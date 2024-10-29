@@ -4,6 +4,7 @@ import os
 import sys
 import re
 
+
 def supports_encoder(encoder_name):
     """Check if FFmpeg supports a specific encoder (e.g., h264_nvenc or h264_amf)."""
     try:
@@ -11,6 +12,7 @@ def supports_encoder(encoder_name):
         return encoder_name in result.stdout
     except Exception:
         return False
+
 
 def get_best_encoder():
     """Determine the best available encoder based on GPU compatibility."""
@@ -24,9 +26,11 @@ def get_best_encoder():
         print("No compatible GPU detected. Falling back to CPU encoding (libx264).")
         return 'libx264'
 
+
 def sanitize_filename(filename):
     """Replace special characters in filenames with underscores."""
     return re.sub(r'[^a-zA-Z0-9_\-\.]', '_', filename)
+
 
 def list_available_qualities(url):
     # Fetch available formats and list with index
@@ -58,6 +62,7 @@ def list_available_qualities(url):
             print(f"{idx}: {quality['resolution']} at {quality['fps']} fps")
         
         return available_qualities
+
 
 def download_and_convert(url):
     # List available qualities and prompt user for selection
@@ -105,30 +110,47 @@ def download_and_convert(url):
 
     # Determine the best available encoder based on GPU compatibility
     video_codec = get_best_encoder()
-
-    # Prompt for AAC conversion
-    convert_choice = input("Do you want to convert the audio to AAC for compatibility (This may take a few minutes)? (y/n): ").strip().lower()
-    if convert_choice == 'y':
-        # Convert to H.264 (using GPU if available) and AAC with enhanced settings
-        aac_output = os.path.join(folder_path, f"{video_title}_{selected_quality['resolution']}_AAC.mp4")
-        conversion_command = [
-            'ffmpeg', '-i', final_output,
-            '-c:v', video_codec, '-preset', 'slow', '-b:v', '10M',  # Use 10MB bitrate
-            '-c:a', 'aac', '-b:a', '256k',                          # Convert Opus to AAC
-            aac_output
-        ]
-
-        
-        print("Converting to AAC audio format...")
-        subprocess.run(conversion_command)
-        print(f"Conversion complete! Video saved as {aac_output}")
-        
-        delete_choice = input("Delete the original downloaded file? (y/n): ").strip().lower()
-        if delete_choice == 'y' and os.path.exists(final_output):
-            os.remove(final_output)
-            print(f"Deleted the original file: {final_output}")
+    
+    #IF Already AAC skip
+    if check_audio_codec(final_output):
+        print("Audio is already in AAC format. Skipping AAC conversion.")
     else:
-        print("AAC conversion skipped. The video is saved as-is.")
+        # Prompt for AAC conversion only if the audio is not in AAC format
+        convert_choice = input("Do you want to convert the audio to AAC for compatibility (This may take a few minutes)? (y/n): ").strip().lower()
+        if convert_choice == 'y':
+            # Convert to H.264 (using GPU if available) and AAC with enhanced settings
+            aac_output = os.path.join(folder_path, f"{video_title}_{selected_quality['resolution']}_AAC.mp4")
+            conversion_command = [
+                'ffmpeg', '-i', final_output,
+                '-c:v', video_codec, '-preset', 'slow', '-b:v', '10M',  # Use 10MB bitrate
+                '-c:a', 'aac', '-b:a', '256k',                          # Convert Opus to AAC
+                aac_output
+            ]
+
+            print("Converting to AAC audio format...")
+            subprocess.run(conversion_command)
+            print(f"Conversion complete! Video saved as {aac_output}")
+            
+            delete_choice = input("Delete the original downloaded file? (y/n): ").strip().lower()
+            if delete_choice == 'y' and os.path.exists(final_output):
+                os.remove(final_output)
+                print(f"Deleted the original file: {final_output}")
+        else:
+            print("AAC conversion skipped. The video is saved as-is.")
+
+
+def check_audio_codec(filepath):
+    """Check the audio codec of the downloaded video file."""
+    try:
+        result = subprocess.run(
+            ['ffmpeg', '-i', filepath],
+            stderr=subprocess.PIPE, text=True
+        )
+        return "aac" in result.stderr  # Return True if AAC is detected
+    except Exception as e:
+        print(f"Error checking audio codec: {e}")
+        return False
+
 
 if __name__ == "__main__":
     # Check if a URL is provided as a command-line argument
