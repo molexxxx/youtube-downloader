@@ -29,7 +29,7 @@ def sanitize_filename(filename):
     return re.sub(r'[^a-zA-Z0-9_\-\.]', '_', filename)
 
 def list_available_qualities(url):
-    # Fetch available formats and return only mp4 in a list with correct numbering
+    # Fetch available formats and list with index
     with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
         info = ydl.extract_info(url, download=False)
         formats = info.get('formats', [])
@@ -37,8 +37,7 @@ def list_available_qualities(url):
         seen_qualities = {}
 
         print("\nAvailable Qualities:")
-        # Filter formats to include only mp4 formats with both video and audio
-        mp4_formats = [f for f in formats if f.get('vcodec') != 'none' and f.get('ext') == 'mp4']
+        mp4_formats = [f for f in formats if f.get('vcodec') != 'none' and f.get('ext') == 'webm']
         
         # Track the last occurrence of each resolution and fps combination
         for f in mp4_formats:
@@ -48,12 +47,10 @@ def list_available_qualities(url):
                 'format_id': f['format_id'],
                 'resolution': resolution,
                 'fps': fps,
-                'ext': f.get('ext', 'mp4')
+                'ext': f.get('ext', 'webm')
             }
-            # Update seen_qualities to only keep the last occurrence
             seen_qualities[(resolution, fps)] = quality_info
 
-        # Populate available_qualities with the unique last-seen entries
         available_qualities = list(seen_qualities.values())
 
         # Display the qualities with corrected numbering
@@ -66,7 +63,6 @@ def download_and_convert(url):
     # List available qualities and prompt user for selection
     available_qualities = list_available_qualities(url)
 
-    # Loop until valid input is received
     while True:
         try:
             selected_index = int(input("\nEnter the number corresponding to your desired quality: ")) - 1
@@ -78,7 +74,7 @@ def download_and_convert(url):
 
     selected_quality = available_qualities[selected_index]
     
-    # Extract metadata for title and uploader
+    # Extract metadata
     with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
         info = ydl.extract_info(url, download=False)
         video_title = sanitize_filename(info.get('title', 'downloaded_video').replace(" ", "_"))
@@ -97,7 +93,7 @@ def download_and_convert(url):
         'merge_output_format': 'mp4',                                 # Merge video and audio into MP4
         'postprocessors': [
             {
-                'key': 'FFmpegMetadata',  # Adds metadata to the final file
+                'key': 'FFmpegMetadata',  # Add the uploader's metadata to the file
             }
         ],
     }
@@ -117,8 +113,8 @@ def download_and_convert(url):
         aac_output = os.path.join(folder_path, f"{video_title}_{selected_quality['resolution']}_AAC.mp4")
         conversion_command = [
             'ffmpeg', '-i', final_output,
-            '-c:v', video_codec, '-preset', 'slow', '-b:v', '10M',  # Use 10M bit-rate
-            '-c:a', 'aac', '-b:a', '192k',                          # Convert Opus to AAC with a specified bitrate
+            '-c:v', video_codec, '-preset', 'slow', '-b:v', '10M',  # Use 10MB bitrate
+            '-c:a', 'aac', '-b:a', '256k',                          # Convert Opus to AAC
             aac_output
         ]
 
@@ -127,7 +123,6 @@ def download_and_convert(url):
         subprocess.run(conversion_command)
         print(f"Conversion complete! Video saved as {aac_output}")
         
-        # Optional deletion of the original file after conversion
         delete_choice = input("Delete the original downloaded file? (y/n): ").strip().lower()
         if delete_choice == 'y' and os.path.exists(final_output):
             os.remove(final_output)
