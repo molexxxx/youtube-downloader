@@ -1,15 +1,3 @@
-'''
-File: c:\Users\tonyw\Desktop\youtube_dl\download.py
-Project: c:\Users\tonyw\Desktop\youtube_dl
-Created Date: Monday October 28th 2024
-Author: Tony Wiedman
------
-Last Modified: Tue October 29th 2024 3:10:20 
-Modified By: Tony Wiedman
------
-Copyright (c) 2024 MolexWorks
-'''
-
 import yt_dlp
 import subprocess
 import os
@@ -123,16 +111,17 @@ def download_and_convert(url):
     video_codec = get_best_encoder()
 
     # Prompt for AAC conversion
-    convert_choice = input("Do you want to convert the audio to AAC for compatibility? (y/n): ").strip().lower()
+    convert_choice = input("Do you want to convert the audio to AAC for compatibility (This may take a few minutes)? (y/n): ").strip().lower()
     if convert_choice == 'y':
-        # Convert to H.264 (using GPU if available) and AAC
+        # Convert to H.264 (using GPU if available) and AAC with enhanced settings
         aac_output = os.path.join(folder_path, f"{video_title}_{selected_quality['resolution']}_AAC.mp4")
         conversion_command = [
             'ffmpeg', '-i', final_output,
-            '-c:v', video_codec, '-preset', 'fast',    # Use GPU or CPU based on availability
-            '-c:a', 'aac', '-b:a', '192k',             # Convert Opus to AAC with a specified bitrate
+            '-c:v', video_codec, '-preset', 'slow', '-b:v', '10M',  # Use 10M bit-rate
+            '-c:a', 'aac', '-b:a', '192k',                          # Convert Opus to AAC with a specified bitrate
             aac_output
         ]
+
         
         print("Converting to AAC audio format...")
         subprocess.run(conversion_command)
