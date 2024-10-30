@@ -1,6 +1,0 @@
-{
-    "video_bitrate": "5M",
-    "audio_bitrate": "192k",
-    "conversion_preset": "medium",
-    "ffmpeg_path": "ffmpeg"
-}

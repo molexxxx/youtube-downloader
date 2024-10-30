@@ -3,8 +3,7 @@ import subprocess
 import os
 import re
 import customtkinter as ctk
-from tkinter import messagebox
-from tkinter import StringVar, Toplevel, Entry, Label, Button
+from tkinter import StringVar, Toplevel, Entry, Label, Button, filedialog, messagebox
 import threading
 import time
 import webbrowser
@@ -17,7 +16,7 @@ conversion_preset = 'slow'
 video_bitrate = '10M'
 audio_bitrate = '192k'
 ffmpeg_path = 'ffmpeg'
-
+output_folder = os.path.join(os.getcwd(), 'videos')  # Default output folder
 
 def supports_encoder(encoder_name):
     try:
@@ -25,7 +24,6 @@ def supports_encoder(encoder_name):
         return encoder_name in result.stdout
     except Exception:
         return False
-
 
 def get_best_encoder():
     """Determine the best available encoder based on GPU compatibility."""
@@ -36,11 +34,9 @@ def get_best_encoder():
     else:
         return 'libx264'
 
-
 def sanitize_filename(filename):
     """Replace special characters in filenames with underscores."""
     return re.sub(r'[^a-zA-Z0-9_\-\.]', '_', filename)
-
 
 def check_ffmpeg_installed():
     """Check if FFmpeg is installed and reachable."""
@@ -50,7 +46,6 @@ def check_ffmpeg_installed():
     except Exception:
         return False
 
-
 def check_audio_codec(filepath):
     """Check if the audio codec of the downloaded file is AAC."""
     try:
@@ -58,7 +53,6 @@ def check_audio_codec(filepath):
         return "aac" in result.stderr
     except Exception:
         return False
-
 
 def list_available_qualities(url):
     with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
@@ -79,7 +73,6 @@ def list_available_qualities(url):
         
         return list(seen_qualities.values())
 
-
 def download_and_convert(url, quality_index):
     available_qualities = list_available_qualities(url)
     selected_quality = available_qualities[quality_index]
@@ -88,19 +81,21 @@ def download_and_convert(url, quality_index):
         info = ydl.extract_info(url, download=False)
         video_title = sanitize_filename(info.get('title', 'downloaded_video').replace(" ", "_"))
         uploader_name = sanitize_filename(info.get('uploader', 'Unknown_Uploader').replace(" ", "_"))
-        duration = info.get('duration', 0) 
+        duration = info.get('duration', 0)
 
-    folder_path = os.path.join(os.getcwd(), uploader_name)
-    os.makedirs(folder_path, exist_ok=True)
-    final_output = os.path.join(folder_path, f"{video_title}_{selected_quality['resolution']}.mp4")
+    # Create output folder based on user settings
+    full_output_folder = os.path.join(output_folder, uploader_name)
+    os.makedirs(full_output_folder, exist_ok=True)
+    
+    final_output = os.path.join(full_output_folder, f"{video_title}_{selected_quality['resolution']}.mp4")
 
     if os.path.exists(final_output):
         overwrite = messagebox.askyesno("File Exists", f"The file '{final_output}' already exists. Do you want to overwrite it?")
         if not overwrite:
             if not check_audio_codec(final_output):
-                prompt_audio_conversion(final_output, folder_path, video_title, selected_quality['resolution'], duration)
+                prompt_audio_conversion(final_output, full_output_folder, video_title, selected_quality['resolution'], duration)
             else:
-                finalize_download(folder_path)
+                finalize_download(full_output_folder)
             return
         else:
             os.remove(final_output)
@@ -111,16 +106,14 @@ def download_and_convert(url, quality_index):
         'merge_output_format': 'mp4',
         'progress_hooks': [progress_hook],
         'postprocessors': [{'key': 'FFmpegMetadata'}],
-        'logger': YTDLLogger()  # Redirect yt-dlp logs to custom logger
+        'logger': YTDLLogger()  # Redirect yt-dlp logs to a custom logger
     }
-    
+
     progress_label.set("Starting download...")
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
 
-    # Check if audio needs conversion to AAC
-    prompt_audio_conversion(final_output, folder_path, video_title, selected_quality['resolution'], duration)
-
+    prompt_audio_conversion(final_output, full_output_folder, video_title, selected_quality['resolution'], duration)
 
 class YTDLLogger:
     """Custom logger to capture yt-dlp output and display it in the GUI."""
@@ -148,14 +141,20 @@ def progress_hook(d):
     if d['status'] == 'downloading':
         downloaded = d.get('downloaded_bytes', 0)
         total = d.get('total_bytes', 1)
-        speed = d.get('speed', 0)
-        eta = d.get('eta', 0)
-        
+        speed = d.get('speed', 0) if d.get('speed') is not None else 0  # Force speed to 0 if None
+        eta = d.get('eta', 0) if d.get('eta') is not None else 0  # Force ETA to 0 if None
+
         progress.set(downloaded / total)
 
-        # Prepare status message
-        speed_str = f"{speed / 1024 / 1024:.2f} MiB/s" if speed else "N/A"
-        eta_str = time.strftime("%H:%M:%S", time.gmtime(eta)) if eta else "N/A"
+        speed_str = f"{speed / 1024 / 1024:.2f} MiB/s" if speed > 0 else "0.00 MiB/s"
+
+        # Calculate ETA only if speed is greater than 0
+        if speed > 0:
+            remaining_time = (total - downloaded) / speed
+            eta_str = time.strftime("%H:%M:%S", time.gmtime(remaining_time))
+        else:
+            eta_str = "0:00:00"  # Set ETA to 0 hours, 0 minutes, 0 seconds
+
         status_message = f"{downloaded / 1024 / 1024:.2f} MiB at {speed_str} ETA: {eta_str}"
 
         if len(status_message) > 69:
@@ -181,7 +180,6 @@ def prompt_audio_conversion(filepath, folder_path, video_title, resolution, dura
             finalize_download(folder_path)
     else:
         finalize_download(folder_path)
-
 
 def convert_audio_to_aac(filepath, folder_path, video_title, resolution, duration):
     """Convert the audio of the downloaded video file to AAC with GPU-accelerated encoding if available."""
@@ -242,12 +240,10 @@ def convert_audio_to_aac(filepath, folder_path, video_title, resolution, duratio
         messagebox.showerror("Execution Error", f"Error during conversion: {e}")
         finalize_download(folder_path)
 
-
 def finalize_download(folder_path):
     progress_and_status_panel.pack_forget()
     final_options_panel.pack(pady=10)
     view_button.configure(command=lambda: open_in_explorer(folder_path))
-
 
 def update_quality_options():
     url = url_entry.get()
@@ -261,7 +257,6 @@ def update_quality_options():
     progress_and_status_panel.pack()
     threading.Thread(target=fetch_qualities_thread, args=(url,)).start()
 
-
 def fetch_qualities_thread(url):
     available_qualities = list_available_qualities(url)
     quality_options = [f"{q['resolution']} at {q['fps']} fps" for q in available_qualities]
@@ -270,10 +265,8 @@ def fetch_qualities_thread(url):
     quality_combobox.configure(values=quality_options)
     quality_combobox.set("Select Quality")
 
-
 def open_in_explorer(folder_path):
     webbrowser.open(f"file://{folder_path}")
-
 
 def reset_ui():
     final_options_panel.pack_forget()
@@ -283,7 +276,6 @@ def reset_ui():
     progress_label.set("Ready")
     estimated_time_remaining.set("")
     url_entry_panel.pack(pady=10)
-
 
 def start_download():
     selected_quality = quality_combobox.get()
@@ -305,11 +297,12 @@ def start_download():
     progress_and_status_panel.pack()
     threading.Thread(target=download_and_convert, args=(url_entry.get(), quality_index)).start()
 
+
 def open_settings():
     """Open the settings window."""
     settings_window = ctk.CTkToplevel(app)  
     settings_window.title("Settings")
-    settings_window.geometry("400x565")  
+    settings_window.geometry("400x685")  
     settings_window.attributes('-topmost', True) 
 
     # Main settings container
@@ -322,6 +315,10 @@ def open_settings():
     ffmpeg_entry.pack(pady=5, fill='x')
     ffmpeg_entry.insert(0, ffmpeg_path)
 
+    # Button to browse for FFmpeg path
+    browse_ffmpeg_button = ctk.CTkButton(settings_container, text="Browse", command=lambda: select_ffmpeg(ffmpeg_entry), fg_color="#8B0000", hover_color="#FF0000")
+    browse_ffmpeg_button.pack(pady=5)
+
     # Check if FFmpeg is installed
     ffmpeg_status_label = ctk.CTkLabel(settings_container, text="", text_color="#FFFFFF")
     ffmpeg_status_label.pack(pady=5)
@@ -331,13 +328,21 @@ def open_settings():
             ffmpeg_status_label.configure(text="FFmpeg is installed and reachable.", text_color="green")
         else:
             ffmpeg_status_label.configure(text="FFmpeg is NOT installed or not reachable.", text_color="red")
-            # Provide a link to the FFmpeg website for download
             messagebox.showinfo("FFmpeg Not Found", "FFmpeg is not installed or not reachable. You can download it from the official website: https://ffmpeg.org/download.html")
             webbrowser.open("https://ffmpeg.org/download.html")
 
-
     check_button = ctk.CTkButton(settings_container, text="Check FFmpeg", command=check_ffmpeg, fg_color="#8B0000", hover_color="#FF0000")
     check_button.pack(pady=5)
+
+    # Output folder input
+    ctk.CTkLabel(settings_container, text="Output Folder:", text_color="#FFFFFF").pack(pady=10)
+    output_folder_entry = ctk.CTkEntry(settings_container, width=50, fg_color="#3D3D3D")
+    output_folder_entry.pack(pady=5, fill='x')
+    output_folder_entry.insert(0, output_folder)
+
+    # Button to browse for output folder
+    browse_output_button = ctk.CTkButton(settings_container, text="Browse", command=lambda: select_output_folder(output_folder_entry), fg_color="#8B0000", hover_color="#FF0000")
+    browse_output_button.pack(pady=5)
 
     # Video bitrate input (Combobox)
     ctk.CTkLabel(settings_container, text="Video Bitrate:", text_color="#FFFFFF").pack(pady=10)
@@ -358,18 +363,20 @@ def open_settings():
     preset_combobox.set(conversion_preset)
 
     def save_settings():
-        global video_bitrate, audio_bitrate, conversion_preset, ffmpeg_path
+        global video_bitrate, audio_bitrate, conversion_preset, ffmpeg_path, output_folder
         video_bitrate = video_bitrate_combobox.get()
         audio_bitrate = audio_bitrate_combobox.get()
         conversion_preset = preset_combobox.get()
         ffmpeg_path = ffmpeg_entry.get()
+        output_folder = output_folder_entry.get()  # Get the output folder
 
         # Save settings to a JSON file
         settings = {
             'video_bitrate': video_bitrate,
             'audio_bitrate': audio_bitrate,
             'conversion_preset': conversion_preset,
-            'ffmpeg_path': ffmpeg_path
+            'ffmpeg_path': ffmpeg_path,
+            'output_folder': output_folder
         }
 
         with open('settings.json', 'w') as f:
@@ -379,25 +386,64 @@ def open_settings():
 
     save_button = ctk.CTkButton(settings_container, text="Save Settings", command=save_settings, fg_color="#8B0000", hover_color="#FF0000")
     save_button.pack(pady=10)
+    
 
+def select_ffmpeg(entry_widget):
+    """Open a file dialog to select the FFmpeg executable, starting from the global path if available."""
+    ffmpeg_install_path = get_ffmpeg_path()  # Get the FFmpeg path if installed
+
+    if ffmpeg_install_path:
+        default_ffmpeg_path = os.path.dirname(ffmpeg_install_path)  # Get directory of the FFmpeg path
+    else:
+        default_ffmpeg_path = ""  # Fallback if FFmpeg is not found
+
+    # Open file dialog
+    ffmpeg_file = filedialog.askopenfilename(
+        title="Select FFmpeg Executable", 
+        initialdir=default_ffmpeg_path,  # Use the directory if found
+        filetypes=[("Executable", "*.exe")]
+    )
+    
+    if ffmpeg_file:
+        entry_widget.delete(0, 'end')  # Clear the current text
+        entry_widget.insert(0, ffmpeg_file)  # Insert the selected path
+
+def get_ffmpeg_path():
+    """Retrieve the path to the FFmpeg executable if installed."""
+    try:
+        result = subprocess.run(["where", "ffmpeg"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if result.returncode == 0:
+            ffmpeg_paths = result.stdout.strip().split("\n")
+            return ffmpeg_paths[0]  # Return the first path
+    except Exception as e:
+        print(f"Error finding FFmpeg: {e}")
+    return None  # FFmpeg not found or accessible
+
+def select_output_folder(entry_widget):
+    """Open a file dialog to select the output folder, starting from the current output folder if set."""
+    # Open the file dialog with the current output folder as the initial directory
+    output_folder = filedialog.askdirectory(title="Select Output Folder", initialdir=entry_widget.get())
+    if output_folder:
+        entry_widget.delete(0, 'end') 
+        entry_widget.insert(0, output_folder)  # Insert the selected path
 
 def load_settings():
-    global video_bitrate, audio_bitrate, conversion_preset, ffmpeg_path
+    global video_bitrate, audio_bitrate, conversion_preset, ffmpeg_path, output_folder
     try:
         with open('settings.json', 'r') as f:
             settings = json.load(f)
+            output_folder = settings.get('output_folder', None)  # Get the saved output folder, if any
             video_bitrate = settings.get('video_bitrate', '10M')
             audio_bitrate = settings.get('audio_bitrate', '192k')
             conversion_preset = settings.get('conversion_preset', 'slow')
             ffmpeg_path = settings.get('ffmpeg_path', 'ffmpeg')
     except FileNotFoundError:
-        # If the file does not exist, use default values
-        video_bitrate = '10M'
-        audio_bitrate = '256k'
-        conversion_preset = 'slow'
-        ffmpeg_path = 'ffmpeg'
+        output_folder = None  # If settings.json doesn't exist, output_folder will be None
 
-
+    # If output_folder is not set, create 'videos/' directory relative to script location
+    if output_folder is None:
+        output_folder = os.path.join(os.getcwd(), 'videos')
+        os.makedirs(output_folder, exist_ok=True) 
 
 #@ GUI Setup ---------------------------
 app = ctk.CTk()

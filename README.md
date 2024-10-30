@@ -4,13 +4,13 @@ This application provides a graphical user interface (GUI) for downloading YouTu
 
 ## Requirements
 
-- **Python** (installed via [Scoop](https://scoop.sh/))
-- **FFmpeg** (installed via Scoop)
-- **yt-dlp** Python package for downloading YouTube videos
+- **FFmpeg**: Required for both GUI and CLI versions.
 
-## Setup Guide (Windows)
+## Installing FFmpeg and Running the GUI Application
 
-### Step 1: Install Scoop
+You can easily install FFmpeg using Scoop, a package manager for Windows.
+
+### Step 1: Install Scoop (Optional for Package Management)
 
 If you haven't already, install Scoop to manage packages on Windows. Open PowerShell and run:
 
@@ -24,31 +24,65 @@ This installs Scoop in your user profile. You may need to allow script execution
 Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
-### Step 2: Install Python and FFmpeg
+### Step 2: Install FFmpeg
 
-1. **Install Python**:
+1. **Add the main bucket**:
 
    ```powershell
-   scoop install python
+   scoop bucket add main
    ```
 
 2. **Install FFmpeg**:
 
    ```powershell
-   scoop install ffmpeg
+   scoop install main/ffmpeg
    ```
 
-Scoop will install Python and FFmpeg and add them to your PATH, making them available from any terminal.
+Alternatively, if you do not want to use Scoop, you can download and install FFmpeg from the official website:
 
-### Step 3: Install `yt-dlp` Package
+[FFmpeg Download Page](https://ffmpeg.org/download.html)
 
-With Python installed, use `pip` (Python's package manager) to install `yt-dlp`:
+### Step 3: Run the GUI Application
+
+You can run the application using the executable generated in the `dist` folder:
 
 ```powershell
-pip install yt-dlp
+cd dist
+.\YouTube_Stealer.exe
 ```
 
-### Step 4: Clone the Repository and Install Requirements
+### Settings Panel
+
+The application includes a settings panel that allows you to configure the following options:
+- **FFmpeg Path**: Specify the path to your FFmpeg installation.
+- **Video Bitrate**: Choose the desired video bitrate from a predefined list.
+- **Audio Bitrate**: Choose the desired audio bitrate from a predefined list.
+- **Conversion Preset**: Select the encoding speed for FFmpeg (fast, medium, slow).
+- **Output Folder**: Set the folder where downloaded videos will be saved. The default is a `videos/` directory relative to the script location, but you can customize it.
+
+### Settings Storage
+
+The settings are stored in a `settings.json` file within the same directory as the executable. The application will load these settings at startup, allowing you to customize the behavior of the downloader.
+
+## Installing Python and Additional Requirements (CLI Only)
+
+If you wish to run the CLI version, you will need to install Python and the necessary dependencies.
+
+### Step 1: Install Python
+
+1. **Add the main bucket**:
+
+   ```powershell
+   scoop bucket add main
+   ```
+
+2. **Install Python**:
+
+   ```powershell
+   scoop install python
+   ```
+
+### Step 2: Clone the Repository and Install Requirements
 
 1. **Clone the Repository**:
 
@@ -68,22 +102,9 @@ pip install yt-dlp
    pip install -r requirements.txt
    ```
 
-### Step 5: Run the Script
+### Step 3: Run the CLI Script
 
-You can run the application using the executable generated in the `dist` folder:
-
-```powershell
-cd dist
-.\YouTube_Stealer.exe
-```
-
-Alternatively, you can run the script from the command line by specifying a YouTube URL as input:
-
-```powershell
-python cli.py
-```
-
-Or, pass the URL directly:
+You can run the CLI version by specifying a YouTube URL as input:
 
 ```powershell
 python cli.py "https://www.youtube.com/watch?v=VIDEO_ID"
@@ -95,17 +116,15 @@ The application will:
 3. Detect and use GPU encoding if available (NVIDIA or AMD), falling back to CPU if no GPU is detected.
 4. Optionally, convert the audio to AAC for compatibility.
 
-## Settings Panel
+## Building a New Executable
 
-The application includes a settings panel that allows you to configure the following options:
-- **FFmpeg Path**: Specify the path to your FFmpeg installation.
-- **Video Bitrate**: Choose the desired video bitrate from a predefined list.
-- **Audio Bitrate**: Choose the desired audio bitrate from a predefined list.
-- **Conversion Preset**: Select the encoding speed for FFmpeg (fast, medium, slow).
+If you need to rebuild the executable, ensure you have the necessary packages installed, and then use the following command in your terminal within the project directory:
 
-### Settings Storage
+```powershell
+pyinstaller --onefile --windowed ui.py
+```
 
-The settings are stored in a `settings.json` file within the same directory as the executable. The application will load these settings at startup, allowing you to customize the behavior of the downloader.
+This will create a new executable in the `dist` folder.
 
 ## Additional Notes
 
@@ -115,6 +134,6 @@ The settings are stored in a `settings.json` file within the same directory as t
 ## Troubleshooting
 
 If you encounter issues with the application:
-1. Ensure `python`, `ffmpeg`, and `yt-dlp` are installed and accessible from the command line.
+1. Ensure `ffmpeg` is installed and accessible from the command line.
 2. For GPU encoding, verify that you have the appropriate drivers installed (NVIDIA or AMD).
-3. Update `yt-dlp` if needed using `pip install --upgrade yt-dlp`.
+3. Update `yt-dlp` if needed using `pip install --upgrade yt-dlp` (only for the CLI version).
