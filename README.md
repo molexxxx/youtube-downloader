@@ -6,7 +6,7 @@ This application provides a graphical user interface (GUI) for downloading YouTu
 
 You can download the latest release of the YouTube Video Downloader GUI from the following link:
 
-[Download YouTube Downloader](https://github.com/tonywied17/youtube-downloader/releases/tag/release)
+[Download YouTube Downloader](https://github.com/tonywied17/youtube-downloader/releases)
 
 ## Requirements
 
