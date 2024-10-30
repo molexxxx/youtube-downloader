@@ -2,6 +2,12 @@
 
 This application provides a graphical user interface (GUI) for downloading YouTube videos at specified qualities and offers optional audio conversion to AAC for better compatibility. The app automatically detects available GPU encoders (NVIDIA or AMD) and falls back to CPU encoding if no GPU is found.
 
+## Download the GUI Executable
+
+You can download the latest release of the YouTube Video Downloader GUI from the following link:
+
+[Download YouTube Downloader](https://github.com/tonywied17/youtube-downloader/releases/tag/release)
+
 ## Requirements
 
 - **FFmpeg**: Required for both GUI and CLI versions.
@@ -48,7 +54,7 @@ You can run the application using the executable generated in the `dist` folder:
 
 ```powershell
 cd dist
-.\YouTube_Stealer.exe
+.\YouTube_Downloader.exe
 ```
 
 ### Settings Panel
