@@ -133,7 +133,7 @@ The application will:
 If you need to rebuild the executable, ensure you have the necessary packages installed, and then use the following command in your terminal within the project directory:
 
 ```powershell
-pyinstaller --onefile --windowed ui.py
+pyinstaller YouTube Downloader.spec
 ```
 
 This will create a new executable in the `dist` folder.

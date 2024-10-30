@@ -1,13 +1,23 @@
 import yt_dlp
 import subprocess
 import os
+import sys
 import re
 import customtkinter as ctk
-from tkinter import StringVar, Toplevel, Entry, Label, Button, filedialog, messagebox, BooleanVar
+from tkinter import StringVar, Toplevel, Entry, Label, Button, filedialog, messagebox, BooleanVar, PhotoImage
 import threading
 import time
 import webbrowser
 import json
+from PIL import Image
+
+# Define the resource path function to access bundled files
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS  # Used by PyInstaller to store temporary files
+    except AttributeError:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 
 ctk.set_appearance_mode("dark")
 
@@ -18,10 +28,15 @@ audio_bitrate = '192k'
 ffmpeg_path = 'ffmpeg'
 output_folder = os.path.join(os.getcwd(), 'downloads')  # Default output folder
 
-# GUI Setup --------------------------- 
+# GUI Setup
 app = ctk.CTk()
 app.title("YouTube Video Downloader")
 app.geometry("650x275")
+app.resizable(False, False)
+
+# Set the icon for the taskbar
+icon_path = resource_path("icons/yt-ico.ico")
+app.iconbitmap(icon_path)
 
 # Use a BooleanVar after the app has been created
 save_mp3_var = BooleanVar(value=True)  # Default to checked
@@ -281,6 +296,7 @@ def convert_audio_to_aac(filepath, folder_path, video_title, resolution, duratio
 def finalize_download(folder_path):
     progress_and_status_panel.pack_forget()
     final_options_panel.pack(pady=10)
+    # Update view_button's command to open the explorer dynamically
     view_button.configure(command=lambda: open_in_explorer(folder_path))
 
 
@@ -345,7 +361,7 @@ def open_settings():
     """Open the settings window.""" 
     settings_window = ctk.CTkToplevel(app)  
     settings_window.title("Settings")
-    settings_window.geometry("400x685")  
+    settings_window.geometry("400x712")  
     settings_window.attributes('-topmost', True) 
 
     # Main settings container
@@ -357,9 +373,14 @@ def open_settings():
     ffmpeg_entry = ctk.CTkEntry(settings_container, width=50, fg_color="#3D3D3D")
     ffmpeg_entry.pack(pady=5, fill='x')
     ffmpeg_entry.insert(0, ffmpeg_path)
-
-    # Button to browse for FFmpeg path
-    browse_ffmpeg_button = ctk.CTkButton(settings_container, text="Browse", command=lambda: select_ffmpeg(ffmpeg_entry), fg_color="#8B0000", hover_color="#FF0000")
+    
+    browse_ffmpeg_button = create_button(
+    settings_container, 
+    "Browse..", 
+    resource_path("icons/browse.png"), 
+    lambda: select_ffmpeg(ffmpeg_entry),
+    icon_position="right"
+    )
     browse_ffmpeg_button.pack(pady=5)
 
     # Check if FFmpeg is installed
@@ -374,7 +395,13 @@ def open_settings():
             messagebox.showinfo("FFmpeg Not Found", "FFmpeg is not installed or not reachable. You can download it from the official website: https://ffmpeg.org/download.html")
             webbrowser.open("https://ffmpeg.org/download.html")
 
-    check_button = ctk.CTkButton(settings_container, text="Check FFmpeg", command=check_ffmpeg, fg_color="#8B0000", hover_color="#FF0000")
+    check_button = create_button(
+    settings_container, 
+    "Check FFmpeg", 
+    resource_path("icons/test.png"), 
+    check_ffmpeg,
+    icon_position="left"
+    )
     check_button.pack(pady=5)
 
     # Output folder input
@@ -384,7 +411,13 @@ def open_settings():
     output_folder_entry.insert(0, output_folder)
 
     # Button to browse for output folder
-    browse_output_button = ctk.CTkButton(settings_container, text="Browse", command=lambda: select_output_folder(output_folder_entry), fg_color="#8B0000", hover_color="#FF0000")
+    browse_output_button = create_button(
+    settings_container, 
+    "Browse..", 
+    resource_path("icons/browse.png"), 
+    lambda: select_output_folder(output_folder_entry),
+    icon_position="right"
+    )
     browse_output_button.pack(pady=5)
 
     # Video bitrate input (Combobox)
@@ -427,7 +460,13 @@ def open_settings():
 
         messagebox.showinfo("Settings Saved", "Your settings have been saved.")
 
-    save_button = ctk.CTkButton(settings_container, text="Save Settings", command=save_settings, fg_color="#8B0000", hover_color="#FF0000")
+    save_button = create_button(
+    settings_container, 
+    "Save Settings", 
+    resource_path("icons/save.png"), 
+    save_settings,
+    icon_position="left"
+    )
     save_button.pack(pady=10)
 
 def select_ffmpeg(entry_widget):
@@ -495,19 +534,69 @@ load_settings()
 main_container = ctk.CTkFrame(app)
 main_container.pack(padx=20, pady=20, fill="both", expand=True)
 
-# Settings button
-settings_button = ctk.CTkButton(
-    main_container, 
-    text="Settings", 
-    command=open_settings, 
-    text_color="#343434",
-    fg_color="#A9A9A9",
-    hover_color="#8B8B8B",
-    font=('Arial', 12, "bold"),
-    width=80, 
-    height=30
+
+
+# Set button and icon sizes
+button_height = 35  # Adjust this based on your button’s height
+icon_size = int(button_height * 0.9)  # Resize icon to about 80% of button height
+
+
+# Define a helper function to create navigation buttons with icons and hover effects
+def create_button(container, text, icon_path, command, icon_position="left"):
+    # Load and resize the icon
+    icon_image = Image.open(resource_path(icon_path)).resize((icon_size, icon_size), Image.LANCZOS)
+    button_icon = ctk.CTkImage(light_image=icon_image, dark_image=icon_image)
+    
+    # Create the button with the specified properties
+    button = ctk.CTkButton(
+        container,
+        text=text,
+        command=command,
+        image=button_icon,
+        compound=icon_position,
+        text_color="#A9A9A9", 
+        fg_color="#343434",
+        border_color="#343434", 
+        border_width=1,
+        hover_color="#333333",
+        font=('Arial', 12, "bold"),
+        width=80,
+        height=button_height
+    )
+    
+    # Apply hover effects for text and border color
+    def on_enter(event):
+        button.configure(text_color="#FF0000", border_color="#FF0000") 
+    
+    def on_leave(event):
+        button.configure(text_color="#A9A9A9", border_color="#343434") 
+    
+    button.bind("<Enter>", on_enter)
+    button.bind("<Leave>", on_leave)
+    
+    return button
+
+# Create the navigation buttons container
+nav_buttons_container = ctk.CTkFrame(main_container, fg_color="transparent", bg_color="transparent")
+nav_buttons_container.pack(side='top', anchor='ne', padx=20, pady=(10, 0))
+
+# Create "Downloads" and "Settings" buttons with icons
+downloads_button = create_button(
+    nav_buttons_container, 
+    "Downloads", 
+    resource_path("icons/downloads.png"), 
+    lambda: open_in_explorer(output_folder)
 )
-settings_button.pack(side='top', anchor='ne', padx=(0, 20), pady=(10, 0))
+downloads_button.pack(side='left', padx=(0, 10))
+
+settings_button = create_button(
+    nav_buttons_container, 
+    "Settings", 
+    resource_path("icons/gears.png"), 
+    open_settings
+)
+settings_button.pack(side='left')
+
 
 # URL Entry Panel
 url_entry_panel = ctk.CTkFrame(main_container, fg_color="transparent", bg_color="transparent")
@@ -516,7 +605,14 @@ url_label = ctk.CTkLabel(url_entry_panel, font=('Arial', 14), text="Enter a YouT
 url_label.pack(pady=(10, 5))
 url_entry = ctk.CTkEntry(url_entry_panel, width=500)
 url_entry.pack(pady=5)
-fetch_button = ctk.CTkButton(url_entry_panel, text="Fetch Qualities", command=update_quality_options, fg_color="#8B0000", hover_color="#FF0000", font=('Arial', 12, "bold"))
+
+fetch_button = create_button(
+    url_entry_panel, 
+    "Get Qualities", 
+    resource_path("icons/start.png"), 
+    update_quality_options,
+    icon_position="right"
+)
 fetch_button.pack(pady=10)
 
 # Quality Selection Panel
@@ -526,8 +622,15 @@ quality_combobox = ctk.CTkComboBox(quality_selection_panel, width=300)
 quality_combobox.pack(pady=5)
 save_mp3_checkbox = ctk.CTkCheckBox(quality_selection_panel, text="Save MP3 Separately", variable=save_mp3_var)
 save_mp3_checkbox.pack(pady=10)
-download_button = ctk.CTkButton(quality_selection_panel, text="Download", command=start_download, fg_color="#8B0000", hover_color="#FF0000", font=('Arial', 12, "bold"))
+download_button = create_button(
+    quality_selection_panel, 
+    "Download", 
+    resource_path("icons/download.png"), 
+    start_download,
+    icon_position="right"
+)
 download_button.pack(pady=10)
+
 quality_selection_panel.pack_forget()
 
 # Progress and Status Panel
@@ -544,11 +647,27 @@ progress_and_status_panel.pack_forget()
 # Final Options Panel
 final_options_panel = ctk.CTkFrame(main_container, fg_color="transparent", bg_color="transparent")
 final_options_panel.pack(padx=20, pady=20, fill="both", expand=True)
-view_button = ctk.CTkButton(final_options_panel, text="View in Explorer", fg_color="#A6A19B", hover_color="#BFB9B3", text_color="#343434", font=('Arial', 12, "bold"))
+view_button = create_button(
+    final_options_panel, 
+    "View in Explorer", 
+    resource_path("icons/browse.png"),
+    lambda: None,
+    icon_position="right"
+)
 view_button.pack(pady=5)
-reset_button = ctk.CTkButton(final_options_panel, text="Start Over", command=reset_ui, fg_color="#8B0000", hover_color="#FF0000", font=('Arial', 12, "bold"))
+
+# Use create_button to initialize reset_button with the reset_ui command
+reset_button = create_button(
+    final_options_panel, 
+    "Download Another", 
+    resource_path("icons/restart.png"),
+    reset_ui,
+    icon_position="right"
+)
 reset_button.pack(pady=5)
+
 final_options_panel.pack_forget()
 url_entry_panel.pack(pady=10)
+
 
 app.mainloop()
