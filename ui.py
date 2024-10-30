@@ -3,7 +3,7 @@ import subprocess
 import os
 import re
 import customtkinter as ctk
-from tkinter import StringVar, Toplevel, Entry, Label, Button, filedialog, messagebox
+from tkinter import StringVar, Toplevel, Entry, Label, Button, filedialog, messagebox, BooleanVar
 import threading
 import time
 import webbrowser
@@ -16,7 +16,15 @@ conversion_preset = 'slow'
 video_bitrate = '10M'
 audio_bitrate = '192k'
 ffmpeg_path = 'ffmpeg'
-output_folder = os.path.join(os.getcwd(), 'videos')  # Default output folder
+output_folder = os.path.join(os.getcwd(), 'downloads')  # Default output folder
+
+# GUI Setup --------------------------- 
+app = ctk.CTk()
+app.title("YouTube Video Downloader")
+app.geometry("650x275")
+
+# Use a BooleanVar after the app has been created
+save_mp3_var = BooleanVar(value=True)  # Default to checked
 
 def supports_encoder(encoder_name):
     try:
@@ -106,17 +114,48 @@ def download_and_convert(url, quality_index):
         'merge_output_format': 'mp4',
         'progress_hooks': [progress_hook],
         'postprocessors': [{'key': 'FFmpegMetadata'}],
-        'logger': YTDLLogger()  # Redirect yt-dlp logs to a custom logger
+        'logger': YTDLLogger()
     }
 
     progress_label.set("Starting download...")
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
 
+    # Save MP3 separately if the checkbox is checked
+    if save_mp3_var.get(): 
+        progress_label.set("Downloading MP3...") 
+        save_mp3(full_output_folder, video_title, url) 
+
     prompt_audio_conversion(final_output, full_output_folder, video_title, selected_quality['resolution'], duration)
 
+def save_mp3(folder_path, video_title, url):  
+    """Save the audio as an MP3 file in a separate directory.""" 
+    mp3_folder = os.path.join(folder_path, "mp3s")
+    os.makedirs(mp3_folder, exist_ok=True)
+
+    mp3_output = os.path.join(mp3_folder, video_title)
+
+    if os.path.exists(mp3_output):
+        overwrite = messagebox.askyesno("File Exists", f"The MP3 file '{mp3_output}' already exists. Do you want to overwrite it?")
+        if not overwrite:
+            return  
+
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'outtmpl': mp3_output,
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }],
+        'logger': YTDLLogger()  
+    }
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([url])  
+
 class YTDLLogger:
-    """Custom logger to capture yt-dlp output and display it in the GUI."""
+    """Custom logger to capture yt-dlp output and display it in the GUI.""" 
     def __init__(self):
         self.last_status = "" 
 
@@ -135,25 +174,24 @@ class YTDLLogger:
     def error(self, msg):
         messagebox.showerror("yt-dlp Error", msg)
 
-
 def progress_hook(d):
-    """Handle download progress and update GUI."""
+    """Handle download progress and update GUI.""" 
     if d['status'] == 'downloading':
         downloaded = d.get('downloaded_bytes', 0)
         total = d.get('total_bytes', 1)
-        speed = d.get('speed', 0) if d.get('speed') is not None else 0  # Force speed to 0 if None
-        eta = d.get('eta', 0) if d.get('eta') is not None else 0  # Force ETA to 0 if None
+        speed = d.get('speed', 0) if d.get('speed') is not None else 0
+        eta = d.get('eta', 0) if d.get('eta') is not None else 0 
 
         progress.set(downloaded / total)
 
         speed_str = f"{speed / 1024 / 1024:.2f} MiB/s" if speed > 0 else "0.00 MiB/s"
 
-        # Calculate ETA only if speed is greater than 0
+        # Calculate ETA
         if speed > 0:
             remaining_time = (total - downloaded) / speed
             eta_str = time.strftime("%H:%M:%S", time.gmtime(remaining_time))
         else:
-            eta_str = "0:00:00"  # Set ETA to 0 hours, 0 minutes, 0 seconds
+            eta_str = "0:00:00"
 
         status_message = f"{downloaded / 1024 / 1024:.2f} MiB at {speed_str} ETA: {eta_str}"
 
@@ -168,7 +206,7 @@ def progress_hook(d):
 
 
 def prompt_audio_conversion(filepath, folder_path, video_title, resolution, duration):
-    """Prompt the user to convert audio to AAC if needed and proceed with conversion or finalize."""
+    """Prompt the user to convert audio to AAC if needed and proceed with conversion or finalize.""" 
     if not check_audio_codec(filepath):
         convert_to_aac = messagebox.askyesno(
             "Convert Audio to AAC",
@@ -181,12 +219,12 @@ def prompt_audio_conversion(filepath, folder_path, video_title, resolution, dura
     else:
         finalize_download(folder_path)
 
+
 def convert_audio_to_aac(filepath, folder_path, video_title, resolution, duration):
-    """Convert the audio of the downloaded video file to AAC with GPU-accelerated encoding if available."""
+    """Convert the audio of the downloaded video file to AAC with GPU-accelerated encoding if available.""" 
     video_codec = get_best_encoder()
     aac_output = os.path.join(folder_path, f"{video_title}_{resolution}_AAC.mp4")
 
-    # Check if AAC file already exists and prompt for overwrite if it does
     if os.path.exists(aac_output):
         overwrite = messagebox.askyesno("File Exists", f"The AAC file '{aac_output}' already exists. Do you want to overwrite it?")
         if not overwrite:
@@ -222,7 +260,6 @@ def convert_audio_to_aac(filepath, folder_path, video_title, resolution, duratio
                 remaining_time = (duration - elapsed_time) / (conversion_progress + 1e-5)
                 mins, secs = divmod(int(remaining_time), 60)
                 
-                # Update the status with codec and settings
                 settings_message = (f"Using codec: {video_codec} | "
                                     f"Video Bitrate: {video_bitrate} | "
                                     f"Audio Bitrate: {audio_bitrate} | "
@@ -240,10 +277,12 @@ def convert_audio_to_aac(filepath, folder_path, video_title, resolution, duratio
         messagebox.showerror("Execution Error", f"Error during conversion: {e}")
         finalize_download(folder_path)
 
+
 def finalize_download(folder_path):
     progress_and_status_panel.pack_forget()
     final_options_panel.pack(pady=10)
     view_button.configure(command=lambda: open_in_explorer(folder_path))
+
 
 def update_quality_options():
     url = url_entry.get()
@@ -257,6 +296,7 @@ def update_quality_options():
     progress_and_status_panel.pack()
     threading.Thread(target=fetch_qualities_thread, args=(url,)).start()
 
+
 def fetch_qualities_thread(url):
     available_qualities = list_available_qualities(url)
     quality_options = [f"{q['resolution']} at {q['fps']} fps" for q in available_qualities]
@@ -265,8 +305,10 @@ def fetch_qualities_thread(url):
     quality_combobox.configure(values=quality_options)
     quality_combobox.set("Select Quality")
 
+
 def open_in_explorer(folder_path):
     webbrowser.open(f"file://{folder_path}")
+
 
 def reset_ui():
     final_options_panel.pack_forget()
@@ -276,6 +318,7 @@ def reset_ui():
     progress_label.set("Ready")
     estimated_time_remaining.set("")
     url_entry_panel.pack(pady=10)
+
 
 def start_download():
     selected_quality = quality_combobox.get()
@@ -299,7 +342,7 @@ def start_download():
 
 
 def open_settings():
-    """Open the settings window."""
+    """Open the settings window.""" 
     settings_window = ctk.CTkToplevel(app)  
     settings_window.title("Settings")
     settings_window.geometry("400x685")  
@@ -368,7 +411,7 @@ def open_settings():
         audio_bitrate = audio_bitrate_combobox.get()
         conversion_preset = preset_combobox.get()
         ffmpeg_path = ffmpeg_entry.get()
-        output_folder = output_folder_entry.get()  # Get the output folder
+        output_folder = output_folder_entry.get() 
 
         # Save settings to a JSON file
         settings = {
@@ -386,69 +429,62 @@ def open_settings():
 
     save_button = ctk.CTkButton(settings_container, text="Save Settings", command=save_settings, fg_color="#8B0000", hover_color="#FF0000")
     save_button.pack(pady=10)
-    
 
 def select_ffmpeg(entry_widget):
-    """Open a file dialog to select the FFmpeg executable, starting from the global path if available."""
-    ffmpeg_install_path = get_ffmpeg_path()  # Get the FFmpeg path if installed
+    """Open a file dialog to select the FFmpeg executable, starting from the global path if available.""" 
+    ffmpeg_install_path = get_ffmpeg_path()  
 
     if ffmpeg_install_path:
-        default_ffmpeg_path = os.path.dirname(ffmpeg_install_path)  # Get directory of the FFmpeg path
+        default_ffmpeg_path = os.path.dirname(ffmpeg_install_path)
     else:
-        default_ffmpeg_path = ""  # Fallback if FFmpeg is not found
+        default_ffmpeg_path = "" 
 
     # Open file dialog
     ffmpeg_file = filedialog.askopenfilename(
         title="Select FFmpeg Executable", 
-        initialdir=default_ffmpeg_path,  # Use the directory if found
+        initialdir=default_ffmpeg_path, 
         filetypes=[("Executable", "*.exe")]
     )
     
     if ffmpeg_file:
-        entry_widget.delete(0, 'end')  # Clear the current text
-        entry_widget.insert(0, ffmpeg_file)  # Insert the selected path
+        entry_widget.delete(0, 'end') 
+        entry_widget.insert(0, ffmpeg_file) 
 
 def get_ffmpeg_path():
-    """Retrieve the path to the FFmpeg executable if installed."""
+    """Retrieve the path to the FFmpeg executable if installed.""" 
     try:
         result = subprocess.run(["where", "ffmpeg"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         if result.returncode == 0:
             ffmpeg_paths = result.stdout.strip().split("\n")
-            return ffmpeg_paths[0]  # Return the first path
+            return ffmpeg_paths[0]  
     except Exception as e:
         print(f"Error finding FFmpeg: {e}")
-    return None  # FFmpeg not found or accessible
+    return None 
 
 def select_output_folder(entry_widget):
-    """Open a file dialog to select the output folder, starting from the current output folder if set."""
+    """Open a file dialog to select the output folder, starting from the current output folder if set.""" 
     # Open the file dialog with the current output folder as the initial directory
     output_folder = filedialog.askdirectory(title="Select Output Folder", initialdir=entry_widget.get())
     if output_folder:
         entry_widget.delete(0, 'end') 
-        entry_widget.insert(0, output_folder)  # Insert the selected path
+        entry_widget.insert(0, output_folder) 
 
 def load_settings():
     global video_bitrate, audio_bitrate, conversion_preset, ffmpeg_path, output_folder
     try:
         with open('settings.json', 'r') as f:
             settings = json.load(f)
-            output_folder = settings.get('output_folder', None)  # Get the saved output folder, if any
+            output_folder = settings.get('output_folder', None) 
             video_bitrate = settings.get('video_bitrate', '10M')
             audio_bitrate = settings.get('audio_bitrate', '192k')
             conversion_preset = settings.get('conversion_preset', 'slow')
             ffmpeg_path = settings.get('ffmpeg_path', 'ffmpeg')
     except FileNotFoundError:
-        output_folder = None  # If settings.json doesn't exist, output_folder will be None
+        output_folder = None 
 
-    # If output_folder is not set, create 'videos/' directory relative to script location
     if output_folder is None:
-        output_folder = os.path.join(os.getcwd(), 'videos')
+        output_folder = os.path.join(os.getcwd(), 'downloads')
         os.makedirs(output_folder, exist_ok=True) 
-
-#@ GUI Setup ---------------------------
-app = ctk.CTk()
-app.title("YouTube Video Downloader")
-app.geometry("650x275")
 
 progress = ctk.DoubleVar(value=0.0)
 progress_label = StringVar(value="Ready")
@@ -488,6 +524,8 @@ quality_selection_panel = ctk.CTkFrame(main_container, fg_color="transparent", b
 quality_selection_panel.pack(padx=20, pady=20, fill="both", expand=True)
 quality_combobox = ctk.CTkComboBox(quality_selection_panel, width=300)
 quality_combobox.pack(pady=5)
+save_mp3_checkbox = ctk.CTkCheckBox(quality_selection_panel, text="Save MP3 Separately", variable=save_mp3_var)
+save_mp3_checkbox.pack(pady=10)
 download_button = ctk.CTkButton(quality_selection_panel, text="Download", command=start_download, fg_color="#8B0000", hover_color="#FF0000", font=('Arial', 12, "bold"))
 download_button.pack(pady=10)
 quality_selection_panel.pack_forget()
@@ -495,13 +533,10 @@ quality_selection_panel.pack_forget()
 # Progress and Status Panel
 progress_and_status_panel = ctk.CTkFrame(main_container, fg_color="transparent", bg_color="transparent")
 progress_and_status_panel.pack(padx=20, pady=20, fill="both", expand=True)
-
 progress_text = ctk.CTkLabel(progress_and_status_panel, textvariable=progress_label, width=300, wraplength=300, height=30, font=('Arial', 12))
 progress_text.pack(pady=5)
-
 progress_bar = ctk.CTkProgressBar(progress_and_status_panel, variable=progress, width=350, fg_color="#8B0000", progress_color="#FF0000")
 progress_bar.pack(pady=5)
-
 time_remaining_label = ctk.CTkLabel(progress_and_status_panel, textvariable=estimated_time_remaining, font=('Arial', 11))
 time_remaining_label.pack(pady=5)
 progress_and_status_panel.pack_forget()
@@ -514,7 +549,6 @@ view_button.pack(pady=5)
 reset_button = ctk.CTkButton(final_options_panel, text="Start Over", command=reset_ui, fg_color="#8B0000", hover_color="#FF0000", font=('Arial', 12, "bold"))
 reset_button.pack(pady=5)
 final_options_panel.pack_forget()
-
 url_entry_panel.pack(pady=10)
 
 app.mainloop()

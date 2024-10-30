@@ -58,7 +58,13 @@ The application includes a settings panel that allows you to configure the follo
 - **Video Bitrate**: Choose the desired video bitrate from a predefined list.
 - **Audio Bitrate**: Choose the desired audio bitrate from a predefined list.
 - **Conversion Preset**: Select the encoding speed for FFmpeg (fast, medium, slow).
-- **Output Folder**: Set the folder where downloaded videos will be saved. The default is a `videos/` directory relative to the script location, but you can customize it.
+- **Output Folder**: Set the folder where downloaded videos and MP3s will be saved. The default is a `downloads/` directory relative to the script location, but you can customize it.
+
+### MP3 Saving Feature
+
+- The application allows you to save audio from videos as MP3 files separately.
+- When you check the "Save MP3 Separately" option, the application will create an `mp3s/` folder within the downloaded channel's media folder (e.g., `output_folder/uploader_name/mp3s/`).
+- The MP3 file will be named using the video title, ensuring that special characters are sanitized to prevent file system issues.
 
 ### Settings Storage
 
