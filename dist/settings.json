@@ -1,0 +1,7 @@
+{
+    "video_bitrate": "10M",
+    "audio_bitrate": "192k",
+    "conversion_preset": "slow",
+    "ffmpeg_path": "ffmpeg",
+    "output_folder": "%APPDATA%\\YouTube Downloader\\downloads"
+}

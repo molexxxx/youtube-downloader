@@ -30,24 +30,25 @@ def load_settings():
     try:
         with open('settings.json', 'r') as f:
             settings = json.load(f)
-            output_folder = settings.get('output_folder', None) 
+            output_folder = settings.get('output_folder', None)
+            if output_folder:
+                output_folder = os.path.expandvars(output_folder)  # Expand %APPDATA% if present
+            
             video_bitrate = settings.get('video_bitrate', '10M')
             audio_bitrate = settings.get('audio_bitrate', '192k')
             conversion_preset = settings.get('conversion_preset', 'slow')
             ffmpeg_path = settings.get('ffmpeg_path', 'ffmpeg')
     except FileNotFoundError:
-        output_folder = None 
-
-    if output_folder is None:
+        # Default to a relative 'downloads' folder when settings.json is not found
         output_folder = os.path.join(os.getcwd(), 'downloads')
-        os.makedirs(output_folder, exist_ok=True) 
+        os.makedirs(output_folder, exist_ok=True)
 
 #* Global settings
 conversion_preset = 'slow'
 video_bitrate = '10M'
 audio_bitrate = '192k'
 ffmpeg_path = 'ffmpeg'
-output_folder = os.path.join(os.getcwd(), 'downloads')  # Default output folder if not set.
+output_folder = os.path.join(os.getcwd(), 'downloads')
 
 #* CTkinter settings
 ctk.set_appearance_mode("dark")
@@ -395,8 +396,23 @@ def start_download():
 
 #! --
 def open_in_explorer(folder_path):
-    """Open the specified folder in the file explorer."""
-    webbrowser.open(f"file://{folder_path}")
+    """Open the specified folder in the file explorer, creating it if necessary."""
+    folder_path = os.path.abspath(folder_path)  # Ensure absolute path
+    folder_path = os.path.normpath(folder_path)  # Normalize path for Windows
+
+    if not os.path.exists(folder_path):
+        create_folder = messagebox.askyesno("Folder Not Found", f"The folder '{folder_path}' does not exist. Would you like to create it?")
+        if create_folder:
+            try:
+                os.makedirs(folder_path)
+                messagebox.showinfo("Folder Created", f"The folder '{folder_path}' has been created.")
+            except Exception as e:
+                messagebox.showerror("Error", f"Could not create the folder: {e}")
+                return
+        else:
+            return 
+        
+    webbrowser.open(f"file:///{folder_path}")
 
 #! --
 def open_settings():
