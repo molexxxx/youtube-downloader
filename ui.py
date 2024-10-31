@@ -11,43 +11,85 @@ import webbrowser
 import json
 from PIL import Image
 
-# Define the resource path function to access bundled files
+
+
+#@ ------------------------------ Global Settings -------------------------------
+
+#! --
 def resource_path(relative_path):
+    """Access bundled files for PyInstaller."""
     try:
-        base_path = sys._MEIPASS  # Used by PyInstaller to store temporary files
+        base_path = sys._MEIPASS  # temporary files
     except AttributeError:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
-ctk.set_appearance_mode("dark")
+#! --
+def load_settings():
+    global video_bitrate, audio_bitrate, conversion_preset, ffmpeg_path, output_folder
+    try:
+        with open('settings.json', 'r') as f:
+            settings = json.load(f)
+            output_folder = settings.get('output_folder', None) 
+            video_bitrate = settings.get('video_bitrate', '10M')
+            audio_bitrate = settings.get('audio_bitrate', '192k')
+            conversion_preset = settings.get('conversion_preset', 'slow')
+            ffmpeg_path = settings.get('ffmpeg_path', 'ffmpeg')
+    except FileNotFoundError:
+        output_folder = None 
 
-# Global settings
+    if output_folder is None:
+        output_folder = os.path.join(os.getcwd(), 'downloads')
+        os.makedirs(output_folder, exist_ok=True) 
+
+#* Global settings
 conversion_preset = 'slow'
 video_bitrate = '10M'
 audio_bitrate = '192k'
 ffmpeg_path = 'ffmpeg'
-output_folder = os.path.join(os.getcwd(), 'downloads')  # Default output folder
+output_folder = os.path.join(os.getcwd(), 'downloads')  # Default output folder if not set.
 
-# GUI Setup
+#* CTkinter settings
+ctk.set_appearance_mode("dark")
+icon_path = resource_path("icons/yt-ico.ico")
 app = ctk.CTk()
 app.title("YouTube Video Downloader")
 app.geometry("650x275")
 app.resizable(False, False)
-
-# Set the icon for the taskbar
-icon_path = resource_path("icons/yt-ico.ico")
 app.iconbitmap(icon_path)
 
-# Use a BooleanVar after the app has been created
-save_mp3_var = BooleanVar(value=True)  # Default to checked
+#* CTkinter variables
+save_mp3_var = BooleanVar(value=True) 
+progress = ctk.DoubleVar(value=0.0)
+progress_label = StringVar(value="Ready")
+estimated_time_remaining = StringVar(value="")
 
+
+
+#@ ------------------------------- Utility Functions -------------------------------
+
+#! --
 def supports_encoder(encoder_name):
+    """Check if a specific encoder is supported by FFmpeg."""
     try:
         result = subprocess.run([ffmpeg_path, '-encoders'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         return encoder_name in result.stdout
     except Exception:
         return False
 
+#! --
+def get_ffmpeg_path():
+    """Retrieve the path to the FFmpeg executable if installed.""" 
+    try:
+        result = subprocess.run(["where", "ffmpeg"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if result.returncode == 0:
+            ffmpeg_paths = result.stdout.strip().split("\n")
+            return ffmpeg_paths[0]  
+    except Exception as e:
+        print(f"Error finding FFmpeg: {e}")
+    return None 
+
+#! --
 def get_best_encoder():
     """Determine the best available encoder based on GPU compatibility."""
     if supports_encoder('h264_nvenc'):
@@ -57,10 +99,7 @@ def get_best_encoder():
     else:
         return 'libx264'
 
-def sanitize_filename(filename):
-    """Replace special characters in filenames with underscores."""
-    return re.sub(r'[^a-zA-Z0-9_\-\.]', '_', filename)
-
+#! --
 def check_ffmpeg_installed():
     """Check if FFmpeg is installed and reachable."""
     try:
@@ -69,6 +108,7 @@ def check_ffmpeg_installed():
     except Exception:
         return False
 
+#! --
 def check_audio_codec(filepath):
     """Check if the audio codec of the downloaded file is AAC."""
     try:
@@ -77,7 +117,17 @@ def check_audio_codec(filepath):
     except Exception:
         return False
 
+#! --
+def sanitize_filename(filename):
+    """Replace special characters in filenames with underscores."""
+    return re.sub(r'[^a-zA-Z0-9_\-\.]', '_', filename)
+
+
+#@ --------------------------- yt-dlp Specific Functions ---------------------------
+
+#! --
 def list_available_qualities(url):
+    """Fetch available video qualities from a YouTube URL."""
     with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
         info = ydl.extract_info(url, download=False)
         formats = info.get('formats', [])
@@ -96,7 +146,9 @@ def list_available_qualities(url):
         
         return list(seen_qualities.values())
 
+#! --
 def download_and_convert(url, quality_index):
+    """Download and convert video based on selected quality."""
     available_qualities = list_available_qualities(url)
     selected_quality = available_qualities[quality_index]
 
@@ -136,13 +188,14 @@ def download_and_convert(url, quality_index):
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
 
-    # Save MP3 separately if the checkbox is checked
+    # Save MP3 separately to 'mp3s/'
     if save_mp3_var.get(): 
         progress_label.set("Downloading MP3...") 
         save_mp3(full_output_folder, video_title, url) 
 
     prompt_audio_conversion(final_output, full_output_folder, video_title, selected_quality['resolution'], duration)
 
+#! --
 def save_mp3(folder_path, video_title, url):  
     """Save the audio as an MP3 file in a separate directory.""" 
     mp3_folder = os.path.join(folder_path, "mp3s")
@@ -169,57 +222,7 @@ def save_mp3(folder_path, video_title, url):
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])  
 
-class YTDLLogger:
-    """Custom logger to capture yt-dlp output and display it in the GUI.""" 
-    def __init__(self):
-        self.last_status = "" 
-
-    def debug(self, msg):
-        if msg.startswith("[download]") or msg.startswith("[info]"):
-            if "Downloading" in msg:
-                progress_label.set(msg)
-                self.last_status = msg
-            elif "finished" in msg:
-                progress_label.set("Download complete, processing...")
-                self.last_status = "Download complete, processing..."
-
-    def warning(self, msg):
-        print(msg)
-
-    def error(self, msg):
-        messagebox.showerror("yt-dlp Error", msg)
-
-def progress_hook(d):
-    """Handle download progress and update GUI.""" 
-    if d['status'] == 'downloading':
-        downloaded = d.get('downloaded_bytes', 0)
-        total = d.get('total_bytes', 1)
-        speed = d.get('speed', 0) if d.get('speed') is not None else 0
-        eta = d.get('eta', 0) if d.get('eta') is not None else 0 
-
-        progress.set(downloaded / total)
-
-        speed_str = f"{speed / 1024 / 1024:.2f} MiB/s" if speed > 0 else "0.00 MiB/s"
-
-        # Calculate ETA
-        if speed > 0:
-            remaining_time = (total - downloaded) / speed
-            eta_str = time.strftime("%H:%M:%S", time.gmtime(remaining_time))
-        else:
-            eta_str = "0:00:00"
-
-        status_message = f"{downloaded / 1024 / 1024:.2f} MiB at {speed_str} ETA: {eta_str}"
-
-        if len(status_message) > 69:
-            status_message = status_message[:47] + "..."
-
-        progress_label.set(status_message)
-    
-    elif d['status'] == 'finished':
-        progress.set(1.0)
-        progress_label.set("Download complete, processing...")
-
-
+#! --
 def prompt_audio_conversion(filepath, folder_path, video_title, resolution, duration):
     """Prompt the user to convert audio to AAC if needed and proceed with conversion or finalize.""" 
     if not check_audio_codec(filepath):
@@ -233,8 +236,8 @@ def prompt_audio_conversion(filepath, folder_path, video_title, resolution, dura
             finalize_download(folder_path)
     else:
         finalize_download(folder_path)
-
-
+  
+#! --  
 def convert_audio_to_aac(filepath, folder_path, video_title, resolution, duration):
     """Convert the audio of the downloaded video file to AAC with GPU-accelerated encoding if available.""" 
     video_codec = get_best_encoder()
@@ -290,17 +293,73 @@ def convert_audio_to_aac(filepath, folder_path, video_title, resolution, duratio
             messagebox.showerror("Conversion Error", "An error occurred during audio conversion.")
     except Exception as e:
         messagebox.showerror("Execution Error", f"Error during conversion: {e}")
-        finalize_download(folder_path)
-
-
+        finalize_download(folder_path)  
+      
+#! --
 def finalize_download(folder_path):
+    """Finalize the download process and update the UI."""
     progress_and_status_panel.pack_forget()
     final_options_panel.pack(pady=10)
-    # Update view_button's command to open the explorer dynamically
     view_button.configure(command=lambda: open_in_explorer(folder_path))
 
+#! --
+def progress_hook(d):
+    """Handle download progress and update GUI.""" 
+    if d['status'] == 'downloading':
+        downloaded = d.get('downloaded_bytes', 0)
+        total = d.get('total_bytes', 1)
+        speed = d.get('speed', 0) if d.get('speed') is not None else 0
+        eta = d.get('eta', 0) if d.get('eta') is not None else 0 
 
+        progress.set(downloaded / total)
+
+        speed_str = f"{speed / 1024 / 1024:.2f} MiB/s" if speed > 0 else "0.00 MiB/s"
+
+        # Calculate ETA
+        if speed > 0:
+            remaining_time = (total - downloaded) / speed
+            eta_str = time.strftime("%H:%M:%S", time.gmtime(remaining_time))
+        else:
+            eta_str = "0:00:00"
+
+        status_message = f"{downloaded / 1024 / 1024:.2f} MiB at {speed_str} ETA: {eta_str}"
+
+        if len(status_message) > 69:
+            status_message = status_message[:47] + "..."
+
+        progress_label.set(status_message)
+    
+    elif d['status'] == 'finished':
+        progress.set(1.0)
+        progress_label.set("Download complete, processing...")
+
+
+#@ ----------------------------- GUI Related Functions -----------------------------
+
+#! --
+def reset_ui():
+    """Reset the UI to its initial state after a download."""
+    final_options_panel.pack_forget()
+    quality_selection_panel.pack_forget()
+    progress_and_status_panel.pack_forget()
+    progress.set(0.0)
+    progress_label.set("Ready")
+    estimated_time_remaining.set("")
+    url_entry_panel.pack(pady=10)
+
+#! --
+def fetch_qualities_thread(url):
+    """Background thread to retrieve quality options for the provided URL."""
+    available_qualities = list_available_qualities(url)
+    quality_options = [f"{q['resolution']} at {q['fps']} fps" for q in available_qualities]
+    progress_and_status_panel.pack_forget()
+    quality_selection_panel.pack(pady=10)
+    quality_combobox.configure(values=quality_options)
+    quality_combobox.set("Select Quality")
+
+#! --
 def update_quality_options():
+    """Fetch and display available quality options for a given URL."""
     url = url_entry.get()
     if not url:
         messagebox.showwarning("Input Error", "Please enter a YouTube URL first.")
@@ -312,31 +371,9 @@ def update_quality_options():
     progress_and_status_panel.pack()
     threading.Thread(target=fetch_qualities_thread, args=(url,)).start()
 
-
-def fetch_qualities_thread(url):
-    available_qualities = list_available_qualities(url)
-    quality_options = [f"{q['resolution']} at {q['fps']} fps" for q in available_qualities]
-    progress_and_status_panel.pack_forget()
-    quality_selection_panel.pack(pady=10)
-    quality_combobox.configure(values=quality_options)
-    quality_combobox.set("Select Quality")
-
-
-def open_in_explorer(folder_path):
-    webbrowser.open(f"file://{folder_path}")
-
-
-def reset_ui():
-    final_options_panel.pack_forget()
-    quality_selection_panel.pack_forget()
-    progress_and_status_panel.pack_forget()
-    progress.set(0.0)
-    progress_label.set("Ready")
-    estimated_time_remaining.set("")
-    url_entry_panel.pack(pady=10)
-
-
+#! --
 def start_download():
+    """Initialize download based on user-selected quality."""
     selected_quality = quality_combobox.get()
     if not selected_quality:
         messagebox.showwarning("Selection Error", "Please select a quality.")
@@ -356,7 +393,12 @@ def start_download():
     progress_and_status_panel.pack()
     threading.Thread(target=download_and_convert, args=(url_entry.get(), quality_index)).start()
 
+#! --
+def open_in_explorer(folder_path):
+    """Open the specified folder in the file explorer."""
+    webbrowser.open(f"file://{folder_path}")
 
+#! --
 def open_settings():
     """Open the settings window.""" 
     settings_window = ctk.CTkToplevel(app)  
@@ -468,7 +510,8 @@ def open_settings():
     icon_position="left"
     )
     save_button.pack(pady=10)
-
+    
+#! --
 def select_ffmpeg(entry_widget):
     """Open a file dialog to select the FFmpeg executable, starting from the global path if available.""" 
     ffmpeg_install_path = get_ffmpeg_path()  
@@ -478,7 +521,6 @@ def select_ffmpeg(entry_widget):
     else:
         default_ffmpeg_path = "" 
 
-    # Open file dialog
     ffmpeg_file = filedialog.askopenfilename(
         title="Select FFmpeg Executable", 
         initialdir=default_ffmpeg_path, 
@@ -487,47 +529,19 @@ def select_ffmpeg(entry_widget):
     
     if ffmpeg_file:
         entry_widget.delete(0, 'end') 
-        entry_widget.insert(0, ffmpeg_file) 
+        entry_widget.insert(0, ffmpeg_file)    
 
-def get_ffmpeg_path():
-    """Retrieve the path to the FFmpeg executable if installed.""" 
-    try:
-        result = subprocess.run(["where", "ffmpeg"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        if result.returncode == 0:
-            ffmpeg_paths = result.stdout.strip().split("\n")
-            return ffmpeg_paths[0]  
-    except Exception as e:
-        print(f"Error finding FFmpeg: {e}")
-    return None 
-
+#! --
 def select_output_folder(entry_widget):
     """Open a file dialog to select the output folder, starting from the current output folder if set.""" 
     # Open the file dialog with the current output folder as the initial directory
     output_folder = filedialog.askdirectory(title="Select Output Folder", initialdir=entry_widget.get())
     if output_folder:
         entry_widget.delete(0, 'end') 
-        entry_widget.insert(0, output_folder) 
-
-def load_settings():
-    global video_bitrate, audio_bitrate, conversion_preset, ffmpeg_path, output_folder
-    try:
-        with open('settings.json', 'r') as f:
-            settings = json.load(f)
-            output_folder = settings.get('output_folder', None) 
-            video_bitrate = settings.get('video_bitrate', '10M')
-            audio_bitrate = settings.get('audio_bitrate', '192k')
-            conversion_preset = settings.get('conversion_preset', 'slow')
-            ffmpeg_path = settings.get('ffmpeg_path', 'ffmpeg')
-    except FileNotFoundError:
-        output_folder = None 
-
-    if output_folder is None:
-        output_folder = os.path.join(os.getcwd(), 'downloads')
-        os.makedirs(output_folder, exist_ok=True) 
-
-progress = ctk.DoubleVar(value=0.0)
-progress_label = StringVar(value="Ready")
-estimated_time_remaining = StringVar(value="")
+        entry_widget.insert(0, output_folder)       
+       
+         
+#@ ----------------------------- GUI Initialization -------------------------------
 
 load_settings()
 
@@ -536,18 +550,17 @@ main_container.pack(padx=20, pady=20, fill="both", expand=True)
 
 
 
-# Set button and icon sizes
-button_height = 35  # Adjust this based on your button’s height
-icon_size = int(button_height * 0.9)  # Resize icon to about 80% of button height
+#@ ----------------------- Set Button Styling and Icon Sizes -----------------------
 
+button_height = 35 
+icon_size = int(button_height * 0.9)  
 
-# Define a helper function to create navigation buttons with icons and hover effects
+#! --
 def create_button(container, text, icon_path, command, icon_position="left"):
-    # Load and resize the icon
+    """Create a custom button with an icon and hover effects for a CustomTkinter GUI."""
     icon_image = Image.open(resource_path(icon_path)).resize((icon_size, icon_size), Image.LANCZOS)
     button_icon = ctk.CTkImage(light_image=icon_image, dark_image=icon_image)
     
-    # Create the button with the specified properties
     button = ctk.CTkButton(
         container,
         text=text,
@@ -564,7 +577,6 @@ def create_button(container, text, icon_path, command, icon_position="left"):
         height=button_height
     )
     
-    # Apply hover effects for text and border color
     def on_enter(event):
         button.configure(text_color="#FF0000", border_color="#FF0000") 
     
@@ -576,11 +588,10 @@ def create_button(container, text, icon_path, command, icon_position="left"):
     
     return button
 
-# Create the navigation buttons container
+#! Navigation Buttons -----------------------
 nav_buttons_container = ctk.CTkFrame(main_container, fg_color="transparent", bg_color="transparent")
 nav_buttons_container.pack(side='top', anchor='ne', padx=20, pady=(10, 0))
 
-# Create "Downloads" and "Settings" buttons with icons
 downloads_button = create_button(
     nav_buttons_container, 
     "Downloads", 
@@ -597,8 +608,7 @@ settings_button = create_button(
 )
 settings_button.pack(side='left')
 
-
-# URL Entry Panel
+#! URL Entry Panel -----------------------
 url_entry_panel = ctk.CTkFrame(main_container, fg_color="transparent", bg_color="transparent")
 url_entry_panel.pack(padx=20, pady=20, fill="both", expand=True)
 url_label = ctk.CTkLabel(url_entry_panel, font=('Arial', 14), text="Enter a YouTube Link")
@@ -615,13 +625,14 @@ fetch_button = create_button(
 )
 fetch_button.pack(pady=10)
 
-# Quality Selection Panel
+#! Quality Selection Panel -----------------------
 quality_selection_panel = ctk.CTkFrame(main_container, fg_color="transparent", bg_color="transparent")
 quality_selection_panel.pack(padx=20, pady=20, fill="both", expand=True)
 quality_combobox = ctk.CTkComboBox(quality_selection_panel, width=300)
 quality_combobox.pack(pady=5)
 save_mp3_checkbox = ctk.CTkCheckBox(quality_selection_panel, text="Save MP3 Separately", variable=save_mp3_var)
 save_mp3_checkbox.pack(pady=10)
+
 download_button = create_button(
     quality_selection_panel, 
     "Download", 
@@ -630,33 +641,35 @@ download_button = create_button(
     icon_position="right"
 )
 download_button.pack(pady=10)
-
 quality_selection_panel.pack_forget()
 
-# Progress and Status Panel
+#! Progress and Status Panel -----------------------
 progress_and_status_panel = ctk.CTkFrame(main_container, fg_color="transparent", bg_color="transparent")
 progress_and_status_panel.pack(padx=20, pady=20, fill="both", expand=True)
+
 progress_text = ctk.CTkLabel(progress_and_status_panel, textvariable=progress_label, width=300, wraplength=300, height=30, font=('Arial', 12))
 progress_text.pack(pady=5)
+
 progress_bar = ctk.CTkProgressBar(progress_and_status_panel, variable=progress, width=350, fg_color="#8B0000", progress_color="#FF0000")
 progress_bar.pack(pady=5)
+
 time_remaining_label = ctk.CTkLabel(progress_and_status_panel, textvariable=estimated_time_remaining, font=('Arial', 11))
 time_remaining_label.pack(pady=5)
 progress_and_status_panel.pack_forget()
 
-# Final Options Panel
+#! Final Options Panel -----------------------
 final_options_panel = ctk.CTkFrame(main_container, fg_color="transparent", bg_color="transparent")
 final_options_panel.pack(padx=20, pady=20, fill="both", expand=True)
+
 view_button = create_button(
     final_options_panel, 
     "View in Explorer", 
     resource_path("icons/browse.png"),
-    lambda: None,
+    lambda: open_in_explorer(output_folder),
     icon_position="right"
 )
 view_button.pack(pady=5)
 
-# Use create_button to initialize reset_button with the reset_ui command
 reset_button = create_button(
     final_options_panel, 
     "Download Another", 
@@ -665,9 +678,36 @@ reset_button = create_button(
     icon_position="right"
 )
 reset_button.pack(pady=5)
-
 final_options_panel.pack_forget()
+
+
+
+#@ ------------------------------- Custom Classes ----------------------------------
+
+#! --
+class YTDLLogger:
+    """Custom logger to capture yt-dlp output and display it in the GUI.""" 
+    def __init__(self):
+        self.last_status = "" 
+
+    def debug(self, msg):
+        if msg.startswith("[download]") or msg.startswith("[info]"):
+            if "Downloading" in msg:
+                progress_label.set(msg)
+                self.last_status = msg
+            elif "finished" in msg:
+                progress_label.set("Download complete, processing...")
+                self.last_status = "Download complete, processing..."
+
+    def warning(self, msg):
+        print(msg)
+
+    def error(self, msg):
+        messagebox.showerror("yt-dlp Error", msg)
+  
+
+
+#@ ----------------------- Start Application -----------------------
+
 url_entry_panel.pack(pady=10)
-
-
 app.mainloop()
