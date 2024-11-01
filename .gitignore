@@ -1,5 +1,6 @@
 !dist/
 !dist/*.exe
+!installer_scripts/*.exe
 
 build/
 
