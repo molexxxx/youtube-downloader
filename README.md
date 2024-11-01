@@ -138,6 +138,35 @@ pyinstaller YouTube Downloader.spec
 
 This will create a new executable in the `dist` folder.
 
+### Build New Release (Portable Executable and Installer)
+
+To create a new release that includes both a portable executable (standalone) and an installer version of the YouTube Video Downloader, you can use the `build.ps1` script. This PowerShell script automates the entire process from the root project directory.
+
+#### Prerequisites
+- **Inno Setup**: Required for generating the installer. [Download Inno Setup](https://jrsoftware.org/isdl.php).
+  - Ensure `ISCC.exe` (the Inno Setup Compiler) is accessible at the specified path or update the script with the correct path to your installation.
+
+#### Steps to Run `build.ps1`
+
+1. Open PowerShell in the root project directory.
+2. Execute the `build.ps1` script to automate the following steps:
+
+    ```powershell
+    .\build.ps1
+    ```
+
+#### Script Overview
+The `build.ps1` script performs the following tasks:
+
+1. **Clean Build**: Removes existing `dist` and `build` folders to ensure a fresh build.
+2. **One-directory Build**: Generates the one-directory executable with dependencies in the `dist\YouTube Downloader` folder.
+3. **Internal Compression**: Compresses the `_internal` directory within the one-directory build for optimized distribution.
+4. **Generate `settings.json`**: Creates a default `settings.json` file in the one-directory build with preset configurations.
+5. **One-file Executable**: Builds the standalone executable, packaging it as a single file in `dist\YouTube Downloader.exe`.
+6. **Portable Zip Creation**: Compresses the one-file executable for a portable release in `dist\YouTube_Downloader_Standalone.zip`.
+7. **Installer Creation**: If `ISCC.exe` is available, compiles the Inno Setup script to generate a Windows installer in the `installer_scripts` folder.
+
+
 ## Additional Notes
 
 - **Special Character Handling**: The application replaces any special characters in filenames to prevent issues during processing.
