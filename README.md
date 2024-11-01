@@ -132,9 +132,9 @@ The application will:
 
 If you need to rebuild the portable standalone version of the executable, ensure you have the necessary packages installed, and then use the following command in your terminal within the project directory:
 
-    ```powershell
-    pyinstaller "YouTube Downloader.spec"
-    ```
+```powershell
+pyinstaller "YouTube Downloader.spec"
+```
 
 This will create a new portable standalone executable in the `dist` folder.
 
