@@ -1,16 +1,13 @@
+import os, sys, re, json, time, threading, subprocess, webbrowser
 import yt_dlp
-import subprocess
-import os
-import sys
-import re
 import customtkinter as ctk
-from tkinter import StringVar, Toplevel, Entry, Label, Button, filedialog, messagebox, BooleanVar, PhotoImage
-import threading
-import time
-import webbrowser
-import json
+from tkinter import (
+    StringVar,
+    filedialog,
+    messagebox,
+    BooleanVar,
+)
 from PIL import Image
-
 
 
 #@ ------------------------------ Global Settings -------------------------------
@@ -29,6 +26,8 @@ def load_settings():
     global video_bitrate, audio_bitrate, conversion_preset, ffmpeg_path, output_folder
     try:
         with open('settings.json', 'r') as f:
+            if os.path.getsize('settings.json') == 0:
+                raise ValueError("settings.json is empty.")
             settings = json.load(f)
             output_folder = settings.get('output_folder', None)
             if output_folder:
@@ -42,6 +41,11 @@ def load_settings():
         # Default to a relative 'downloads' folder when settings.json is not found
         output_folder = os.path.join(os.getcwd(), 'downloads')
         os.makedirs(output_folder, exist_ok=True)
+    except json.JSONDecodeError:
+        print("Error: settings.json is improperly formatted. Please check the file content.")
+    except ValueError as e:
+        print(e)
+
 
 #* Global settings
 conversion_preset = 'slow'
@@ -52,12 +56,11 @@ output_folder = os.path.join(os.getcwd(), 'downloads')
 
 #* CTkinter settings
 ctk.set_appearance_mode("dark")
-icon_path = resource_path("icons/yt-ico.ico")
 app = ctk.CTk()
 app.title("YouTube Video Downloader")
 app.geometry("650x275")
 app.resizable(False, False)
-app.iconbitmap(icon_path)
+app.iconbitmap(resource_path("icons/yt-ico.ico"))
 
 #* CTkinter variables
 save_mp3_var = BooleanVar(value=True) 
@@ -411,8 +414,14 @@ def open_in_explorer(folder_path):
                 return
         else:
             return 
-        
-    webbrowser.open(f"file:///{folder_path}")
+    # Use subprocess to open the folder without webbrowser
+    try:
+        if os.name == 'nt':  # Windows
+            subprocess.Popen(['explorer', folder_path])
+        elif os.name == 'posix':  # macOS or Linux
+            subprocess.Popen(['open', folder_path] if sys.platform == 'darwin' else ['xdg-open', folder_path])
+    except Exception as e:
+        messagebox.showerror("Error", f"Could not open the folder: {e}")
 
 #! --
 def open_settings():
