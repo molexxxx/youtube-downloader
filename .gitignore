@@ -1,7 +1,15 @@
-!dist/
+# Ignore distribution and build folders
+dist/
 !dist/*.exe
 !installer_scripts/*.exe
-
 build/
 
-.gitignore
+# Ignore specific subdirectories in the distribution folder
+dist/YouTube Downloader/_internal/
+
+# Ignore PyInstaller and build-related files
+*.spec
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
