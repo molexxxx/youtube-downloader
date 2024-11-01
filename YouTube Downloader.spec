@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['ui.py'],
+    ['src\\ui.py'],
     pathex=[],
     binaries=[],
     datas=[('icons', 'icons')],

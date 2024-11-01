@@ -1,14 +1,17 @@
-#* Define paths for directories and files
+#* Define paths for directories, files, and build options
 $distFolder = "dist"
 $buildFolder = "build"
-$oneDirFolder = "dist\YouTube Downloader"
+$oneDirFolder = "$distFolder\YouTube Downloader"
 $internalZipPath = "$oneDirFolder\_internal.zip"
 $settingsFilePath = "$oneDirFolder\settings.json"
-$oneFileExePath = "dist\YouTube Downloader.exe"
-$oneFileZipPath = "dist\YouTube_Downloader_Standalone.zip"
+$oneFileExePath = "$distFolder\YouTube Downloader.exe"
+$oneFileZipPath = "$distFolder\YouTube_Downloader_Standalone.zip"
 $innoScriptPath = "installer_scripts\installer.iss"
 $isccPath = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 $installerExePath = "installer_scripts\win_Installer.exe"
+$uiScript = "src\ui.py"
+$iconPath = "icons\yt-ico.ico"
+$iconsData = "icons;icons"
 
 #! Remove existing "dist" and "build" folders for a clean build
 if (Test-Path $distFolder) {
@@ -19,7 +22,13 @@ if (Test-Path $buildFolder) {
 }
 
 #@ Step 1: Build the one-directory app
-pyinstaller --name "YouTube Downloader" --onedir --windowed --icon=icons/yt-ico.ico --add-data "icons;icons" ui.py
+pyinstaller `
+    --name "YouTube Downloader" `
+    --onedir `
+    --windowed `
+    --icon=$iconPath `
+    --add-data $iconsData `
+    $uiScript
 
 #@ Step 2: Compress only the "_internal" directory within the one-directory app
 Compress-Archive -Path "$oneDirFolder\_internal" -DestinationPath $internalZipPath -Force
@@ -39,7 +48,13 @@ $settingsContent | Out-File -FilePath $settingsFilePath -Encoding UTF8 -NoNewlin
 Write-Output "One-directory build with _internal compression and settings.json creation completed successfully."
 
 #@ Step 4: Build the standalone one-file executable as the final output
-pyinstaller --name "YouTube Downloader" --onefile --windowed --icon=icons/yt-ico.ico --add-data "icons;icons" ui.py
+pyinstaller `
+    --name "YouTube Downloader" `
+    --onefile `
+    --windowed `
+    --icon=$iconPath `
+    --add-data $iconsData `
+    $uiScript
 
 #@ Step 5: Zip the standalone one-file executable for portable distribution
 Compress-Archive -Path $oneFileExePath -DestinationPath $oneFileZipPath -Force

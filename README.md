@@ -142,23 +142,23 @@ For a full new build, including the one-directory version and installer, refer t
 
 ### Build New Release (Portable Executable and Installer)
 
-To create a new release that includes both a portable executable (standalone) and an installer version of the YouTube Video Downloader, you can use the `build.ps1` script. This PowerShell script automates the entire process from the root project directory.
+To create a new release that includes both a portable executable (standalone) and an installer version of the YouTube Video Downloader, you can use the `build_release.ps1` script. This PowerShell script automates the entire process from the root project directory.
 
 #### Prerequisites
 - **Inno Setup**: Required for generating the installer. [Download Inno Setup](https://jrsoftware.org/isdl.php).
   - Ensure `ISCC.exe` (the Inno Setup Compiler) is accessible at the specified path or update the script with the correct path to your installation.
 
-#### Steps to Run `build.ps1`
+#### Steps to Run `build_release.ps1`
 
 1. Open PowerShell in the root project directory.
-2. Execute the `build.ps1` script to automate the following steps:
+2. Execute the `build_release.ps1` script to automate the following steps:
 
-    ```powershell
-    .\build.ps1
-    ```
+```powershell
+.\build_release.ps1
+```
 
 #### Script Overview
-The `build.ps1` script performs the following tasks:
+The `build_release.ps1` script performs the following tasks:
 
 1. **Clean Build**: Removes existing `dist` and `build` folders to ensure a fresh build.
 2. **One-directory Build**: Generates the one-directory executable with dependencies in the `dist\YouTube Downloader` folder.
