@@ -130,13 +130,15 @@ The application will:
 
 ## Building a New Executable
 
-If you need to rebuild the executable, ensure you have the necessary packages installed, and then use the following command in your terminal within the project directory:
+If you need to rebuild the portable standalone version of the executable, ensure you have the necessary packages installed, and then use the following command in your terminal within the project directory:
 
-```powershell
-pyinstaller YouTube Downloader.spec
-```
+    ```powershell
+    pyinstaller "YouTube Downloader.spec"
+    ```
 
-This will create a new executable in the `dist` folder.
+This will create a new portable standalone executable in the `dist` folder.
+
+For a full new build, including the one-directory version and installer, refer to the **Build New Release (Portable Executable and Installer)** section below.
 
 ### Build New Release (Portable Executable and Installer)
 
