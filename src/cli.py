@@ -8,8 +8,8 @@ import re
 
 CONFIG = {
     "video_bitrate": "10M",
-    "audio_bitrate": "192k",
-    "conversion_preset": "slow",
+    "audio_bitrate": "256k",
+    "conversion_preset": "medium",
     "ffmpeg_path": "ffmpeg",
     "output_folder": os.path.join(os.getcwd(), 'downloads')
 }

@@ -1,14 +1,17 @@
 [Setup]
 AppName=YouTube Downloader
-AppVersion=1.0
+AppVersion=0.2
 DefaultDirName={userappdata}\YouTube Downloader
 DefaultGroupName=YouTube Downloader
 OutputDir=.
-OutputBaseFilename=win_Installer2
+OutputBaseFilename=win_Installer
 Compression=lzma
 SolidCompression=yes
 PrivilegesRequired=lowest
 SetupIconFile=..\src\icons\yt-multi-size.ico
+UninstallDisplayIcon=bmps\wizard-icon.bmp
+WizardImageFile=bmps\wizard-left.bmp
+WizardSmallImageFile=bmps\wizard-icon.bmp
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a Desktop shortcut"; GroupDescription: "Additional icons:"

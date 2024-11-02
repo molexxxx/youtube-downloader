@@ -48,9 +48,9 @@ def load_settings():
 
 
 #* Global settings
-conversion_preset = 'slow'
+conversion_preset = 'medium'
 video_bitrate = '10M'
-audio_bitrate = '192k'
+audio_bitrate = '256k'
 ffmpeg_path = 'ffmpeg'
 output_folder = os.path.join(os.getcwd(), 'downloads')
 
@@ -60,7 +60,6 @@ app = ctk.CTk()
 app.title("YouTube Video Downloader")
 app.geometry("650x275")
 app.resizable(False, False)
-# app.iconbitmap(resource_path("icons/yt-ico.ico"))
 app.iconbitmap(resource_path("icons/yt-multi-size.ico"))
 
 #* CTkinter variables
@@ -163,7 +162,6 @@ def download_and_convert(url, quality_index):
         uploader_name = sanitize_filename(info.get('uploader', 'Unknown_Uploader').replace(" ", "_"))
         duration = info.get('duration', 0)
 
-    # Create output folder based on user settings
     full_output_folder = os.path.join(output_folder, uploader_name)
     os.makedirs(full_output_folder, exist_ok=True)
     
@@ -219,7 +217,7 @@ def save_mp3(folder_path, video_title, url):
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
-            'preferredquality': '192',
+            'preferredquality': '256',
         }],
         'logger': YTDLLogger()  
     }
@@ -400,9 +398,8 @@ def start_download():
 
 #! --
 def open_in_explorer(folder_path):
-    """Open the specified folder in the file explorer, creating it if necessary."""
-    folder_path = os.path.abspath(folder_path)  # Ensure absolute path
-    folder_path = os.path.normpath(folder_path)  # Normalize path for Windows
+    folder_path = os.path.abspath(folder_path)
+    folder_path = os.path.normpath(folder_path)
 
     if not os.path.exists(folder_path):
         create_folder = messagebox.askyesno("Folder Not Found", f"The folder '{folder_path}' does not exist. Would you like to create it?")
@@ -414,15 +411,17 @@ def open_in_explorer(folder_path):
                 messagebox.showerror("Error", f"Could not create the folder: {e}")
                 return
         else:
-            return 
-    # Use subprocess to open the folder without webbrowser
+            return
     try:
-        if os.name == 'nt':  # Windows
+        if sys.platform == 'win32':
             subprocess.Popen(['explorer', folder_path])
-        elif os.name == 'posix':  # macOS or Linux
-            subprocess.Popen(['open', folder_path] if sys.platform == 'darwin' else ['xdg-open', folder_path])
+        if sys.platform == 'darwin':
+            subprocess.Popen(['open', folder_path])
+        if sys.platform.startswith('linux'):
+            subprocess.Popen(['xdg-open', folder_path])
     except Exception as e:
         messagebox.showerror("Error", f"Could not open the folder: {e}")
+
 
 #! --
 def open_settings():
@@ -604,7 +603,7 @@ def create_button(container, text, icon_path, command, icon_position="left"):
     )
     
     def on_enter(event):
-        button.configure(text_color="#FF0000", border_color="#FF0000") 
+        button.configure(text_color="#ff2953", border_color="#ff2953") 
     
     def on_leave(event):
         button.configure(text_color="#A9A9A9", border_color="#343434") 
@@ -676,7 +675,7 @@ progress_and_status_panel.pack(padx=20, pady=20, fill="both", expand=True)
 progress_text = ctk.CTkLabel(progress_and_status_panel, textvariable=progress_label, width=300, wraplength=300, height=30, font=('Arial', 12))
 progress_text.pack(pady=5)
 
-progress_bar = ctk.CTkProgressBar(progress_and_status_panel, variable=progress, width=350, fg_color="#8B0000", progress_color="#FF0000")
+progress_bar = ctk.CTkProgressBar(progress_and_status_panel, variable=progress, width=350, fg_color="#8B0000", progress_color="#FF1D49")
 progress_bar.pack(pady=5)
 
 time_remaining_label = ctk.CTkLabel(progress_and_status_panel, textvariable=estimated_time_remaining, font=('Arial', 11))
