@@ -1,3 +1,7 @@
+
+# reverse engineering bookmark
+# https://tyrrrz.me/blog/reverse-engineering-youtube-revisited
+
 import re
 import json
 import requests

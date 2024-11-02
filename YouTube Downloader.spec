@@ -5,7 +5,7 @@ a = Analysis(
     ['src\\ui.py'],
     pathex=[],
     binaries=[],
-    datas=[('icons', 'icons')],
+    datas=[('src\\icons', 'icons')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -35,5 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['icons\\yt-ico.ico'],
+    icon=['src\\icons\\yt-multi-size.ico'],
 )

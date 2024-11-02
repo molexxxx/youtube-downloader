@@ -60,7 +60,8 @@ app = ctk.CTk()
 app.title("YouTube Video Downloader")
 app.geometry("650x275")
 app.resizable(False, False)
-app.iconbitmap(resource_path("icons/yt-ico.ico"))
+# app.iconbitmap(resource_path("icons/yt-ico.ico"))
+app.iconbitmap(resource_path("icons/yt-multi-size.ico"))
 
 #* CTkinter variables
 save_mp3_var = BooleanVar(value=True) 
