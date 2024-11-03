@@ -105,13 +105,17 @@ def get_ffmpeg_path():
 
 #! --
 def get_best_encoder():
-    """Determine the best available encoder based on GPU compatibility."""
-    if supports_encoder('h264_nvenc'):
+    """Determine the best available encoder based on platform and GPU compatibility."""
+    if sys.platform.startswith('linux'):
+        # Force software encoding on Linux for testing on VM
+        return 'libx264'
+    elif supports_encoder('h264_nvenc'):
         return 'h264_nvenc'
     elif supports_encoder('h264_amf'):
         return 'h264_amf'
     else:
-        return 'libx264'
+        return 'libx264'  # Fallback to software encoding on other platforms
+
 
 #! --
 def check_ffmpeg_installed():
@@ -252,7 +256,8 @@ def prompt_audio_conversion(filepath, folder_path, video_title, resolution, dura
   
 #! --  
 def convert_audio_to_aac(filepath, folder_path, video_title, resolution, duration):
-    """Convert the audio of the downloaded video file to AAC with GPU-accelerated encoding if available.""" 
+    """Convert the audio of the downloaded video file to AAC, using a fallback encoder if needed."""
+    # Get the best encoder available, falling back to software encoding if no GPU encoder is present
     video_codec = get_best_encoder()
     aac_output = os.path.join(folder_path, f"{video_title}_{resolution}_AAC.mp4")
 
@@ -266,8 +271,8 @@ def convert_audio_to_aac(filepath, folder_path, video_title, resolution, duratio
 
     conversion_command = [
         ffmpeg_path, '-y', '-i', filepath,
-        '-c:v', video_codec, '-preset', conversion_preset, '-b:v', video_bitrate,   # Use settings from the variables
-        '-c:a', 'aac', '-b:a', audio_bitrate,                                       # Convert Opus to AAC
+        '-c:v', video_codec, '-preset', conversion_preset, '-b:v', video_bitrate,
+        '-c:a', 'aac', '-b:a', audio_bitrate,
         aac_output
     ]
 
@@ -275,17 +280,24 @@ def convert_audio_to_aac(filepath, folder_path, video_title, resolution, duratio
     estimated_time_remaining.set("")
 
     try:
-        process = subprocess.Popen(conversion_command, stderr=subprocess.PIPE, text=True,
-                                   creationflags=subprocess.CREATE_NO_WINDOW)
+        # Run the conversion command without opening a window on Windows
+        creation_flags = subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0
+        process = subprocess.Popen(
+            conversion_command,
+            stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            text=True,
+            creationflags=creation_flags
+        )
 
         for line in process.stderr:
+            # Extract the current time to calculate progress
             time_match = re.search(r'time=(\d+:\d+:\d+\.\d+)', line)
             if time_match:
-                # Convert the current time to seconds
                 current_time = time_match.group(1)
                 h, m, s = map(float, current_time.split(':'))
                 elapsed_time = h * 3600 + m * 60 + s
-                conversion_progress = min(elapsed_time / duration, 1.0)  # Calculate the progress based on duration
+                conversion_progress = min(elapsed_time / duration, 1.0)
                 progress.set(conversion_progress)
 
                 remaining_time = (duration - elapsed_time) / (conversion_progress + 1e-5)
@@ -298,16 +310,17 @@ def convert_audio_to_aac(filepath, folder_path, video_title, resolution, duratio
                                     f"Estimated time left: {mins}m {secs}s")
                 estimated_time_remaining.set(settings_message)
 
-        process.wait() 
+        stdout, stderr = process.communicate()
         if process.returncode == 0:
             os.remove(filepath)
             finalize_download(folder_path)
         else:
-            messagebox.showerror("Conversion Error", "An error occurred during audio conversion.")
+            error_message = stderr if stderr else stdout
+            messagebox.showerror("Conversion Error", f"An error occurred during audio conversion:\n{error_message}")
     except Exception as e:
         messagebox.showerror("Execution Error", f"Error during conversion: {e}")
-        finalize_download(folder_path)  
-      
+        finalize_download(folder_path)
+
 #! --
 def finalize_download(folder_path):
     """Finalize the download process and update the UI."""
