@@ -77,3 +77,14 @@ if (Test-Path $isccPath) {
 } else {
     Write-Output "ISCC.exe not found. Ensure Inno Setup is installed and ISCC.exe is in your PATH or update the script with the correct path."
 }
+
+
+#LINUX BUILD TESTING
+docker run --rm -v ${PWD}:/src python:3.8-slim /bin/bash -c "
+    apt update && \
+    apt install -y binutils && \
+    pip install pyinstaller && \
+    cd /src && \
+    pyinstaller /src/YouTubeDownloaderLinux.spec && \
+    tar -czvf dist/YouTube_Downloader_Linux.tar.gz -C dist/linux YouTube_Downloader_Linux
+"
