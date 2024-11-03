@@ -7,7 +7,10 @@ from tkinter import (
     messagebox,
     BooleanVar,
 )
-from PIL import Image
+try:
+    from PIL import Image, ImageTk
+except ImportError as e:
+    print(f"Import error: {e}")
 
 
 #@ ------------------------------ Global Settings -------------------------------
@@ -24,27 +27,33 @@ def resource_path(relative_path):
 #! --
 def load_settings():
     global video_bitrate, audio_bitrate, conversion_preset, ffmpeg_path, output_folder
-    try:
-        with open('settings.json', 'r') as f:
-            if os.path.getsize('settings.json') == 0:
-                raise ValueError("settings.json is empty.")
-            settings = json.load(f)
-            output_folder = settings.get('output_folder', None)
-            if output_folder:
-                output_folder = os.path.expandvars(output_folder)  # Expand %APPDATA% if present
-            
-            video_bitrate = settings.get('video_bitrate', '10M')
-            audio_bitrate = settings.get('audio_bitrate', '192k')
-            conversion_preset = settings.get('conversion_preset', 'slow')
-            ffmpeg_path = settings.get('ffmpeg_path', 'ffmpeg')
-    except FileNotFoundError:
-        # Default to a relative 'downloads' folder when settings.json is not found
+    settings_path = 'settings.json'
+    if os.path.exists(settings_path):
+        try:
+            with open(settings_path, 'r') as f:
+                if os.path.getsize(settings_path) == 0:
+                    raise ValueError("settings.json is empty.")
+                settings = json.load(f)
+                output_folder = settings.get('output_folder', None)
+                if output_folder:
+                    output_folder = os.path.expandvars(output_folder)
+
+                video_bitrate = settings.get('video_bitrate', '10M')
+                audio_bitrate = settings.get('audio_bitrate', '192k')
+                conversion_preset = settings.get('conversion_preset', 'slow')
+                ffmpeg_path = settings.get('ffmpeg_path', 'ffmpeg')
+        except (FileNotFoundError, json.JSONDecodeError, ValueError) as e:
+            print(f"Error loading settings: {e}")
+            # Set default values or handle error accordingly
+    else:
+        # Set default values
         output_folder = os.path.join(os.getcwd(), 'downloads')
+        video_bitrate = '10M'
+        audio_bitrate = '256k'
+        conversion_preset = 'medium'
+        ffmpeg_path = 'ffmpeg'
         os.makedirs(output_folder, exist_ok=True)
-    except json.JSONDecodeError:
-        print("Error: settings.json is improperly formatted. Please check the file content.")
-    except ValueError as e:
-        print(e)
+
 
 
 #* Global settings
@@ -60,7 +69,8 @@ app = ctk.CTk()
 app.title("YouTube Video Downloader")
 app.geometry("650x275")
 app.resizable(False, False)
-app.iconbitmap(resource_path("icons/yt-multi-size.ico"))
+icon_image = Image.open(resource_path("icons/yt-png.png"))
+app.iconphoto(True, ImageTk.PhotoImage(icon_image))
 
 #* CTkinter variables
 save_mp3_var = BooleanVar(value=True) 
