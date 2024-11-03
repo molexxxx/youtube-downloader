@@ -3,7 +3,10 @@
 a = Analysis(
     ['src/ui.py'],  # Updated path to ui.py
     pathex=['src'],  # Updated to include the src directory
-    binaries=[],
+    binaries=[
+        ("/usr/share/tcltk/tcl8.6", "tcl"),
+        ("/usr/share/tcltk/tk8.6", "tk"),
+    ],
     datas=[('src/icons', 'icons')],  # Updated path to icons directory
     hiddenimports=['PIL._tkinter_finder', 'PIL.ImageTk', 'PIL.Image'],
     hookspath=[],
