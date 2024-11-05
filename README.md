@@ -1,3 +1,5 @@
+![YouTube Downloader Banner](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/reademe_logo.png)
+
 # YouTube Video Downloader and Converter
 
 This application provides a graphical user interface (GUI) for downloading YouTube videos at specified qualities and offers optional audio conversion to AAC for better compatibility. The app automatically detects available GPU encoders (NVIDIA or AMD) and falls back to CPU encoding if no GPU is found.
