@@ -9,9 +9,10 @@ Compression=lzma
 SolidCompression=yes
 PrivilegesRequired=lowest
 SetupIconFile=..\src\icons\yt-multi-size.ico
-UninstallDisplayIcon=bmps\wizard-icon.bmp
-WizardImageFile=bmps\wizard-left.bmp
-WizardSmallImageFile=bmps\wizard-icon.bmp
+UninstallDisplayIcon=..\src\media\bmps\wizard-icon.bmp
+WizardImageFile=..\src\media\bmps\wizard-left.bmp
+WizardSmallImageFile=..\src\media\bmps\wizard-icon.bmp
+
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a Desktop shortcut"; GroupDescription: "Additional icons:"

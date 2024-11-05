@@ -1,8 +1,24 @@
+# File: c:\Users\tonyw\Desktop\youtube_dl\src\ui.py
+# Project: c:\Users\tonyw\Desktop\youtube_dl\src
+# Created Date: Saturday November 2nd 2024
+# Author: Tony Wiedman
+# -----
+# Last Modified: Tue November 5th 2024 3:49:06 
+# Modified By: Tony Wiedman
+# -----
+# Copyright (c) 2024 MolexWorks / Tone Web Design
+
+
+
+#@ ------------------------------ Global Imports and Dependencies -------------------------------
+
 import yt_dlp
 import subprocess
 import os
 import sys
 import re
+
+
 
 #@ ------------------------------- Global Configuration -------------------------------
 
@@ -13,6 +29,8 @@ CONFIG = {
     "ffmpeg_path": "ffmpeg",
     "output_folder": os.path.join(os.getcwd(), 'downloads')
 }
+
+
 
 #@ ------------------------------- Utility Functions -------------------------------
 
@@ -52,6 +70,8 @@ def check_audio_codec(filepath):
     except Exception as e:
         print(f"Error checking audio codec: {e}")
         return False
+
+
 
 #@ --------------------------- yt-dlp Specific Functions ---------------------------
 
@@ -143,6 +163,8 @@ def download_and_convert(url):
                 print(f"Deleted the original file: {final_output}")
         else:
             print("AAC conversion skipped. The video is saved as-is.")
+
+
 
 #@ ------------------------------- Main Script Execution ---------------------------
 
