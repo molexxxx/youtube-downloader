@@ -8,6 +8,8 @@ build/
 dist/YouTube Downloader/_internal/
 
 # Ignore PyInstaller and build-related files
+!YouTube_Downloader_Linux.spec
+!YouTube Downloader.spec
 *.spec
 __pycache__/
 *.pyc
