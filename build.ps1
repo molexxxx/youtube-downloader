@@ -79,7 +79,6 @@ if (Test-Path $isccPath) {
 }
 
 
-# #LINUX BUILD TESTING
 # docker run --rm -v ${PWD}:/src python:3.8-slim /bin/bash -c "
 #     apt update && \
 #     apt install -y binutils && \
