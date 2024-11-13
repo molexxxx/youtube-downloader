@@ -182,3 +182,6 @@ If you encounter issues with the application:
 1. Ensure `ffmpeg` is installed and accessible from the command line.
 2. For GPU encoding, verify that you have the appropriate drivers installed (NVIDIA or AMD).
 3. Update `yt-dlp` if needed using `pip install --upgrade yt-dlp` (only for the CLI version).
+
+### Author
+- [Tony Wiedman](https://github.com/tonywied17)
