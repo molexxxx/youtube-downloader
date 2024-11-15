@@ -110,11 +110,13 @@ def open_settings():
 
     settings_window = ctk.CTkToplevel(app)
     settings_window.title("Settings")
-    settings_window.geometry("400x522")
-    settings_window.attributes('-topmost', True)
+    settings_window.geometry("400x400")
     settings_window.resizable(False, False)
     settings_window.wm_iconbitmap()
     settings_window.after(222, lambda: settings_window.iconphoto(False, ImageTk.PhotoImage(icon_image)))
+    settings_window.attributes("-topmost", True)
+    settings_window.after(100, lambda: settings_window.attributes("-topmost", False))
+    
 
     def on_close():
         global settings_window
@@ -123,26 +125,43 @@ def open_settings():
 
     settings_window.protocol("WM_DELETE_WINDOW", on_close)
     settings_container = ctk.CTkFrame(settings_window, fg_color="#2E2E2E", bg_color="#2E2E2E")
-    settings_container.pack(padx=10, pady=10, fill="both", expand=True)
+    settings_container.pack(padx=10, pady=10, ipady=10, fill="both", expand=True)
 
-    # FFmpeg Path input
-    ctk.CTkLabel(settings_container, text="FFmpeg Path:", text_color="#FFFFFF").pack(pady=10, padx=10) 
-    ffmpeg_entry = ctk.CTkEntry(settings_container, width=50, fg_color="#3D3D3D")
-    ffmpeg_entry.pack(pady=5, padx=10, fill='x')
+    #? FFmpeg Path, and Testing
+    ctk.CTkLabel(
+        settings_container, 
+        text="FFmpeg Path", 
+        text_color="#C2C2C2", 
+        font=('Roboto', 14),
+        anchor="w" 
+    ).pack(pady=0, padx=10, fill='x') 
+
+    # Frame for Entry and Buttons
+    ffmpeg_row = ctk.CTkFrame(settings_container, fg_color="transparent") 
+    ffmpeg_row.pack(pady=5, padx=10, fill="x") 
+
+    # Entry Box
+    ffmpeg_entry = ctk.CTkEntry(
+        ffmpeg_row, 
+        width=50, 
+        fg_color="#3D3D3D", 
+        border_width=1, 
+        border_color="#404040", 
+        height=35, 
+        font=('Roboto', 13)
+    )
+    ffmpeg_entry.pack(side="left", fill="x", expand=True, padx=(0, 5)) 
     ffmpeg_entry.insert(0, ffmpeg_path)
 
+    # Browse Button
     browse_ffmpeg_button = create_button(
-        settings_container, 
+        ffmpeg_row, 
         "Browse..", 
         resource_path("icons/browse.png"), 
         lambda: select_ffmpeg(ffmpeg_entry),
         icon_position="right"
     )
-    browse_ffmpeg_button.pack(pady=5, padx=10)
-
-    # Check FFmpeg installation
-    ffmpeg_status_label = ctk.CTkLabel(settings_container, text="", text_color="#FFFFFF")
-    ffmpeg_status_label.pack(pady=5, padx=10) 
+    browse_ffmpeg_button.pack(side="left", padx=(0, 5)) 
 
     def check_ffmpeg():
         if check_ffmpeg_installed():
@@ -151,44 +170,76 @@ def open_settings():
             ffmpeg_status_label.configure(text="FFmpeg is NOT installed or not reachable.", text_color="red")
             show_info_message("FFmpeg Not Found", "FFmpeg is not installed or not reachable. You can download it from the official website: https://ffmpeg.org/download.html")
             webbrowser.open("https://ffmpeg.org/download.html")
-
+            
+    # Check FFmpeg Button
     check_button = create_button(
-        settings_container, 
-        "Check FFmpeg", 
+        ffmpeg_row, 
+        "", 
         resource_path("icons/test.png"), 
         check_ffmpeg,
         icon_position="left"
     )
-    check_button.pack(pady=5, padx=10)
+    check_button.pack(side="left")
 
-    # Output Folder input
-    ctk.CTkLabel(settings_container, text="Output Folder:", text_color="#FFFFFF").pack(pady=10, padx=10) 
-    output_folder_entry = ctk.CTkEntry(settings_container, width=50, fg_color="#3D3D3D")
-    output_folder_entry.pack(pady=5, padx=10, fill='x') 
-    output_folder_entry.insert(0, output_folder)
+    ffmpeg_status_label = ctk.CTkLabel(settings_container, text="", text_color="#FFFFFF")
+    ffmpeg_status_label.pack(pady=5, padx=10) 
 
-    browse_output_button = create_button(
+    #? Output Folder
+    ctk.CTkLabel(
         settings_container, 
+        text="Output Folder", 
+        text_color="#C2C2C2", 
+        font=('Roboto', 14),
+        anchor="w" 
+    ).pack(pady=0, padx=10, fill='x') 
+    output_folder_row = ctk.CTkFrame(settings_container, fg_color="transparent") 
+    output_folder_row.pack(pady=5, padx=10, fill="x") 
+    output_folder_entry = ctk.CTkEntry(
+        output_folder_row, 
+        width=50, 
+        fg_color="#3D3D3D", 
+        border_width=1, 
+        border_color="#404040", 
+        height=35, 
+        font=('Roboto', 13)
+    )
+    output_folder_entry.pack(side="left", fill="x", expand=True, padx=(0, 5)) 
+    output_folder_entry.insert(0, output_folder)
+    browse_output_button = create_button(
+        output_folder_row, 
         "Browse..", 
         resource_path("icons/browse.png"), 
         lambda: select_output_folder(output_folder_entry),
         icon_position="right"
     )
-    browse_output_button.pack(pady=5, padx=10) 
+    browse_output_button.pack(side="left") 
+    
+    output_status_label = ctk.CTkLabel(settings_container, text="", text_color="#FFFFFF")
+    output_status_label.pack(pady=5, padx=10) 
 
-    # Audio Bitrate input (Combobox)
-    ctk.CTkLabel(settings_container, text="Audio Bitrate:", text_color="#FFFFFF").pack(pady=10, padx=10)
-    audio_bitrate_combobox = ctk.CTkComboBox(settings_container, values=["128k", "256k", "256k"], width=150)
+    #? Audio Bitrate
+    ctk.CTkLabel(
+        settings_container, 
+        text="Audio Bitrate", 
+        text_color="#C2C2C2", 
+        font=('Roboto', 14),
+        anchor="w" 
+    ).pack(pady=0, padx=10, fill='x') 
+    audio_bitrate_combobox = ctk.CTkComboBox(settings_container, values=["128k", "256k", "256k"], 
+                                             width=150, fg_color="#3D3D3D", border_width=1, border_color="#404040", height=35, font=('Roboto', 13))
     audio_bitrate_combobox.pack(pady=5, padx=10, fill='x')
     audio_bitrate_combobox.set(audio_bitrate)
+    
+    audio_status_label = ctk.CTkLabel(settings_container, text="", text_color="#FFFFFF")
+    audio_status_label.pack(pady=0, padx=10) 
 
+    #? Save Settings
     def save_settings():
         global audio_bitrate, ffmpeg_path, output_folder
         audio_bitrate = audio_bitrate_combobox.get()
         ffmpeg_path = ffmpeg_entry.get()
         output_folder = output_folder_entry.get()
 
-        # Save settings to a JSON file
         settings = {
             'audio_bitrate': audio_bitrate,
             'ffmpeg_path': ffmpeg_path,
@@ -205,9 +256,10 @@ def open_settings():
         "Save Settings", 
         resource_path("icons/save.png"), 
         save_settings,
-        icon_position="left"
+        icon_position="left",
+        button_height=40
     )
-    save_button.pack(pady=10, padx=10) 
+    save_button.pack(pady=10, padx=10, fill="x") 
 
 
 
@@ -728,13 +780,16 @@ main_container.pack(padx=20, pady=20, fill="both", expand=True)
     
 # * -- Button Creation and Binding
       
-button_height = 35 
-icon_size = int(button_height * 0.9)  
 
-def create_button(container, text, icon_path, command, icon_position="left"):
+def create_button(container, text, icon_path, command, icon_position="left", button_height=35):
     """Create a custom button with an icon and hover effects for a CustomTkinter GUI."""
+    icon_size = int(button_height * 0.9)  
     icon_image = Image.open(resource_path(icon_path)).resize((icon_size, icon_size), Image.LANCZOS)
     button_icon = ctk.CTkImage(light_image=icon_image, dark_image=icon_image)
+    is_icon_button = False
+    
+    if text == "":
+        is_icon_button = True
     
     button = ctk.CTkButton(
         container,
@@ -744,11 +799,11 @@ def create_button(container, text, icon_path, command, icon_position="left"):
         compound=icon_position,
         text_color="#A9A9A9", 
         fg_color="#343434",
-        border_color="#343434", 
+        border_color="#404040", 
         border_width=1,
         hover_color="#333333",
         font=('Arial', 12, "bold"),
-        width=80,
+        width=40 if is_icon_button else 80,
         height=button_height
     )
     
@@ -756,7 +811,7 @@ def create_button(container, text, icon_path, command, icon_position="left"):
         button.configure(text_color="#ff2953", border_color="#ff2953") 
     
     def on_leave(event):
-        button.configure(text_color="#A9A9A9", border_color="#343434") 
+        button.configure(text_color="#A9A9A9", border_color="#404040") 
     
     button.bind("<Enter>", on_enter)
     button.bind("<Leave>", on_leave)
@@ -766,11 +821,27 @@ def create_button(container, text, icon_path, command, icon_position="left"):
 
 # * --- Navigation Buttons
 
-nav_buttons_container = ctk.CTkFrame(main_container, fg_color="transparent", bg_color="transparent")
-nav_buttons_container.pack(side='top', anchor='ne', padx=20, pady=(10, 0))
+nav_row_container = ctk.CTkFrame(main_container, fg_color="transparent", bg_color="transparent")
+nav_row_container.pack(side='top', fill='x', padx=10, pady=10)
+
+
+left_buttons = ctk.CTkFrame(nav_row_container, fg_color="transparent", bg_color="transparent")
+left_buttons.pack(side='left')
+
+github_button = create_button(
+    left_buttons, 
+    "", 
+    resource_path("icons/github.png"), 
+    lambda: webbrowser.open("https://github.com/tonywied17/youtube-downloader")
+)
+github_button.pack(side='left')
+
+
+right_buttons = ctk.CTkFrame(nav_row_container, fg_color="transparent", bg_color="transparent")
+right_buttons.pack(side='right')
 
 downloads_button = create_button(
-    nav_buttons_container, 
+    right_buttons, 
     "Downloads", 
     resource_path("icons/downloads.png"), 
     lambda: open_in_explorer(output_folder)
@@ -778,7 +849,7 @@ downloads_button = create_button(
 downloads_button.pack(side='left', padx=(0, 10))
 
 settings_button = create_button(
-    nav_buttons_container, 
+    right_buttons, 
     "Settings", 
     resource_path("icons/gears.png"), 
     open_settings
@@ -786,28 +857,52 @@ settings_button = create_button(
 settings_button.pack(side='left')
 
 
-# * --- URL Entry Panel
 
+# * URL Entry Panel ---
 url_entry_panel = ctk.CTkFrame(main_container, fg_color="transparent", bg_color="transparent")
-url_label = ctk.CTkLabel(url_entry_panel, font=('Roboto', 15), text="Enter a YouTube Link")
-url_label.pack(pady=(10, 5))
-url_entry = ctk.CTkEntry(url_entry_panel, width=500)
-url_entry.pack(pady=5)
+
+url_label = ctk.CTkLabel(
+    url_entry_panel, 
+    font=('Roboto', 14),
+    text="Enter a YouTube Link", 
+    text_color="#C2C2C2",
+    anchor="w" 
+)
+url_label.pack(pady=5, padx=5, fill="x") 
+
+# Frame for Entry and Button
+url_row = ctk.CTkFrame(url_entry_panel, fg_color="transparent")
+url_row.pack(pady=5, padx=5, fill="x")
+
+# Entry Box
+url_entry = ctk.CTkEntry(
+    url_row, 
+    width=360, 
+    fg_color="#3D3D3D", 
+    border_width=1, 
+    border_color="#404040", 
+    height=40, 
+    font=('Roboto', 13),
+    placeholder_text="https://www.youtube.com/watch?v=..."
+)
+url_entry.pack(side="left", fill="x", expand=True, padx=(0, 5))
 
 fetch_button = create_button(
-    url_entry_panel, 
+    url_row, 
     "Find Source(s)", 
     resource_path("icons/start.png"), 
     update_quality_options,
-    icon_position="right"
+    icon_position="right",
+    button_height=40
 )
-fetch_button.pack(pady=10)
+fetch_button.pack(side="right")
+
 
 
 # * --- Quality Selection Panel
 
 quality_selection_panel = ctk.CTkFrame(main_container, fg_color="transparent", bg_color="transparent")
-quality_combobox = ctk.CTkComboBox(quality_selection_panel, width=300)
+quality_combobox = ctk.CTkComboBox(quality_selection_panel, width=300, fg_color="#3D3D3D", border_width=1, border_color="#404040", height=30, font=('Roboto', 13))
 quality_combobox.pack(pady=5)
 save_mp3_checkbox = ctk.CTkCheckBox(quality_selection_panel, text="Save MP3 Copy", variable=save_mp3_var)
 save_mp3_checkbox.pack(pady=10)
@@ -837,14 +932,14 @@ quality_selection_panel.pack_forget()
 
 # * --- Progress and Status Panel
 progress_and_status_panel = ctk.CTkFrame(main_container, fg_color="transparent", bg_color="transparent")
-progress_text = ctk.CTkLabel(progress_and_status_panel, textvariable=progress_label, width=300, wraplength=300, height=30, font=('Arial', 12))
+progress_text = ctk.CTkLabel(progress_and_status_panel, textvariable=progress_label, width=300, wraplength=300, height=30, font=('Roboto', 12), text_color="#C2C2C2")
 progress_text.pack(pady=5)
 
 progress_bar = ctk.CTkProgressBar(progress_and_status_panel, variable=progress, width=350, fg_color="#8B0000", progress_color="#FF1D49")
 progress_bar.pack(pady=5)
 
-time_remaining_label = ctk.CTkLabel(progress_and_status_panel, textvariable=estimated_time_remaining, font=('Arial', 11))
-time_remaining_label.pack(pady=5)
+time_remaining_label = ctk.CTkLabel(progress_and_status_panel, textvariable=estimated_time_remaining, font=('Roboto', 11), text_color="#C2C2C2")
+time_remaining_label.pack(pady=(20, 10))
 progress_and_status_panel.pack_forget()
 
 
@@ -857,7 +952,7 @@ view_button = create_button(
     lambda: open_in_explorer(output_folder),
     icon_position="right"
 )
-view_button.pack(pady=5)
+view_button.pack(pady=(20, 5), padx=200, ipadx=200)
 
 reset_button = create_button(
     final_options_panel, 
@@ -866,9 +961,8 @@ reset_button = create_button(
     reset_ui,
     icon_position="right"
 )
-reset_button.pack(pady=5)
+reset_button.pack(pady=5, padx=200, ipadx=200)
 final_options_panel.pack_forget()
-
 
 
 
@@ -884,7 +978,7 @@ def show_playlist_window():
 
     playlist_window = ctk.CTkToplevel(app)
     playlist_window.title("Playlists Not Supported")
-    playlist_window.geometry("300x150")
+    playlist_window.geometry("300x200")
     playlist_window.attributes('-topmost', True)
     playlist_window.resizable(False, False)
     playlist_window.wm_iconbitmap()

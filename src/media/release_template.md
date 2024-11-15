@@ -1,3 +1,8 @@
+YouTube Downloader GUI
+
+
+![YouTube Downloader Banner](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/reademe_logo.png)
+
 ## Features
 
 ### Video Saving Feature
@@ -28,6 +33,8 @@ The latest release includes three installation options for flexibility and ease 
 
 - **Installer Version**: This option unpacks the application, allowing you to install it with shortcuts in the Start Menu and on the Desktop. It integrates with your system, making the application easily accessible from familiar locations.
 
-- **Standalone Executable** (Windows): A single-file version that includes everything needed to run the application without installation. Ideal for portability, this version allows you to launch the application directly, making it easy to move and store across different directories or devices.
+- **Standalone Executable `.zip`** (Windows): A single-file version that includes everything needed to run the application without installation. Ideal for portability, this version allows you to launch the application directly, making it easy to move and store across different directories or devices.
 
 - **Linux `.tar.gz` Archive** (Standalone): A compressed archive containing the Linux version of the application. Simply extract the contents of the `.tar.gz` file and run the executable within. This option is ideal for Linux users who prefer a standalone application that can be run directly after extraction.
+
+**Full Changelog**: https://github.com/tonywied17/youtube-downloader/commits/release
