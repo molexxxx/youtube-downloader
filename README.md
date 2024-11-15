@@ -52,16 +52,13 @@ Alternatively, if you do not want to use Scoop, you can download and install FFm
 
 ### Step 3: Run the GUI Application
 
-You can run the application using the executable generated in the `dist` folder:
+You can run the application extracting the standalone `.zip` in the `dist` folder:
 
-```powershell
-cd dist
-.\YouTube_Downloader.exe
-```
 
 ### Settings Panel
 
 The application includes a settings panel that allows you to configure the following options:
+- **FFMPEG Location**: Set the path to the FFmpeg executable. The application will attempt to auto-detect the FFmpeg path, but you can manually set it here.
 - **Audio Bitrate**: Choose the desired audio bitrate from a predefined list.
 - **Output Folder**: Set the folder where downloaded videos and MP3s will be saved. The default is a `downloads/` directory relative to the script location, but you can customize it.
 
@@ -73,7 +70,7 @@ The application includes a settings panel that allows you to configure the follo
 
 ### Settings Storage
 
-The settings are stored in a `settings.json` file within the same directory as the executable. The application will load these settings at startup, allowing you to customize the behavior of the downloader. For the CLI version you modify the settings in `cli.py` directly.
+The settings are stored in a `settings.json` file within the same directory as the executable. The application will load these settings at startup, allowing you to customize the behavior of the downloader. For the CLI version you modify the settings of the `cli.py` by directly modifying the values of the Global Configuration Variables.
 
 ## Installing Python and Additional Requirements (Interactive CLI Only)
 
