@@ -1,9 +1,9 @@
-# File: c:\Users\tonyw\Desktop\youtube_dl\src\ui.py
-# Project: c:\Users\tonyw\Desktop\youtube_dl\src
-# Created Date: Saturday November 2nd 2024
+# File: c:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\src\ui.py
+# Project: c:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\src
+# Created Date: Tuesday November 5th 2024
 # Author: Tony Wiedman
 # -----
-# Last Modified: Tue November 5th 2024 3:49:06 
+# Last Modified: Thu November 14th 2024 9:25:19 
 # Modified By: Tony Wiedman
 # -----
 # Copyright (c) 2024 MolexWorks / Tone Web Design
@@ -30,7 +30,6 @@ from CTkMessagebox import CTkMessagebox
 
 
 
-
 #@ ------------------------------ Global Settings and Variables -------------------------------
 
 
@@ -50,9 +49,7 @@ def sanitize_filename(filename):
 
 
 # * --- Global Variables
-conversion_preset = 'medium'
-video_bitrate = '10M'
-audio_bitrate = '192k'
+audio_bitrate = '256k'
 ffmpeg_path = 'ffmpeg'
 output_folder = os.path.join(os.getcwd(), 'downloads')
 
@@ -81,7 +78,7 @@ estimated_time_remaining = StringVar(value="")
 settings_window = None
 
 def load_settings():
-    global video_bitrate, audio_bitrate, conversion_preset, ffmpeg_path, output_folder
+    global audio_bitrate, ffmpeg_path, output_folder
     settings_path = 'settings.json'
     if os.path.exists(settings_path):
         try:
@@ -93,20 +90,17 @@ def load_settings():
                 if output_folder:
                     output_folder = os.path.expandvars(output_folder)
 
-                video_bitrate = settings.get('video_bitrate', '10M')
-                audio_bitrate = settings.get('audio_bitrate', '192k')
-                conversion_preset = settings.get('conversion_preset', 'slow')
+                audio_bitrate = settings.get('audio_bitrate', '256k')
                 ffmpeg_path = settings.get('ffmpeg_path', 'ffmpeg')
         except (FileNotFoundError, json.JSONDecodeError, ValueError) as e:
             print(f"Error loading settings: {e}")
     else:
         # Set default values
         output_folder = os.path.join(os.getcwd(), 'downloads')
-        video_bitrate = '10M'
-        audio_bitrate = '192k'
-        conversion_preset = 'medium'
+        audio_bitrate = '256k'
         ffmpeg_path = 'ffmpeg'
         os.makedirs(output_folder, exist_ok=True)
+
 
 def open_settings():
     global settings_window
@@ -116,7 +110,7 @@ def open_settings():
 
     settings_window = ctk.CTkToplevel(app)
     settings_window.title("Settings")
-    settings_window.geometry("400x712")
+    settings_window.geometry("400x522")
     settings_window.attributes('-topmost', True)
     settings_window.resizable(False, False)
     settings_window.wm_iconbitmap()
@@ -129,25 +123,26 @@ def open_settings():
 
     settings_window.protocol("WM_DELETE_WINDOW", on_close)
     settings_container = ctk.CTkFrame(settings_window, fg_color="#2E2E2E", bg_color="#2E2E2E")
-    settings_container.pack(padx=20, pady=20, fill="both", expand=True)
+    settings_container.pack(padx=10, pady=10, fill="both", expand=True)
 
-    ctk.CTkLabel(settings_container, text="FFmpeg Path:", text_color="#FFFFFF").pack(pady=10) 
+    # FFmpeg Path input
+    ctk.CTkLabel(settings_container, text="FFmpeg Path:", text_color="#FFFFFF").pack(pady=10, padx=10) 
     ffmpeg_entry = ctk.CTkEntry(settings_container, width=50, fg_color="#3D3D3D")
-    ffmpeg_entry.pack(pady=5, fill='x')
+    ffmpeg_entry.pack(pady=5, padx=10, fill='x')
     ffmpeg_entry.insert(0, ffmpeg_path)
-    
-    browse_ffmpeg_button = create_button(
-    settings_container, 
-    "Browse..", 
-    resource_path("icons/browse.png"), 
-    lambda: select_ffmpeg(ffmpeg_entry),
-    icon_position="right"
-    )
-    browse_ffmpeg_button.pack(pady=5)
 
-    # Check if FFmpeg is installed
+    browse_ffmpeg_button = create_button(
+        settings_container, 
+        "Browse..", 
+        resource_path("icons/browse.png"), 
+        lambda: select_ffmpeg(ffmpeg_entry),
+        icon_position="right"
+    )
+    browse_ffmpeg_button.pack(pady=5, padx=10)
+
+    # Check FFmpeg installation
     ffmpeg_status_label = ctk.CTkLabel(settings_container, text="", text_color="#FFFFFF")
-    ffmpeg_status_label.pack(pady=5)
+    ffmpeg_status_label.pack(pady=5, padx=10) 
 
     def check_ffmpeg():
         if check_ffmpeg_installed():
@@ -158,61 +153,44 @@ def open_settings():
             webbrowser.open("https://ffmpeg.org/download.html")
 
     check_button = create_button(
-    settings_container, 
-    "Check FFmpeg", 
-    resource_path("icons/test.png"), 
-    check_ffmpeg,
-    icon_position="left"
+        settings_container, 
+        "Check FFmpeg", 
+        resource_path("icons/test.png"), 
+        check_ffmpeg,
+        icon_position="left"
     )
-    check_button.pack(pady=5)
+    check_button.pack(pady=5, padx=10)
 
-    # Output folder input
-    ctk.CTkLabel(settings_container, text="Output Folder:", text_color="#FFFFFF").pack(pady=10)
+    # Output Folder input
+    ctk.CTkLabel(settings_container, text="Output Folder:", text_color="#FFFFFF").pack(pady=10, padx=10) 
     output_folder_entry = ctk.CTkEntry(settings_container, width=50, fg_color="#3D3D3D")
-    output_folder_entry.pack(pady=5, fill='x')
+    output_folder_entry.pack(pady=5, padx=10, fill='x') 
     output_folder_entry.insert(0, output_folder)
 
-    # Button to browse for output folder
     browse_output_button = create_button(
-    settings_container, 
-    "Browse..", 
-    resource_path("icons/browse.png"), 
-    lambda: select_output_folder(output_folder_entry),
-    icon_position="right"
+        settings_container, 
+        "Browse..", 
+        resource_path("icons/browse.png"), 
+        lambda: select_output_folder(output_folder_entry),
+        icon_position="right"
     )
-    browse_output_button.pack(pady=5)
+    browse_output_button.pack(pady=5, padx=10) 
 
-    # Video bitrate input (Combobox)
-    ctk.CTkLabel(settings_container, text="Video Bitrate:", text_color="#FFFFFF").pack(pady=10)
-    video_bitrate_combobox = ctk.CTkComboBox(settings_container, values=["1M", "2M", "5M", "10M", "20M", "30M"], width=150)
-    video_bitrate_combobox.pack(pady=5, fill='x')
-    video_bitrate_combobox.set(video_bitrate) 
-
-    # Audio bitrate input (Combobox)
-    ctk.CTkLabel(settings_container, text="Audio Bitrate:", text_color="#FFFFFF").pack(pady=10)
-    audio_bitrate_combobox = ctk.CTkComboBox(settings_container, values=["128k", "192k", "256k"], width=150)
-    audio_bitrate_combobox.pack(pady=5, fill='x')
+    # Audio Bitrate input (Combobox)
+    ctk.CTkLabel(settings_container, text="Audio Bitrate:", text_color="#FFFFFF").pack(pady=10, padx=10)
+    audio_bitrate_combobox = ctk.CTkComboBox(settings_container, values=["128k", "256k", "256k"], width=150)
+    audio_bitrate_combobox.pack(pady=5, padx=10, fill='x')
     audio_bitrate_combobox.set(audio_bitrate)
 
-    # Conversion preset input (Combobox)
-    ctk.CTkLabel(settings_container, text="Conversion Preset:", text_color="#FFFFFF").pack(pady=10)
-    preset_combobox = ctk.CTkComboBox(settings_container, values=["fast", "medium", "slow"], width=150)
-    preset_combobox.pack(pady=5, fill='x')
-    preset_combobox.set(conversion_preset)
-
     def save_settings():
-        global video_bitrate, audio_bitrate, conversion_preset, ffmpeg_path, output_folder
-        video_bitrate = video_bitrate_combobox.get()
+        global audio_bitrate, ffmpeg_path, output_folder
         audio_bitrate = audio_bitrate_combobox.get()
-        conversion_preset = preset_combobox.get()
         ffmpeg_path = ffmpeg_entry.get()
-        output_folder = output_folder_entry.get() 
+        output_folder = output_folder_entry.get()
 
         # Save settings to a JSON file
         settings = {
-            'video_bitrate': video_bitrate,
             'audio_bitrate': audio_bitrate,
-            'conversion_preset': conversion_preset,
             'ffmpeg_path': ffmpeg_path,
             'output_folder': output_folder
         }
@@ -223,13 +201,14 @@ def open_settings():
         show_info_message("Settings Saved", "Your settings have been saved.")
 
     save_button = create_button(
-    settings_container, 
-    "Save Settings", 
-    resource_path("icons/save.png"), 
-    save_settings,
-    icon_position="left"
+        settings_container, 
+        "Save Settings", 
+        resource_path("icons/save.png"), 
+        save_settings,
+        icon_position="left"
     )
-    save_button.pack(pady=10)
+    save_button.pack(pady=10, padx=10) 
+
 
 
 
@@ -335,25 +314,32 @@ def list_available_qualities(url):
         with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
             info = ydl.extract_info(url, download=False)
             formats = info.get('formats', [])
-            mp4_formats = [f for f in formats if f.get('vcodec') != 'none' and f.get('ext') == 'webm']
             
+            webm_formats = [
+                f for f in formats
+                if f.get('vcodec') != 'none' and f.get('ext') == 'webm'
+            ]
+
             seen_qualities = {}
-            for f in mp4_formats:
+            for f in webm_formats:
                 resolution = f.get('resolution', 'unknown')
                 fps = f.get('fps', 'unknown')
-                seen_qualities[(resolution, fps)] = {
-                    'format_id': f['format_id'],
-                    'resolution': resolution,
-                    'fps': fps,
-                    'ext': f.get('ext', 'webm')
-                }
-            
+                # Avoid duplicates by creating unique keys based on resolution and fps
+                if (resolution, fps) not in seen_qualities:
+                    seen_qualities[(resolution, fps)] = {
+                        'format_id': f['format_id'],
+                        'resolution': resolution,
+                        'fps': fps,
+                        'ext': f.get('ext', 'webm')
+                    }
+
             return list(seen_qualities.values())
+
     except yt_dlp.utils.DownloadError as e:
         print(f"DownloadError: {e}") 
-        show_warning_message("Invalid URL", "The provided YouTube URL is invalid or truncated.")
-        reset_ui() 
+        show_warning_message("Invalid URL", "The provided YouTube URL could not be accessed.")
         return []
+
 
 def download_and_convert(url, quality_index):
     """Download and convert video based on selected quality."""
@@ -412,14 +398,15 @@ def download_and_convert(url, quality_index):
         start_download_after_confirmation()
 
 
-# * --- Audio Extraction and Conversio
+# * --- Audio Extraction and Conversion
 
-def save_mp3(folder_path, video_title, url):  
-    """Save the audio as an MP3 file in a separate directory.""" 
+def save_mp3(folder_path, video_title, url):
+    """Save the audio as an MP3 file in a separate directory."""
     mp3_folder = os.path.join(folder_path, "mp3s")
     os.makedirs(mp3_folder, exist_ok=True)
 
-    mp3_output = os.path.join(mp3_folder, video_title)
+    sanitized_title = sanitize_filename(video_title)
+    mp3_output = os.path.join(mp3_folder, sanitized_title)
 
     if os.path.exists(mp3_output):
         def cancel_overwrite():
@@ -434,17 +421,19 @@ def save_mp3(folder_path, video_title, url):
 
     ydl_opts = {
         'format': 'bestaudio/best',
-        'outtmpl': mp3_output,
+        'outtmpl': mp3_output, 
         'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
+            'key': 'FFmpegExtractAudio', 
             'preferredcodec': 'mp3',
             'preferredquality': '256',
+        }, {
+            'key': 'FFmpegMetadata',
         }],
         'logger': YTDLLogger()  
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([url])  
+        ydl.download([url])
 
 def prompt_audio_conversion(filepath, folder_path, video_title, resolution, duration):
     """Prompt the user to convert audio to AAC if needed and proceed with conversion or finalize."""
@@ -465,8 +454,7 @@ def prompt_audio_conversion(filepath, folder_path, video_title, resolution, dura
         finalize_download(folder_path)
   
 def convert_audio_to_aac(filepath, folder_path, video_title, resolution, duration):
-    """Convert the audio of the downloaded video file to AAC, using a fallback encoder if needed."""
-    video_codec = get_best_encoder()
+    """Convert only the audio to AAC while preserving the original video quality by specifying codecs explicitly."""
     aac_output = os.path.join(folder_path, f"{video_title}_{resolution}_AAC.mp4")
 
     if os.path.exists(aac_output):
@@ -485,8 +473,8 @@ def convert_audio_to_aac(filepath, folder_path, video_title, resolution, duratio
 
     conversion_command = [
         ffmpeg_path, '-y', '-i', filepath,
-        '-c:v', video_codec, '-preset', conversion_preset, '-b:v', video_bitrate,
-        '-c:a', 'aac', '-b:a', audio_bitrate,
+        '-c:v', 'copy',  # Keep the original video quality without re-encoding
+        '-c:a', 'aac', '-b:a', audio_bitrate,  # Convert only audio to AAC
         aac_output
     ]
 
@@ -514,17 +502,15 @@ def convert_audio_to_aac(filepath, folder_path, video_title, resolution, duratio
 
                 remaining_time = (duration - elapsed_time) / (conversion_progress + 1e-5)
                 mins, secs = divmod(int(remaining_time), 60)
-                
-                settings_message = (f"Using codec: {video_codec} | "
-                                    f"Video Bitrate: {video_bitrate} | "
+
+                settings_message = (f"Using codec: copy (video), AAC (audio) | "
                                     f"Audio Bitrate: {audio_bitrate} | "
-                                    f"Preset: {conversion_preset} | "
                                     f"Estimated time left: {mins}m {secs}s")
                 estimated_time_remaining.set(settings_message)
 
         stdout, stderr = process.communicate()
         if process.returncode == 0:
-            os.remove(filepath)
+            os.remove(filepath) 
             finalize_download(folder_path)
         else:
             show_error_message("Conversion Error", f"An error occurred during audio conversion:\n{stderr if stderr else stdout}")
@@ -803,7 +789,7 @@ settings_button.pack(side='left')
 # * --- URL Entry Panel
 
 url_entry_panel = ctk.CTkFrame(main_container, fg_color="transparent", bg_color="transparent")
-url_label = ctk.CTkLabel(url_entry_panel, font=('Arial', 14), text="Enter a YouTube Link")
+url_label = ctk.CTkLabel(url_entry_panel, font=('Roboto', 15), text="Enter a YouTube Link")
 url_label.pack(pady=(10, 5))
 url_entry = ctk.CTkEntry(url_entry_panel, width=500)
 url_entry.pack(pady=5)

@@ -1,81 +1,32 @@
-# File: c:\Users\tonyw\Desktop\youtube_dl\src\ui.py
-# Project: c:\Users\tonyw\Desktop\youtube_dl\src
-# Created Date: Saturday November 2nd 2024
+# File: c:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\src\cli.py
+# Project: c:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\src
+# Created Date: Tuesday November 5th 2024
 # Author: Tony Wiedman
 # -----
-# Last Modified: Tue November 5th 2024 3:49:06 
+# Last Modified: Thu November 14th 2024 9:25:02 
 # Modified By: Tony Wiedman
 # -----
 # Copyright (c) 2024 MolexWorks / Tone Web Design
 
-
-
-#@ ------------------------------ Global Imports and Dependencies -------------------------------
-
 import yt_dlp
-import subprocess
 import os
-import sys
 import re
+import subprocess
 
 
-
-#@ ------------------------------- Global Configuration -------------------------------
-
+# Global Configuration
 CONFIG = {
-    "video_bitrate": "10M",
     "audio_bitrate": "256k",
-    "conversion_preset": "medium",
     "ffmpeg_path": "ffmpeg",
     "output_folder": os.path.join(os.getcwd(), 'downloads')
 }
 
 
-
-#@ ------------------------------- Utility Functions -------------------------------
-
-#! --
-def supports_encoder(encoder_name):
-    """Check if FFmpeg supports a specific encoder (e.g., h264_nvenc or h264_amf)."""
-    try:
-        result = subprocess.run([CONFIG['ffmpeg_path'], '-encoders'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        return encoder_name in result.stdout
-    except Exception:
-        return False
-
-#! --
-def get_best_encoder():
-    """Determine the best available encoder based on GPU compatibility."""
-    if supports_encoder('h264_nvenc'):
-        print("NVIDIA GPU detected. Using h264_nvenc for encoding.")
-        return 'h264_nvenc'
-    elif supports_encoder('h264_amf'):
-        print("AMD GPU detected. Using h264_amf for encoding.")
-        return 'h264_amf'
-    else:
-        print("No compatible GPU detected. Falling back to CPU encoding (libx264).")
-        return 'libx264'
-
-#! --
 def sanitize_filename(filename):
     """Replace special characters in filenames with underscores."""
     return re.sub(r'[^a-zA-Z0-9_\-\.]', '_', filename)
 
-#! --
-def check_audio_codec(filepath):
-    """Check if the audio codec of the downloaded video file is AAC."""
-    try:
-        result = subprocess.run([CONFIG['ffmpeg_path'], '-i', filepath], stderr=subprocess.PIPE, text=True)
-        return "aac" in result.stderr
-    except Exception as e:
-        print(f"Error checking audio codec: {e}")
-        return False
 
-
-
-#@ --------------------------- yt-dlp Specific Functions ---------------------------
-
-#! --
 def list_available_qualities(url):
     """Fetch and display available video qualities for a given YouTube URL."""
     with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
@@ -84,9 +35,7 @@ def list_available_qualities(url):
         seen_qualities = {}
 
         print("\nAvailable Qualities:")
-        mp4_formats = [f for f in formats if f.get('vcodec') != 'none' and f.get('ext') == 'webm']
-
-        for f in mp4_formats:
+        for f in formats:
             resolution = f.get('resolution', 'unknown')
             fps = f.get('fps', 'unknown')
             seen_qualities[(resolution, fps)] = {
@@ -102,19 +51,19 @@ def list_available_qualities(url):
         
         return available_qualities
 
-#! --
-def download_and_convert(url):
-    """Download video from URL in user-selected quality, with optional audio conversion."""
+
+def download_video(url):
+    """Download video from URL in selected quality and save to output folder."""
     available_qualities = list_available_qualities(url)
     
     while True:
         try:
-            selected_index = int(input("\nEnter the number corresponding to your desired quality: ")) - 1
+            selected_index = int(input("\nEnter the number for your desired quality: ")) - 1
             if selected_index < 0 or selected_index >= len(available_qualities):
-                raise ValueError("Invalid selection. Please choose a number from the list.")
+                raise ValueError("Invalid selection. Choose a number from the list.")
             break
         except (ValueError, IndexError):
-            print("Please enter a valid number from the list.")
+            print("Invalid input. Please enter a valid number from the list.")
 
     selected_quality = available_qualities[selected_index]
 
@@ -137,55 +86,101 @@ def download_and_convert(url):
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
+
     print(f"Download complete! Video saved as {final_output}")
 
-    video_codec = get_best_encoder()
-    if check_audio_codec(final_output):
-        print("Audio is already in AAC format. Skipping AAC conversion.")
+    # check if audio is in AAC format and convert if necessary
+    convert_audio_to_aac(final_output)
+
+
+def convert_audio_to_aac(video_path):
+    """Check if video audio is AAC and convert to AAC if it's not."""
+    
+    # probe command to check the current audio codec
+    probe_command = [
+        CONFIG['ffmpeg_path'], '-i', video_path, '-hide_banner', '-loglevel', 'error', 
+        '-select_streams', 'a:0', '-show_entries', 'stream=codec_name', '-of', 'default=noprint_wrappers=1:nokey=1'
+    ]
+    
+    codec = subprocess.run(probe_command, capture_output=True, text=True).stdout.strip()
+    
+    # If codec is not AAC, convert it to AAC
+    if codec != "aac":
+        print(f"Audio codec is '{codec}'. Converting to AAC...")
+        aac_output = video_path.replace('.mp4', '_aac.mp4')
+        
+        convert_command = [
+            CONFIG['ffmpeg_path'], '-i', video_path, '-c:v', 'copy', '-c:a', 'aac',
+            '-b:a', CONFIG['audio_bitrate'], '-y', aac_output
+        ]
+        
+        # Run the conversion command
+        subprocess.run(convert_command, check=True)
+        
+        os.replace(aac_output, video_path)
+        print(f"Conversion to AAC complete. File saved as {video_path}")
     else:
-        convert_choice = input("Do you want to convert the audio to AAC for compatibility? (y/n): ").strip().lower()
-        if convert_choice == 'y':
-            aac_output = os.path.join(folder_path, f"{video_title}_{selected_quality['resolution']}_AAC.mp4")
-            conversion_command = [
-                CONFIG['ffmpeg_path'], '-i', final_output,
-                '-c:v', video_codec, '-preset', CONFIG['conversion_preset'], '-b:v', CONFIG['video_bitrate'],
-                '-c:a', 'aac', '-b:a', CONFIG['audio_bitrate'],
-                aac_output
-            ]
+        print("Audio is already in AAC format. No conversion needed.")
 
-            print("Converting to AAC audio format...")
-            subprocess.run(conversion_command)
-            print(f"Conversion complete! Video saved as {aac_output}")
-            
-            delete_choice = input("Delete the original downloaded file? (y/n): ").strip().lower()
-            if delete_choice == 'y' and os.path.exists(final_output):
-                os.remove(final_output)
-                print(f"Deleted the original file: {final_output}")
+
+
+def download_best_audio(url):
+    """Download the best audio from a URL and convert to MP3 with metadata."""
+    with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+        info = ydl.extract_info(url, download=False)
+        audio_title = sanitize_filename(info.get('title', 'downloaded_audio').replace(" ", "_"))
+        uploader_name = sanitize_filename(info.get('uploader', 'Unknown_Uploader').replace(" ", "_"))
+
+    folder_path = os.path.join(CONFIG['output_folder'], uploader_name, 'mp3s')
+    os.makedirs(folder_path, exist_ok=True)
+
+    mp3_output = os.path.join(folder_path, f"{audio_title}")
+
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'outtmpl': mp3_output,
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': CONFIG['audio_bitrate'].replace('k', ''),
+        }, {
+            'key': 'FFmpegMetadata'
+        }],
+    }
+    
+    if CONFIG['ffmpeg_path'] != "ffmpeg":
+        ydl_opts['ffmpeg_location'] = CONFIG['ffmpeg_path']
+
+    # Download the audio and convert to MP3 with metadata
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([url])
+
+    print(f"Download complete! Audio saved as {mp3_output}")
+
+
+
+
+def main_menu():
+    """Main interactive CLI loop."""
+    while True:
+        print("\nMain Menu:")
+        print("  [1] Download a new video")
+        print("  [2] Download best audio as MP3")
+        print("  [q] Quit")
+        
+        choice = input("Choose an option: ").strip().lower()
+        
+        if choice == '1':
+            url = input("Enter YouTube URL: ").strip()
+            download_video(url)
+        elif choice == '2':
+            url = input("Enter YouTube URL: ").strip()
+            download_best_audio(url)
+        elif choice == 'q':
+            print("Exiting the program.")
+            break
         else:
-            print("AAC conversion skipped. The video is saved as-is.")
-
-
-
-#@ ------------------------------- Main Script Execution ---------------------------
+            print("Invalid option. Please try again.")
 
 if __name__ == "__main__":
-    """Main script execution for downloading and converting video from a URL."""
-    print("""
-    ===============================
-    YouTube Downloader CLI
-    ===============================
-    Configuration Settings:
-    Video Bitrate: {video_bitrate}
-    Audio Bitrate: {audio_bitrate}
-    Conversion Preset: {conversion_preset}
-    FFmpeg Path: {ffmpeg_path}
-    Output Folder: {output_folder}
-    ===============================
-    """.format(**CONFIG))
-
-    if len(sys.argv) > 1:
-        video_url = sys.argv[1]
-    else:
-        video_url = input("Enter YouTube URL: ")
-    
-    download_and_convert(video_url)
+    main_menu()
