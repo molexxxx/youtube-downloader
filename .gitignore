@@ -1,5 +1,5 @@
-# Ignore distribution and build folders
-dist/
+# Distribution and build folders
+!dist/*.zip
 !installer_scripts/*.exe
 build/
 
