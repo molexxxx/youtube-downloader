@@ -62,25 +62,22 @@ cd dist
 ### Settings Panel
 
 The application includes a settings panel that allows you to configure the following options:
-- **FFmpeg Path**: Specify the path to your FFmpeg installation.
-- **Video Bitrate**: Choose the desired video bitrate from a predefined list.
 - **Audio Bitrate**: Choose the desired audio bitrate from a predefined list.
-- **Conversion Preset**: Select the encoding speed for FFmpeg (fast, medium, slow).
 - **Output Folder**: Set the folder where downloaded videos and MP3s will be saved. The default is a `downloads/` directory relative to the script location, but you can customize it.
 
 ### MP3 Saving Feature
 
-- The application allows you to save audio from videos as MP3 files separately.
-- When you check the "Save MP3 Separately" option, the application will create an `mp3s/` folder within the downloaded channel's media folder (e.g., `output_folder/uploader_name/mp3s/`).
+- The application allows you to save audio from videos as MP3 files separately in both the GUI and CLI versions.
+- This will create an `mp3s/` folder within the downloaded channel's media folder (e.g., `output_folder/uploader_name/mp3s/`) and also apply metadata to the track.
 - The MP3 file will be named using the video title, ensuring that special characters are sanitized to prevent file system issues.
 
 ### Settings Storage
 
-The settings are stored in a `settings.json` file within the same directory as the executable. The application will load these settings at startup, allowing you to customize the behavior of the downloader.
+The settings are stored in a `settings.json` file within the same directory as the executable. The application will load these settings at startup, allowing you to customize the behavior of the downloader. For the CLI version you modify the settings in `cli.py` directly.
 
-## Installing Python and Additional Requirements (CLI Only)
+## Installing Python and Additional Requirements (Interactive CLI Only)
 
-If you wish to run the CLI version, you will need to install Python and the necessary dependencies.
+If you wish to run the Interactive CLI version, you will need to install Python and the necessary dependencies.
 
 ### Step 1: Install Python
 
@@ -116,19 +113,19 @@ If you wish to run the CLI version, you will need to install Python and the nece
    pip install -r requirements.txt
    ```
 
-### Step 3: Run the CLI Script
+### Step 3: Run the Interactive CLI Script
 
-You can run the CLI version by specifying a YouTube URL as input:
+To launch the Interactive CLI version, run the following command in your terminal:
+
+```powershell
+python cli.py
+```
+
+You can also supply the video URL as an argument to the script:
 
 ```powershell
 python cli.py "https://www.youtube.com/watch?v=VIDEO_ID"
 ```
-
-The application will:
-1. Display available video qualities in the GUI.
-2. Prompt you to choose a quality for download.
-3. Detect and use GPU encoding if available (NVIDIA or AMD), falling back to CPU if no GPU is detected.
-4. Optionally, convert the audio to AAC for compatibility.
 
 ## Building a New Executable
 
@@ -179,9 +176,8 @@ The `build_release.ps1` script performs the following tasks:
 ## Troubleshooting
 
 If you encounter issues with the application:
-1. Ensure `ffmpeg` is installed and accessible from the command line.
-2. For GPU encoding, verify that you have the appropriate drivers installed (NVIDIA or AMD).
-3. Update `yt-dlp` if needed using `pip install --upgrade yt-dlp` (only for the CLI version).
+- Ensure `ffmpeg` is installed and accessible from the command line.
+- Update `yt-dlp` if needed using `pip install --upgrade yt-dlp` (only for the CLI version).
 
 ### Author
 - [Tony Wiedman](https://github.com/tonywied17)

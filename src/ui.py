@@ -425,7 +425,7 @@ def save_mp3(folder_path, video_title, url):
         'postprocessors': [{
             'key': 'FFmpegExtractAudio', 
             'preferredcodec': 'mp3',
-            'preferredquality': '256',
+            'preferredquality': audio_bitrate.replace('k', ''),
         }, {
             'key': 'FFmpegMetadata',
         }],

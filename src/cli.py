@@ -12,6 +12,7 @@ import yt_dlp
 import os
 import re
 import subprocess
+import argparse
 
 
 # Global Configuration
@@ -159,13 +160,12 @@ def download_best_audio(url):
 
 
 
-
 def main_menu():
     """Main interactive CLI loop."""
     while True:
         print("\nMain Menu:")
         print("  [1] Download a new video")
-        print("  [2] Download best audio as MP3")
+        print("  [2] Download audio as MP3")
         print("  [q] Quit")
         
         choice = input("Choose an option: ").strip().lower()
@@ -182,5 +182,27 @@ def main_menu():
         else:
             print("Invalid option. Please try again.")
 
+
 if __name__ == "__main__":
-    main_menu()
+    # Argument Parsing
+    parser = argparse.ArgumentParser(description="YouTube Downloader")
+    parser.add_argument('url', nargs='?', help="URL of the YouTube video")
+    args = parser.parse_args()
+
+    if args.url:
+        # If URL is passed via command-line argument
+        print(f"Downloading video or audio from: {args.url}")
+        print("Choose option:")
+        print("[1] Download video")
+        print("[2] Download audio (MP3)")
+
+        choice = input("Choose an option: ").strip()
+        if choice == '1':
+            download_video(args.url)
+        elif choice == '2':
+            download_best_audio(args.url)
+        else:
+            print("Invalid option. Exiting...")
+    else:
+        # Interactive menu when no URL is passed
+        main_menu()
