@@ -2,10 +2,10 @@
 
 ![GitHub repo size](https://img.shields.io/github/repo-size/tonywied17/youtube-downloader?style=for-the-badge)
 ![GitHub language count](https://img.shields.io/github/languages/top/tonywied17/youtube-downloader?style=for-the-badge)
+![GitHub](https://img.shields.io/github/license/tonywied17/bin-scripts?style=for-the-badge)
 ![GitHub last commit](https://img.shields.io/github/last-commit/tonywied17/youtube-downloader?style=for-the-badge)
 <br />
 ![GitHub stars](https://img.shields.io/github/stars/tonywied17/youtube-downloader?style=social)
-![GitHub forks](https://img.shields.io/github/forks/tonywied17/youtube-downloader?style=social)
 ![GitHub watchers](https://img.shields.io/github/watchers/tonywied17/youtube-downloader?style=social)
 
 # YouTube Video Downloader and Converter
