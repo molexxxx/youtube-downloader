@@ -5,7 +5,6 @@
 ![GitHub last commit](https://img.shields.io/github/last-commit/tonywied17/youtube-downloader)
 ![GitHub language count](https://img.shields.io/github/languages/top/tonywied17/youtube-downloader)
 ![GitHub last commit](https://img.shields.io/github/last-commit/tonywied17/youtube-downloader)
-<!-- ![GitHub all releases](https://img.shields.io/github/downloads/tonywied17/youtube-downloader/total) -->
 <br />
 ![GitHub stars](https://img.shields.io/github/stars/tonywied17/youtube-downloader?style=social)
 ![GitHub forks](https://img.shields.io/github/forks/tonywied17/youtube-downloader?style=social)
