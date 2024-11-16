@@ -1,13 +1,12 @@
 ![YouTube Downloader Banner](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/reademe_logo.png)
 
-![GitHub license](https://img.shields.io/github/license/tonywied17/youtube-downloader)
-![GitHub repo size](https://img.shields.io/github/repo-size/tonywied17/youtube-downloader)
-![GitHub language count](https://img.shields.io/github/languages/top/tonywied17/youtube-downloader)
-![GitHub last commit](https://img.shields.io/github/last-commit/tonywied17/youtube-downloader)
+![GitHub repo size](https://img.shields.io/github/repo-size/tonywied17/youtube-downloader?style=flat-square)
+![GitHub language count](https://img.shields.io/github/languages/top/tonywied17/youtube-downloader?style=flat-square)
+![GitHub last commit](https://img.shields.io/github/last-commit/tonywied17/youtube-downloader?style=flat-square)
 <br />
-![GitHub stars](https://img.shields.io/github/stars/tonywied17/youtube-downloader?style=social)
-![GitHub forks](https://img.shields.io/github/forks/tonywied17/youtube-downloader?style=social)
-![GitHub watchers](https://img.shields.io/github/watchers/tonywied17/youtube-downloader?style=social)
+![GitHub stars](https://img.shields.io/github/stars/tonywied17/youtube-downloader?style=flat-square)
+![GitHub forks](https://img.shields.io/github/forks/tonywied17/youtube-downloader?style=flat-square)
+![GitHub watchers](https://img.shields.io/github/watchers/tonywied17/youtube-downloader?style=flat-square)
 
 # YouTube Video Downloader and Converter
 
