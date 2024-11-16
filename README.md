@@ -185,7 +185,6 @@ The `build_release.ps1` script performs the following tasks:
 ## Additional Notes
 
 - **Special Character Handling**: The application replaces any special characters in filenames to prevent issues during processing.
-- **FFmpeg Encoding**: The application checks for GPU encoders (`h264_nvenc` for NVIDIA or `h264_amf` for AMD). Ensure your GPU drivers are up to date if you wish to utilize GPU encoding.
 
 ## Troubleshooting
 
