@@ -1,8 +1,7 @@
 ![YouTube Downloader Banner](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/reademe_logo.png)
 
-![GitHub repo size](https://img.shields.io/github/repo-size/tonywied17/youtube-downloader)
 ![GitHub license](https://img.shields.io/github/license/tonywied17/youtube-downloader)
-![GitHub last commit](https://img.shields.io/github/last-commit/tonywied17/youtube-downloader)
+![GitHub repo size](https://img.shields.io/github/repo-size/tonywied17/youtube-downloader)
 ![GitHub language count](https://img.shields.io/github/languages/top/tonywied17/youtube-downloader)
 ![GitHub last commit](https://img.shields.io/github/last-commit/tonywied17/youtube-downloader)
 <br />
