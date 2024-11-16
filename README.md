@@ -1,4 +1,4 @@
-![YouTube Downloader Banner](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/reademe_logo.png)
+![YouTube Downloader Banner](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/reademe_logo.png)
 
 # YouTube Video Downloader and Converter
 
@@ -7,6 +7,8 @@ This application provides a graphical user interface (GUI) for downloading YouTu
 ## Download the GUI Executable
 
 You can download the latest release of the YouTube Video Downloader GUI from the following link:
+
+![Download Release](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/gui_overview.png)
 
 [Download YouTube Downloader](https://github.com/tonywied17/youtube-downloader/releases)
 
@@ -67,12 +69,17 @@ The application includes a settings panel that allows you to configure the follo
 - The application allows you to save audio from videos as MP3 files separately in both the GUI and CLI versions.
 - This will create an `mp3s/` folder within the downloaded channel's media folder (e.g., `output_folder/uploader_name/mp3s/`) and also apply metadata to the track.
 - The MP3 file will be named using the video title, ensuring that special characters are sanitized to prevent file system issues.
+- Metadata such as the title, artist, and album will be embedded in the MP3 file.
+- The application uses the `ffmpeg` library to convert the audio to AAC format for better compatibility.
+
+![Download Release](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/convert_aac_1.png)
 
 ### Settings Storage
 
 The settings are stored in a `settings.json` file within the same directory as the executable. The application will load these settings at startup, allowing you to customize the behavior of the downloader. For the CLI version you modify the settings of the `cli.py` by directly modifying the values of the Global Configuration Variables.
 
-## Installing Python and Additional Requirements (Interactive CLI Only)
+
+## Installing Requirements for the Interactive CLI
 
 If you wish to run the Interactive CLI version, you will need to install Python and the necessary dependencies.
 
@@ -110,21 +117,31 @@ If you wish to run the Interactive CLI version, you will need to install Python 
    pip install -r requirements.txt
    ```
 
-### Step 3: Run the Interactive CLI Script
+### Step 3: Running the Interactive CLI Script
 
-To launch the Interactive CLI version, run the following command in your terminal:
+To launch the Interactive CLI version, first navigate to the `src` directory:
+
+```powershell
+cd src/
+```
+
+Then, run the following command in your terminal:
 
 ```powershell
 python cli.py
 ```
+![Step 3 Example](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/step3_a.png)
+
 
 You can also supply the video URL as an argument to the script:
 
 ```powershell
 python cli.py "https://www.youtube.com/watch?v=VIDEO_ID"
 ```
+![Step 3 Example](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/step3_b.png)
 
-## Building a New Executable
+
+## Building a New Executable (Extra)
 
 If you need to rebuild the portable standalone version of the executable, ensure you have the necessary packages installed, and then use the following command in your terminal within the project directory:
 
