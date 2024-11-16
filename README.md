@@ -24,13 +24,13 @@ You can easily install FFmpeg using Scoop, a package manager for Windows.
 
 If you haven't already, install Scoop to manage packages on Windows. Open PowerShell and run:
 
-```powershell
+```bash
 iwr -useb get.scoop.sh | iex
 ```
 
 This installs Scoop in your user profile. You may need to allow script execution by running:
 
-```powershell
+```bash
 Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
@@ -38,13 +38,13 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 1. **Add the main bucket**:
 
-   ```powershell
+   ```bash
    scoop bucket add main
    ```
 
 2. **Install FFmpeg**:
 
-   ```powershell
+   ```bash
    scoop install main/ffmpeg
    ```
 
@@ -87,13 +87,13 @@ If you wish to run the Interactive CLI version, you will need to install Python 
 
 1. **Add the main bucket**:
 
-   ```powershell
+   ```bash
    scoop bucket add main
    ```
 
 2. **Install Python**:
 
-   ```powershell
+   ```bash
    scoop install python
    ```
 
@@ -101,19 +101,19 @@ If you wish to run the Interactive CLI version, you will need to install Python 
 
 1. **Clone the Repository**:
 
-   ```powershell
+   ```bash
    git clone https://github.com/tonywied17/youtube-downloader.git
    ```
 
 2. **Navigate to the Project Directory**:
 
-   ```powershell
+   ```bash
    cd youtube-downloader
    ```
 
 3. **Install Python Requirements**:
 
-   ```powershell
+   ```bash
    pip install -r requirements.txt
    ```
 
@@ -121,13 +121,13 @@ If you wish to run the Interactive CLI version, you will need to install Python 
 
 To launch the Interactive CLI version, first navigate to the `src` directory:
 
-```powershell
+```bash
 cd src/
 ```
 
 Then, run the following command in your terminal:
 
-```powershell
+```bash
 python cli.py
 ```
 ![Step 3 Example](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/step3_a.png)
@@ -135,7 +135,7 @@ python cli.py
 
 You can also supply the video URL as an argument to the script:
 
-```powershell
+```bash
 python cli.py "https://www.youtube.com/watch?v=VIDEO_ID"
 ```
 ![Step 3 Example](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/step3_b.png)
@@ -145,7 +145,7 @@ python cli.py "https://www.youtube.com/watch?v=VIDEO_ID"
 
 If you need to rebuild the portable standalone version of the executable, ensure you have the necessary packages installed, and then use the following command in your terminal within the project directory:
 
-```powershell
+```bash
 pyinstaller "YouTube Downloader.spec"
 ```
 
@@ -166,7 +166,7 @@ To create a new release that includes both a portable executable (standalone) an
 1. Open PowerShell in the root project directory.
 2. Execute the `build_release.ps1` script to automate the following steps:
 
-```powershell
+```bash
 .\build_release.ps1
 ```
 
