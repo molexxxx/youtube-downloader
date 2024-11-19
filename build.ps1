@@ -1,4 +1,5 @@
 #* Define paths for directories, files, and build options
+
 $distFolder = "dist"
 $buildFolder = "build"
 $oneDirFolder = "$distFolder\YouTube Downloader"
@@ -13,13 +14,17 @@ $uiScript = "src\ui.py"
 $iconPath = "src\icons\yt-multi-size.ico"
 $iconsData = "src\icons;icons"
 
+
 #! Remove existing "dist" and "build" folders for a clean build
+
 if (Test-Path $distFolder) {
     Remove-Item -Recurse -Force $distFolder
 }
 if (Test-Path $buildFolder) {
     Remove-Item -Recurse -Force $buildFolder
 }
+
+
 
 #@ Step 1: Build the one-directory app
 pyinstaller `
