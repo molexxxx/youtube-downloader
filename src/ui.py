@@ -311,21 +311,26 @@ def check_ffmpeg_installed():
 # * --- Video and Audio Validation
 
 def is_valid_youtube_url(url):
-    """Check if the URL is a valid YouTube video URL in either standard or shortened format, excluding playlists."""
-    
+    """Check if the URL is a valid YouTube video or Shorts URL, excluding playlists."""
     if 'list=' in url:
         show_playlist_window()
         return False
-    youtube_video_pattern = r"^(https://)?(www\.)?(youtube\.com/watch\?v=|youtu\.be/)([a-zA-Z0-9_-]{11})(?:[?&]|$)"
-    match = re.match(youtube_video_pattern, url)
+    
+    youtube_video_patterns = [
+        r"^(https://)?(www\.)?(youtube\.com/watch\?v=|youtu\.be/)([a-zA-Z0-9_-]{11})(?:[?&]|$)",
+        r"^(https://)?(www\.)?(youtube\.com/shorts/)([a-zA-Z0-9_-]{11})(?:[?&]|$)"
+    ]
+    
+    match = any(re.match(pattern, url) for pattern in youtube_video_patterns)
     
     if not match:
         show_warning_message(
-            "Invalid URL", 
-            "The provided YouTube URL is not in a valid format.",
+            "Invalid URL",
+            "The provided URL is not a valid YouTube or Shorts link.",
             retry_callback=retry_url_entry
         )
         return False
+
     try:
         with yt_dlp.YoutubeDL({'quiet': True, 'skip_download': True}) as ydl:
             ydl.extract_info(url, download=False)
@@ -334,10 +339,11 @@ def is_valid_youtube_url(url):
     except yt_dlp.utils.DownloadError:
         show_warning_message(
             "Invalid Video",
-            "The provided YouTube video could not be accessed. Please check the URL.",
+            "The provided video could not be accessed. Please check the URL.",
             retry_callback=retry_url_entry
         )
         return False
+
 
 def retry_url_entry():
     """Callback to reset the UI when retrying an invalid URL."""
