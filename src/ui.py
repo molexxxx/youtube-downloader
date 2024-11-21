@@ -313,7 +313,7 @@ def check_ffmpeg_installed():
 def is_valid_youtube_url(url):
     """Check if the URL is a valid YouTube video or Shorts URL, excluding playlists."""
     if 'list=' in url:
-        show_playlist_window()
+        show_playlist_window(url)
         return False
     
     youtube_video_patterns = [
@@ -975,7 +975,7 @@ final_options_panel.pack_forget()
 #@ TODO: Allowing queuing and downloading of playlist videos --
 playlist_window = None
 
-def show_playlist_window():
+def show_playlist_window(url):
     """Show a message indicating that playlists are not yet supported."""
     global playlist_window
     if playlist_window is not None:
@@ -999,7 +999,7 @@ def show_playlist_window():
 
     ctk.CTkLabel(
         playlist_window, 
-        text="Playlist downloads are not implemented yet.", 
+        text=f"Playlist downloads are not implemented yet. {url}", 
         font=('Arial', 12),
         text_color="white"
     ).pack(pady=20)
