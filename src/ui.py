@@ -1,9 +1,9 @@
 # File: c:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\src\ui.py
 # Project: c:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\src
-# Created Date: Tuesday November 5th 2024
+# Created Date: Saturday November 16th 2024
 # Author: Tony Wiedman
 # -----
-# Last Modified: Thu November 14th 2024 9:25:19 
+# Last Modified: Mon November 25th 2024 8:43:33 
 # Modified By: Tony Wiedman
 # -----
 # Copyright (c) 2024 MolexWorks / Tone Web Design
@@ -12,7 +12,7 @@
 #@ ------------------------------ Global Imports and Dependencies -------------------------------
 
 
-import os, sys, re, json, time, threading, subprocess, webbrowser
+import os, sys, re, json, time, threading, subprocess, webbrowser, platform
 import yt_dlp
 import yt_dlp.utils
 import customtkinter as ctk
@@ -26,7 +26,7 @@ try:
 except ImportError as e:
     print(f"Import error: {e}")
 from CTkMessagebox import CTkMessagebox
-
+import ffmpeg
 
 
 
@@ -35,10 +35,32 @@ from CTkMessagebox import CTkMessagebox
 
 # * --- File and Path Management
 
+def get_ffmpeg_binary():
+    """Determine the correct FFmpeg binary based on the operating system."""
+    try:
+        base_path = sys._MEIPASS
+    except AttributeError:
+        base_path = os.path.dirname(os.path.abspath(__file__))
+
+    if platform.system() == 'Windows':
+        ffmpeg_binary = os.path.join(base_path, 'ffmpeg', 'ffmpeg.exe')
+    elif platform.system() == 'Linux':
+        ffmpeg_binary = os.path.join(base_path, 'ffmpeg', 'ffmpeg')
+    else:
+        raise OSError("Unsupported operating system. Only Windows and Linux are supported.")
+
+    if not os.path.exists(ffmpeg_binary):
+        raise FileNotFoundError(f"FFmpeg binary not found at {ffmpeg_binary}. Please include the correct binary.")
+    
+    return ffmpeg_binary
+
+ffmpeg_path = get_ffmpeg_binary()
+os.environ['FFMPEG_BINARY'] = ffmpeg_path
+
 def resource_path(relative_path):
     """Access bundled files for PyInstaller."""
     try:
-        base_path = sys._MEIPASS  # temporary files
+        base_path = sys._MEIPASS 
     except AttributeError:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
@@ -46,12 +68,6 @@ def resource_path(relative_path):
 def sanitize_filename(filename):
     """Replace special characters in filenames with underscores."""
     return re.sub(r'[^a-zA-Z0-9_\-\.]', '_', filename)
-
-
-# * --- Global Variables
-audio_bitrate = '256k'
-ffmpeg_path = 'ffmpeg'
-output_folder = os.path.join(os.getcwd(), 'downloads')
 
 
 # * --- CTkinter Settings and Initialization
@@ -78,8 +94,12 @@ estimated_time_remaining = StringVar(value="")
 settings_window = None
 
 def load_settings():
-    global audio_bitrate, ffmpeg_path, output_folder
+    """Load user settings from a JSON file or use defaults."""
+    global audio_bitrate, output_folder
+    audio_bitrate = '256k'
+    output_folder = os.path.join(os.getcwd(), 'downloads')
     settings_path = 'settings.json'
+    
     if os.path.exists(settings_path):
         try:
             with open(settings_path, 'r') as f:
@@ -89,16 +109,10 @@ def load_settings():
                 output_folder = settings.get('output_folder', None)
                 if output_folder:
                     output_folder = os.path.expandvars(output_folder)
-
                 audio_bitrate = settings.get('audio_bitrate', '256k')
-                ffmpeg_path = settings.get('ffmpeg_path', 'ffmpeg')
         except (FileNotFoundError, json.JSONDecodeError, ValueError) as e:
             print(f"Error loading settings: {e}")
     else:
-        # Set default values
-        output_folder = os.path.join(os.getcwd(), 'downloads')
-        audio_bitrate = '256k'
-        ffmpeg_path = 'ffmpeg'
         os.makedirs(output_folder, exist_ok=True)
 
 
@@ -110,13 +124,12 @@ def open_settings():
 
     settings_window = ctk.CTkToplevel(app)
     settings_window.title("Settings")
-    settings_window.geometry("400x400")
+    settings_window.geometry("400x300")
     settings_window.resizable(False, False)
     settings_window.wm_iconbitmap()
     settings_window.after(222, lambda: settings_window.iconphoto(False, ImageTk.PhotoImage(icon_image)))
     settings_window.attributes("-topmost", True)
     settings_window.after(100, lambda: settings_window.attributes("-topmost", False))
-    
 
     def on_close():
         global settings_window
@@ -127,122 +140,75 @@ def open_settings():
     settings_container = ctk.CTkFrame(settings_window, fg_color="#2E2E2E", bg_color="#2E2E2E")
     settings_container.pack(padx=10, pady=10, ipady=10, fill="both", expand=True)
 
-    #? FFmpeg Path, and Testing
-    ctk.CTkLabel(
-        settings_container, 
-        text="FFmpeg Path", 
-        text_color="#C2C2C2", 
-        font=('Roboto', 14),
-        anchor="w" 
-    ).pack(pady=0, padx=10, fill='x') 
-
-    # Frame for Entry and Buttons
-    ffmpeg_row = ctk.CTkFrame(settings_container, fg_color="transparent") 
-    ffmpeg_row.pack(pady=5, padx=10, fill="x") 
-
-    # Entry Box
-    ffmpeg_entry = ctk.CTkEntry(
-        ffmpeg_row, 
-        width=50, 
-        fg_color="#3D3D3D", 
-        border_width=1, 
-        border_color="#404040", 
-        height=35, 
-        font=('Roboto', 13)
-    )
-    ffmpeg_entry.pack(side="left", fill="x", expand=True, padx=(0, 5)) 
-    ffmpeg_entry.insert(0, ffmpeg_path)
-
-    # Browse Button
-    browse_ffmpeg_button = create_button(
-        ffmpeg_row, 
-        "Browse..", 
-        resource_path("icons/browse.png"), 
-        lambda: select_ffmpeg(ffmpeg_entry),
-        icon_position="right"
-    )
-    browse_ffmpeg_button.pack(side="left", padx=(0, 5)) 
-
-    def check_ffmpeg():
-        if check_ffmpeg_installed():
-            ffmpeg_status_label.configure(text="FFmpeg is installed and reachable.", text_color="green")
-        else:
-            ffmpeg_status_label.configure(text="FFmpeg is NOT installed or not reachable.", text_color="red")
-            show_info_message("FFmpeg Not Found", "FFmpeg is not installed or not reachable. You can download it from the official website: https://ffmpeg.org/download.html")
-            webbrowser.open("https://ffmpeg.org/download.html")
-            
-    # Check FFmpeg Button
-    check_button = create_button(
-        ffmpeg_row, 
-        "", 
-        resource_path("icons/test.png"), 
-        check_ffmpeg,
-        icon_position="left"
-    )
-    check_button.pack(side="left")
-
-    ffmpeg_status_label = ctk.CTkLabel(settings_container, text="", text_color="#FFFFFF")
-    ffmpeg_status_label.pack(pady=5, padx=10) 
-
     #? Output Folder
     ctk.CTkLabel(
-        settings_container, 
-        text="Output Folder", 
-        text_color="#C2C2C2", 
+        settings_container,
+        text="Output Folder",
+        text_color="#C2C2C2",
         font=('Roboto', 14),
-        anchor="w" 
-    ).pack(pady=0, padx=10, fill='x') 
-    output_folder_row = ctk.CTkFrame(settings_container, fg_color="transparent") 
-    output_folder_row.pack(pady=5, padx=10, fill="x") 
+        anchor="w"
+    ).pack(pady=0, padx=10, fill='x')
+    
+    output_folder_row = ctk.CTkFrame(settings_container, fg_color="transparent")
+    output_folder_row.pack(pady=5, padx=10, fill="x")
+    
     output_folder_entry = ctk.CTkEntry(
-        output_folder_row, 
-        width=50, 
-        fg_color="#3D3D3D", 
-        border_width=1, 
-        border_color="#404040", 
-        height=35, 
+        output_folder_row,
+        width=50,
+        fg_color="#3D3D3D",
+        border_width=1,
+        border_color="#404040",
+        height=35,
         font=('Roboto', 13)
     )
-    output_folder_entry.pack(side="left", fill="x", expand=True, padx=(0, 5)) 
+    output_folder_entry.pack(side="left", fill="x", expand=True, padx=(0, 5))
     output_folder_entry.insert(0, output_folder)
+
     browse_output_button = create_button(
-        output_folder_row, 
-        "Browse..", 
-        resource_path("icons/browse.png"), 
+        output_folder_row,
+        "Browse..",
+        resource_path("icons/browse.png"),
         lambda: select_output_folder(output_folder_entry),
         icon_position="right"
     )
-    browse_output_button.pack(side="left") 
-    
+    browse_output_button.pack(side="left")
+
     output_status_label = ctk.CTkLabel(settings_container, text="", text_color="#FFFFFF")
-    output_status_label.pack(pady=5, padx=10) 
+    output_status_label.pack(pady=5, padx=10)
 
     #? Audio Bitrate
     ctk.CTkLabel(
-        settings_container, 
-        text="Audio Bitrate", 
-        text_color="#C2C2C2", 
+        settings_container,
+        text="Audio Bitrate",
+        text_color="#C2C2C2",
         font=('Roboto', 14),
-        anchor="w" 
-    ).pack(pady=0, padx=10, fill='x') 
-    audio_bitrate_combobox = ctk.CTkComboBox(settings_container, values=["128k", "256k", "256k"], 
-                                             width=150, fg_color="#3D3D3D", border_width=1, border_color="#404040", height=35, font=('Roboto', 13))
+        anchor="w"
+    ).pack(pady=0, padx=10, fill='x')
+    
+    audio_bitrate_combobox = ctk.CTkComboBox(
+        settings_container,
+        values=["128k", "192k", "256k", "320k"],
+        width=150,
+        fg_color="#3D3D3D",
+        border_width=1,
+        border_color="#404040",
+        height=35,
+        font=('Roboto', 13)
+    )
     audio_bitrate_combobox.pack(pady=5, padx=10, fill='x')
     audio_bitrate_combobox.set(audio_bitrate)
-    
+
     audio_status_label = ctk.CTkLabel(settings_container, text="", text_color="#FFFFFF")
-    audio_status_label.pack(pady=0, padx=10) 
+    audio_status_label.pack(pady=0, padx=10)
 
     #? Save Settings
     def save_settings():
-        global audio_bitrate, ffmpeg_path, output_folder
+        global audio_bitrate, output_folder
         audio_bitrate = audio_bitrate_combobox.get()
-        ffmpeg_path = ffmpeg_entry.get()
         output_folder = output_folder_entry.get()
 
         settings = {
             'audio_bitrate': audio_bitrate,
-            'ffmpeg_path': ffmpeg_path,
             'output_folder': output_folder
         }
 
@@ -252,60 +218,18 @@ def open_settings():
         show_info_message("Settings Saved", "Your settings have been saved.")
 
     save_button = create_button(
-        settings_container, 
-        "Save Settings", 
-        resource_path("icons/save.png"), 
+        settings_container,
+        "Save Settings",
+        resource_path("icons/save.png"),
         save_settings,
         icon_position="left",
         button_height=40
     )
-    save_button.pack(pady=10, padx=10, fill="x") 
-
+    save_button.pack(pady=10, padx=10, fill="x")
 
 
 
 #@ ------------------------------- Utility Functions -------------------------------
-
-
-# * --- FFmpeg Support and Path Checking
-
-def supports_encoder(encoder_name):
-    """Check if a specific encoder is supported by FFmpeg."""
-    try:
-        result = subprocess.run([ffmpeg_path, '-encoders'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        return encoder_name in result.stdout
-    except Exception:
-        return False
-
-def get_ffmpeg_path():
-    """Retrieve the path to the FFmpeg executable if installed.""" 
-    try:
-        result = subprocess.run(["where", "ffmpeg"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        if result.returncode == 0:
-            ffmpeg_paths = result.stdout.strip().split("\n")
-            return ffmpeg_paths[0]  
-    except Exception as e:
-        print(f"Error finding FFmpeg: {e}")
-    return None 
-
-def get_best_encoder():
-    """Determine the best available encoder based on platform and GPU compatibility."""
-    if sys.platform.startswith('linux'):
-        return 'libx264'
-    elif supports_encoder('h264_nvenc'):
-        return 'h264_nvenc'
-    elif supports_encoder('h264_amf'):
-        return 'h264_amf'
-    else:
-        return 'libx264'
-
-def check_ffmpeg_installed():
-    """Check if FFmpeg is installed and reachable."""
-    try:
-        result = subprocess.run([ffmpeg_path, '-version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        return "ffmpeg" in result.stdout.lower()
-    except Exception:
-        return False
 
 
 # * --- Video and Audio Validation
@@ -408,18 +332,17 @@ def download_and_convert(url, quality_index):
         info = ydl.extract_info(url, download=False)
         video_title = sanitize_filename(info.get('title', 'downloaded_video').replace(" ", "_"))
         uploader_name = sanitize_filename(info.get('uploader', 'Unknown_Uploader').replace(" ", "_"))
-        duration = info.get('duration', 0)
 
     full_output_folder = os.path.join(output_folder, uploader_name)
     os.makedirs(full_output_folder, exist_ok=True)
-    
+
+    temp_file = os.path.join(full_output_folder, f"{video_title}_temp.webm")
     final_output = os.path.join(full_output_folder, f"{video_title}_{selected_quality['resolution']}.mp4")
 
-    def start_download_after_confirmation():
+    def start_download_and_process():
         ydl_opts = {
             'format': f"{selected_quality['format_id']}+bestaudio/best",
-            'outtmpl': final_output,
-            'merge_output_format': 'mp4',
+            'outtmpl': temp_file,
             'progress_hooks': [progress_hook],
             'postprocessors': [{'key': 'FFmpegMetadata'}],
             'logger': YTDLLogger()
@@ -429,31 +352,70 @@ def download_and_convert(url, quality_index):
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
 
-        if save_mp3_var.get(): 
-            progress_label.set("Downloading MP3...") 
-            save_mp3(full_output_folder, video_title, url) 
+        if save_mp3_var.get():
+            progress_label.set("Saving MP3...")
+            save_mp3(full_output_folder, video_title, url)
 
-        prompt_audio_conversion(final_output, full_output_folder, video_title, selected_quality['resolution'], duration)
+        # Convert video to MP4 with AAC audio
+        progress_label.set("Converting video...")
+        convert_to_mp4_with_aac(temp_file, final_output)
 
+        finalize_download(full_output_folder)
+
+    # Remove existing webm file if it exists
     if os.path.exists(final_output):
-        def confirm_overwrite():
-            os.remove(final_output)
-            start_download_after_confirmation()
+        os.remove(final_output)
 
-        def cancel_overwrite():
-            if not check_audio_codec(final_output):
-                prompt_audio_conversion(final_output, full_output_folder, video_title, selected_quality['resolution'], duration)
-            else:
-                finalize_download(full_output_folder)
+    start_download_and_process()
 
-        show_yes_no(
-            title="File Exists",
-            message=f"The file '{final_output}' already exists. Do you want to overwrite it?",
-            confirm_callback=confirm_overwrite,
-            cancel_callback=cancel_overwrite
-        )
-    else:
-        start_download_after_confirmation()
+
+
+def convert_to_mp4_with_aac(input_file, output_file):
+    """Convert a video to MP4 format with AAC audio using python-ffmpeg."""
+    try:
+        # Probe the input file to check the current audio codec
+        probe = ffmpeg.probe(input_file)
+        audio_stream = next((stream for stream in probe['streams'] if stream['codec_type'] == 'audio'), None)
+        
+        if not audio_stream:
+            raise ValueError("No audio stream found in the input file.")
+
+        codec = audio_stream.get('codec_name', '')
+        print(f"Detected audio codec: {codec}")
+
+        if codec != 'aac':
+            print("Audio codec is not AAC. Starting conversion...")
+            (
+                ffmpeg
+                .input(input_file)
+                .output(output_file, vcodec='copy', acodec='aac', strict='experimental')
+                .run(overwrite_output=True)
+            )
+        else:
+            print("Audio is already AAC. Copying video without re-encoding...")
+            (
+                ffmpeg
+                .input(input_file)
+                .output(output_file, vcodec='copy', acodec='copy')
+                .run(overwrite_output=True)
+            )
+
+        print(f"Conversion to MP4 with AAC complete: {output_file}")
+
+
+        if os.path.exists(input_file):
+            os.remove(input_file)
+            print(f"Temporary file '{input_file}' removed.")
+
+    except ffmpeg.Error as e:
+        error_message = e.stderr.decode() if hasattr(e, 'stderr') else str(e)
+        print(f"ffmpeg error: {error_message}")
+        show_warning_message("Conversion Error", "An error occurred during video conversion.")
+    except Exception as e:
+        print(f"Error: {e}")
+        show_warning_message("Error", str(e))
+
+
 
 
 # * --- Audio Extraction and Conversion
@@ -464,156 +426,84 @@ def save_mp3(folder_path, video_title, url):
     os.makedirs(mp3_folder, exist_ok=True)
 
     sanitized_title = sanitize_filename(video_title)
-    mp3_output = os.path.join(mp3_folder, sanitized_title)
+    mp3_output = os.path.join(mp3_folder, f"{sanitized_title}.mp3")
+    temp_audio_file = os.path.join(mp3_folder, f"{sanitized_title}.webm")
 
     if os.path.exists(mp3_output):
-        def cancel_overwrite():
-            return
-
-        show_yes_no(
-            title="File Exists",
-            message=f"The MP3 file '{mp3_output}' already exists. Do you want to overwrite it?",
-            confirm_callback=lambda: os.remove(mp3_output),
-            cancel_callback=cancel_overwrite
-        )
-
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'outtmpl': mp3_output, 
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio', 
-            'preferredcodec': 'mp3',
-            'preferredquality': audio_bitrate.replace('k', ''),
-        }, {
-            'key': 'FFmpegMetadata',
-        }],
-        'logger': YTDLLogger()  
-    }
-
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([url])
-
-def prompt_audio_conversion(filepath, folder_path, video_title, resolution, duration):
-    """Prompt the user to convert audio to AAC if needed and proceed with conversion or finalize."""
-    if not check_audio_codec(filepath):
-        def confirm_conversion():
-            threading.Thread(target=convert_audio_to_aac, args=(filepath, folder_path, video_title, resolution, duration)).start()
-
-        def cancel_conversion():
-            finalize_download(folder_path)
-
-        show_yes_no(
-            title="Convert Audio to AAC",
-            message="The audio codec is not AAC. Do you want to convert it to AAC for better compatibility?",
-            confirm_callback=confirm_conversion,
-            cancel_callback=cancel_conversion
-        )
-    else:
-        finalize_download(folder_path)
-  
-def convert_audio_to_aac(filepath, folder_path, video_title, resolution, duration):
-    """Convert only the audio to AAC while preserving the original video quality by specifying codecs explicitly."""
-    aac_output = os.path.join(folder_path, f"{video_title}_{resolution}_AAC.mp4")
-
-    if os.path.exists(aac_output):
-        def cancel_overwrite():
-            finalize_download(folder_path)
-
-        def confirm_overwrite():
-            os.remove(aac_output)
-
-        show_yes_no(
-            title="File Exists",
-            message=f"The AAC file '{aac_output}' already exists. Do you want to overwrite it?",
-            confirm_callback=confirm_overwrite,
-            cancel_callback=cancel_overwrite
-        )
-
-    conversion_command = [
-        ffmpeg_path, '-y', '-i', filepath,
-        '-c:v', 'copy',  # Keep the original video quality without re-encoding
-        '-c:a', 'aac', '-b:a', audio_bitrate,  # Convert only audio to AAC
-        aac_output
-    ]
-
-    progress.set(0.0)
-    estimated_time_remaining.set("")
+        print(f"MP3 file '{mp3_output}' already exists. Skipping download.")
+        return
 
     try:
-        creation_flags = subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0
-        process = subprocess.Popen(
-            conversion_command,
-            stderr=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            text=True,
-            creationflags=creation_flags
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'outtmpl': temp_audio_file,
+            'postprocessors': [{'key': 'FFmpegMetadata'}],
+            'logger': YTDLLogger()
+        }
+
+        print(f"Downloading audio to temporary file: {temp_audio_file}")
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
+
+        print(f"Converting '{temp_audio_file}' to MP3...")
+        (
+            ffmpeg
+            .input(temp_audio_file)
+            .output(mp3_output, format='mp3', audio_bitrate=audio_bitrate)
+            .run(overwrite_output=True)
         )
+        print(f"MP3 saved: {mp3_output}")
 
-        for line in process.stderr:
-            time_match = re.search(r'time=(\d+:\d+:\d+\.\d+)', line)
-            if time_match:
-                current_time = time_match.group(1)
-                h, m, s = map(float, current_time.split(':'))
-                elapsed_time = h * 3600 + m * 60 + s
-                conversion_progress = min(elapsed_time / duration, 1.0)
-                progress.set(conversion_progress)
+    except ffmpeg.Error as e:
+        error_message = e.stderr.decode() if hasattr(e, 'stderr') else str(e)
+        print(f"ffmpeg error: {error_message}")
+        show_warning_message("Conversion Error", "An error occurred during MP3 conversion.")
 
-                remaining_time = (duration - elapsed_time) / (conversion_progress + 1e-5)
-                mins, secs = divmod(int(remaining_time), 60)
+    finally:
+        if os.path.exists(temp_audio_file):
+            os.remove(temp_audio_file)
+            print(f"Temporary file '{temp_audio_file}' removed.")
 
-                settings_message = (f"Using codec: copy (video), AAC (audio) | "
-                                    f"Audio Bitrate: {audio_bitrate} | "
-                                    f"Estimated time left: {mins}m {secs}s")
-                estimated_time_remaining.set(settings_message)
-
-        stdout, stderr = process.communicate()
-        if process.returncode == 0:
-            os.remove(filepath) 
-            finalize_download(folder_path)
-        else:
-            show_error_message("Conversion Error", f"An error occurred during audio conversion:\n{stderr if stderr else stdout}")
-    except Exception as e:
-        show_error_message("Execution Error", f"Error during conversion: {e}")
-        finalize_download(folder_path)
 
 
 # * --- Finalization and Progress
 
 def finalize_download(folder_path):
     """Finalize the download process and update the UI."""
+    if not os.path.exists(folder_path):
+        print(f"Error: Folder '{folder_path}' does not exist.")
+        return
+
     progress_and_status_panel.pack_forget()
     final_options_panel.pack(pady=10)
     view_button.configure(command=lambda: open_in_explorer(folder_path))
 
+    print(f"Download finalized. Files are available at: {folder_path}")
+
+
 def progress_hook(d):
-    """Handle download progress and update GUI.""" 
+    """Handle download progress and update GUI."""
     if d['status'] == 'downloading':
         downloaded = d.get('downloaded_bytes', 0)
-        total = d.get('total_bytes', 1)
-        speed = d.get('speed', 0) if d.get('speed') is not None else 0
-        eta = d.get('eta', 0) if d.get('eta') is not None else 0 
+        total = d.get('total_bytes', 0)  # Default to 0 if total is not available
+        speed = d.get('speed', 0) or 0  # Fallback to 0 if None
+        eta = d.get('eta', 0) or 0      # Fallback to 0 if None
 
-        progress.set(downloaded / total)
+        # Update progress bar
+        progress.set(downloaded / total if total > 0 else 0)
 
-        speed_str = f"{speed / 1024 / 1024:.2f} MiB/s" if speed > 0 else "0.00 MiB/s"
+        # Format speed and ETA
+        speed_str = f"{speed / 1024 / 1024:.2f} MiB/s" if speed > 0 else "Calculating..."
+        eta_str = time.strftime("%H:%M:%S", time.gmtime(eta)) if eta > 0 else "Calculating..."
 
-        # Calculate ETA
-        if speed > 0:
-            remaining_time = (total - downloaded) / speed
-            eta_str = time.strftime("%H:%M:%S", time.gmtime(remaining_time))
-        else:
-            eta_str = "0:00:00"
-
+        # Update status message
         status_message = f"{downloaded / 1024 / 1024:.2f} MiB at {speed_str} ETA: {eta_str}"
-
-        if len(status_message) > 69:
-            status_message = status_message[:47] + "..."
-
         progress_label.set(status_message)
-    
+
     elif d['status'] == 'finished':
         progress.set(1.0)
         progress_label.set("Download complete, processing...")
+
 
 
 
@@ -651,25 +541,6 @@ def open_in_explorer(folder_path):
             subprocess.Popen(['xdg-open', folder_path])
     except Exception as e:
         show_error_message("Error", f"Could not open the folder: {e}")
-
-def select_ffmpeg(entry_widget):
-    """Open a file dialog to select the FFmpeg executable, starting from the global path if available.""" 
-    ffmpeg_install_path = get_ffmpeg_path()  
-
-    if ffmpeg_install_path:
-        default_ffmpeg_path = os.path.dirname(ffmpeg_install_path)
-    else:
-        default_ffmpeg_path = "" 
-
-    ffmpeg_file = filedialog.askopenfilename(
-        title="Select FFmpeg Executable", 
-        initialdir=default_ffmpeg_path, 
-        filetypes=[("Executable", "*.exe")]
-    )
-    
-    if ffmpeg_file:
-        entry_widget.delete(0, 'end') 
-        entry_widget.insert(0, ffmpeg_file)    
 
 def select_output_folder(entry_widget):
     """Open a file dialog to select the output folder, starting from the current output folder if set.""" 

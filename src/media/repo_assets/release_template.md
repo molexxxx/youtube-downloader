@@ -1,40 +1,30 @@
-YouTube Downloader GUI
 
-
-![YouTube Downloader Banner](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/reademe_logo.png)
-
+![YouTube Downloader Banner](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/reademe_logo.png)
+![GitHub Downloads (all assets, specific tag)](https://img.shields.io/github/downloads/tonywied17/youtube-downloader/RELEASE/total?style=for-the-badge)
 ## Features
 
-### Video Saving Feature
-The application allows you to save videos by choosing the desired quality, combining it with the highest available audio, and optionally converting the audio to AAC for maximum compatibility if it uses another codec such as Opus.
+### GUI Features
+- **Download YouTube videos**: Select and download videos at the best available quality.
+- **Automatic AAC Conversion**: Download videos with the best audio quality and original video quality merged into a highly compatible MP4 format.
+- **MP3 File Saving Option**: Save a separate MP3 copy of the video’s audio in a clean and accessible folder.
+- **Settings Panel**: Easily customize audio bitrate, output folder, and other settings.
+- **Standalone Executable**: Runs as a standalone application without needing external dependencies like FFmpeg (which is bundled).
 
-### MP3 Saving Feature
-
-The application allows you to save audio from videos as MP3 files separately. When you check the "Save MP3 Separately" option, the application will create an mp3s/ folder within the downloaded channel's media folder (e.g., output_folder/uploader_name/mp3s/). The MP3 file will be named using the video title, ensuring that special characters are sanitized to prevent file system issues.
-
-##
-
-The application includes a settings panel that allows you to configure the following options:
-- **FFmpeg Path**: Specify the path to your FFmpeg installation.
-- **Video Bitrate**: Choose the desired video bitrate from a predefined list.
-- **Audio Bitrate**: Choose the desired audio bitrate from a predefined list.
-- **Conversion Preset**: Select the encoding speed for FFmpeg (fast, medium, slow).
-- **Output Folder**: Set the folder where downloaded videos and MP3s will be saved. The default is a downloads/ directory relative to the script location, but you can customize it.
-
-## Requirements
-
-- **FFmpeg**: Required for both GUI and CLI versions.
-
-You can download FFmpeg from the [Official Website](https://ffmpeg.org/download.html) or with [Scoop](https://scoop.sh/#/apps?q=ffmpeg&id=33a9b876d8473b87c35e7f3f35c4595c1f08574c).
+### Interactive CLI Features
+- **Download a New Video**: Download a specific video from YouTube.
+- **Download Audio as MP3**: Extract and download only the audio of a video as an MP3 file.
+- **Download an Entire Playlist (Videos)**: Download all videos in a YouTube playlist.
+- **Download an Entire Playlist (Audio/MP3)**: Download all videos from a playlist as MP3 files.
+- **Quit Option**: Exit the interactive CLI menu.
 
 ## Installation Options
 
-The latest release includes three installation options for flexibility and ease of use:
+The latest release includes four installation options for flexibility and ease of use:
 
-- **Installer Version**: This option unpacks the application, allowing you to install it with shortcuts in the Start Menu and on the Desktop. It integrates with your system, making the application easily accessible from familiar locations.
+- **Installer Version**: This option unpacks the application, installs both the GUI and CLI versions, and creates optional shortcuts for easy access. It integrates with your system, making the application easily accessible from the Start Menu and Desktop.
 
-- **Standalone Executable `.zip`** (Windows): A single-file version that includes everything needed to run the application without installation. Ideal for portability, this version allows you to launch the application directly, making it easy to move and store across different directories or devices.
+- **Standalone GUI Executable `.zip`** (Windows): A single-file version of the GUI that includes everything needed to run the application without installation. Ideal for portability, this version allows you to launch the application directly, making it easy to move and store across different directories or devices.
+
+- **Standalone CLI Executable `.zip`** (Windows): A single-file version of the CLI that allows you to run the interactive command-line interface without installation. This option is great for users who prefer working directly from the command line and need a portable solution.
 
 - **Linux `.tar.gz` Archive** (Standalone): A compressed archive containing the Linux version of the application. Simply extract the contents of the `.tar.gz` file and run the executable within. This option is ideal for Linux users who prefer a standalone application that can be run directly after extraction.
-
-**Full Changelog**: https://github.com/tonywied17/youtube-downloader/commits/release

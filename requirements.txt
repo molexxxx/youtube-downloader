@@ -3,3 +3,4 @@ pyinstaller
 pillow
 customtkinter
 CTkMessagebox
+ffmpeg-python

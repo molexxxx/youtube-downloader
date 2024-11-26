@@ -1,3 +1,4 @@
+
 ![YouTube Downloader Banner](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/reademe_logo.png)
 
 ![GitHub](https://img.shields.io/github/license/tonywied17/bin-scripts?style=for-the-badge)
@@ -12,102 +13,46 @@
 
 # YouTube Video Downloader and Converter
 
-This application provides a graphical user interface (GUI) for downloading YouTube videos at specified qualities and offers optional audio conversion to AAC for better compatibility.
+This application provides both a **graphical user interface (GUI)** and an **interactive command-line interface (CLI)** for downloading YouTube videos. The features include:
 
-## Download the GUI Executable
+- Download videos at specified quality.
+- Automatically merge the best available audio with video into a highly compatible MP4 file.
+- Optional audio conversion to AAC format for better compatibility.
+- Save audio separately as MP3 files with embedded metadata (e.g., title, artist, album).
+- Download an entire playlist of videos or audio (MP3).
+- Interactive CLI with a simple menu to manage downloads easily. 
 
-You can download the latest release of the YouTube Video Downloader GUI from the following link:
+Both the GUI and CLI versions offer flexible options, including the ability to specify output folders and audio bitrates.
 
-![Download Release](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/gui_overview.png)
+## Download the Latest Release
 
-[Download YouTube Downloader](https://github.com/tonywied17/youtube-downloader/releases)
+You can download the latest release of the YouTube Video Downloader GUI and CLI versions from the following link:
 
-## Requirements
+- [Download Standalone GUI Version](https://github.com/tonywied17/youtube-downloader/releases)
+- [Download Standalone CLI Version](https://github.com/tonywied17/youtube-downloader/releases)
+- [Download Windows Installer](https://github.com/tonywied17/youtube-downloader/releases)
 
-- **FFmpeg**: Required for both GUI and CLI versions.
+## Features
 
-## Installing FFmpeg and Running the GUI Application
+### GUI Features
+- **Download YouTube videos**: Select and download videos at the best available quality.
+- **Automatic AAC Conversion**: Download videos with the best audio quality and original video quality merged into a highly compatible MP4 format.
+- **MP3 File Saving Option**: Save a separate MP3 copy of the video’s audio in a clean and accessible folder.
+- **Settings Panel**: Easily customize audio bitrate, output folder, and other settings.
+- **Standalone Executable**: Runs as a standalone application without needing external dependencies like FFmpeg (which is bundled).
 
-You can easily install FFmpeg using Scoop, a package manager for Windows.
+### Interactive CLI Features
+- **Download a New Video**: Download a specific video from YouTube.
+- **Download Audio as MP3**: Extract and download only the audio of a video as an MP3 file.
+- **Download an Entire Playlist (Videos)**: Download all videos in a YouTube playlist.
+- **Download an Entire Playlist (Audio/MP3)**: Download all videos from a playlist as MP3 files.
+- **Quit Option**: Exit the interactive CLI menu.
 
-### Step 1: Install Scoop (Optional for Package Management)
+## Installation
 
-If you haven't already, install Scoop to manage packages on Windows. Open PowerShell and run:
+### Running the Source Code
 
-```bash
-iwr -useb get.scoop.sh | iex
-```
-
-This installs Scoop in your user profile. You may need to allow script execution by running:
-
-```bash
-Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
-
-### Step 2: Install FFmpeg
-
-1. **Add the main bucket**:
-
-   ```bash
-   scoop bucket add main
-   ```
-
-2. **Install FFmpeg**:
-
-   ```bash
-   scoop install main/ffmpeg
-   ```
-
-Alternatively, if you do not want to use Scoop, you can download and install FFmpeg from the official website:
-
-[FFmpeg Download Page](https://ffmpeg.org/download.html)
-
-### Step 3: Run the GUI Application
-
-You can run the application extracting the standalone `.zip` in the `dist` folder:
-
-
-### Settings Panel
-
-The application includes a settings panel that allows you to configure the following options:
-- **FFMPEG Location**: Set the path to the FFmpeg executable. The application will attempt to auto-detect the FFmpeg path, but you can manually set it here.
-- **Audio Bitrate**: Choose the desired audio bitrate from a predefined list.
-- **Output Folder**: Set the folder where downloaded videos and MP3s will be saved. The default is a `downloads/` directory relative to the script location, but you can customize it.
-
-### MP3 Saving Feature
-
-- The application allows you to save audio from videos as MP3 files separately in both the GUI and CLI versions.
-- This will create an `mp3s/` folder within the downloaded channel's media folder (e.g., `output_folder/uploader_name/mp3s/`) and also apply metadata to the track.
-- The MP3 file will be named using the video title, ensuring that special characters are sanitized to prevent file system issues.
-- Metadata such as the title, artist, and album will be embedded in the MP3 file.
-- The application uses the `ffmpeg` library to convert the audio to AAC format for better compatibility.
-
-![Download Release](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/convert_aac_1.png)
-
-### Settings Storage
-
-The settings are stored in a `settings.json` file within the same directory as the executable. The application will load these settings at startup, allowing you to customize the behavior of the downloader. For the CLI version you modify the settings of the `cli.py` by directly modifying the values of the Global Configuration Variables.
-
-
-## Installing Requirements for the Interactive CLI
-
-If you wish to run the Interactive CLI version, you will need to install Python and the necessary dependencies.
-
-### Step 1: Install Python
-
-1. **Add the main bucket**:
-
-   ```bash
-   scoop bucket add main
-   ```
-
-2. **Install Python**:
-
-   ```bash
-   scoop install python
-   ```
-
-### Step 2: Clone the Repository and Install Requirements
+If you prefer to run the application from the source code, follow the steps below.
 
 1. **Clone the Repository**:
 
@@ -121,87 +66,93 @@ If you wish to run the Interactive CLI version, you will need to install Python 
    cd youtube-downloader
    ```
 
-3. **Install Python Requirements**:
+3. **Install Python and Dependencies**:
+
+   Install the required Python libraries:
 
    ```bash
    pip install -r requirements.txt
    ```
 
-### Step 3: Running the Interactive CLI Script
+4. **Run the Interactive CLI Version**:
 
-To launch the Interactive CLI version, first navigate to the `src` directory:
+   Navigate to the `src` directory and run the CLI script:
 
-```bash
-cd src/
+   ```bash
+   cd src/
+   python cli.py
+   ```
+
+   You can also provide a video URL as an argument:
+
+   ```bash
+   python cli.py "https://www.youtube.com/watch?v=VIDEO_ID"
+   ```
+
+   For more detailed instructions, refer to the **Interactive CLI Features** section below.
+
+## Settings Panel
+
+The application includes a settings panel that allows you to configure the following options:
+- **Audio Bitrate**: Choose the desired audio bitrate from a predefined list.
+- **Output Folder**: Set the folder where downloaded videos and MP3s will be saved. The default is a `downloads/` directory relative to the script location, but you can customize it.
+- **MP3 Saving Option**: Enable the option to save a separate MP3 file from the video.
+
+Settings are stored in a `settings.json` file within the same directory as the executable.
+
+## Interactive CLI Features
+
+The CLI version offers an interactive menu for easy video and audio downloading. The menu options are as follows:
+
+```python
+print("
+Main Menu:")
+print("  [1] Download a new video")
+print("  [2] Download audio as MP3")
+print("  [3] Download an entire playlist (videos)")
+print("  [4] Download an entire playlist (audio/mp3)")
+print("  [q] Quit")
 ```
 
-Then, run the following command in your terminal:
+1. **[1] Download a new video**: Prompts the user to enter a YouTube video URL to download the video.
+2. **[2] Download audio as MP3**: Prompts the user for a video URL and extracts the audio as an MP3 file.
+3. **[3] Download an entire playlist (videos)**: Prompts the user to enter a playlist URL and downloads all videos.
+4. **[4] Download an entire playlist (audio/mp3)**: Prompts the user for a playlist URL and downloads all videos as MP3 files.
+5. **[q] Quit**: Exits the CLI tool.
 
-```bash
-python cli.py
-```
-![Step 3 Example](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/step3_a.png)
+## Building a New Release (Portable Executable and Installer)
 
+To create a new release that includes both a portable executable (standalone) and an installer version of the YouTube Video Downloader, you can use the `build_release.ps1` PowerShell script. This script automates the entire build process.
 
-You can also supply the video URL as an argument to the script:
-
-```bash
-python cli.py "https://www.youtube.com/watch?v=VIDEO_ID"
-```
-![Step 3 Example](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/step3_b.png)
-
-
-## Building a New Executable (Extra)
-
-If you need to rebuild the portable standalone version of the executable, ensure you have the necessary packages installed, and then use the following command in your terminal within the project directory:
-
-```bash
-pyinstaller "YouTube Downloader.spec"
-```
-
-This will create a new portable standalone executable in the `dist` folder.
-
-For a full new build, including the one-directory version and installer, refer to the **Build New Release (Portable Executable and Installer)** section below.
-
-### Build New Release (Portable Executable and Installer)
-
-To create a new release that includes both a portable executable (standalone) and an installer version of the YouTube Video Downloader, you can use the `build_release.ps1` script. This PowerShell script automates the entire process from the root project directory.
-
-#### Prerequisites
-- **Inno Setup**: Required for generating the installer. [Download Inno Setup](https://jrsoftware.org/isdl.php).
-  - Ensure `ISCC.exe` (the Inno Setup Compiler) is accessible at the specified path or update the script with the correct path to your installation.
-
-#### Steps to Run `build_release.ps1`
+### Steps to Run `build_release.ps1`
 
 1. Open PowerShell in the root project directory.
-2. Execute the `build_release.ps1` script to automate the following steps:
+2. Execute the `build_release.ps1` script:
 
-```bash
-.\build_release.ps1
-```
+   ```bash
+   ./build_release.ps1
+   ```
 
-#### Script Overview
-The `build_release.ps1` script performs the following tasks:
-
+The script performs the following tasks:
 1. **Clean Build**: Removes existing `dist` and `build` folders to ensure a fresh build.
-2. **One-directory Build**: Generates the one-directory executable with dependencies in the `dist\YouTube Downloader` folder.
+2. **One-Directory Build**: Generates the one-directory executable with dependencies in the `dist\YouTube Downloader` folder.
 3. **Internal Compression**: Compresses the `_internal` directory within the one-directory build for optimized distribution.
 4. **Generate `settings.json`**: Creates a default `settings.json` file in the one-directory build with preset configurations.
-5. **One-file Executable**: Builds the standalone executable, packaging it as a single file in `dist\YouTube Downloader.exe`.
+5. **One-File Executable**: Builds the standalone executable, packaging it as a single file in `dist\YouTube Downloader.exe`.
 6. **Portable Zip Creation**: Compresses the one-file executable for a portable release in `dist\YouTube_Downloader_Standalone.zip`.
-7. **Installer Creation**: If `ISCC.exe` is available, compiles the Inno Setup script to generate a Windows installer in the `installer_scripts` folder.
-
+7. **Installer Creation**: If **Inno Setup** is available, compiles the Inno Setup script to generate a Windows installer in the `installer_scripts` folder.
 
 ## Additional Notes
 
 - **Special Character Handling**: The application replaces any special characters in filenames to prevent issues during processing.
+- **FFmpeg Bundled**: FFmpeg is bundled with the application, so there is no need for separate installation or configuration.
+- **Metadata for MP3 Files**: The MP3 files created from videos will include embedded metadata like title, artist, and album.
 
 ## Troubleshooting
 
 If you encounter issues with the application:
-- Ensure `ffmpeg` is installed and accessible from the command line.
-- Update `yt-dlp` if needed using `pip install --upgrade yt-dlp` (only for the CLI version).
+- Ensure `yt-dlp` is installed and up-to-date by running `pip install --upgrade yt-dlp`.
+- Check that the downloaded FFmpeg binary is correctly bundled with the application.
 
 ### Author
 - [Tony Wiedman](https://github.com/tonywied17)
-.

@@ -4,7 +4,7 @@
 a = Analysis(
     ['src/ui.py'],
     pathex=[],
-    binaries=[],
+    binaries=[('ffmpeg/ffmpeg', 'ffmpeg/ffmpeg')],
     datas=[('src/icons', 'icons')],
     hiddenimports=['PIL._tkinter_finder'],
     hookspath=[],
@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='YouTube_Downloader_Linux',
+    name='YouTube Downloader GUI',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

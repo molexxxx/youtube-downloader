@@ -1,50 +1,63 @@
-#* Define paths for directories, files, and build options
-
+# Define paths for directories, files, and build options
 $distFolder = "dist"
 $buildFolder = "build"
 $oneDirFolder = "$distFolder\YouTube Downloader"
 $internalZipPath = "$oneDirFolder\_internal.zip"
 $settingsFilePath = "$oneDirFolder\settings.json"
 $oneFileExePath = "$distFolder\YouTube Downloader.exe"
-$oneFileZipPath = "$distFolder\YouTube_Downloader_Standalone.zip"
+$oneFileZipPath = "$distFolder\YouTube_Downloader_GUI.zip"
 $innoScriptPath = "installer_scripts\installer.iss"
 $isccPath = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 $installerExePath = "installer_scripts\win_Installer.exe"
 $uiScript = "src\ui.py"
 $iconPath = "src\icons\yt-multi-size.ico"
 $iconsData = "src\icons;icons"
+$ffmpegBinaryPath = "ffmpeg\ffmpeg.exe"
 
-
-#! Remove existing "dist" and "build" folders for a clean build
-
-if (Test-Path $distFolder) {
-    Remove-Item -Recurse -Force $distFolder
-}
-if (Test-Path $buildFolder) {
-    Remove-Item -Recurse -Force $buildFolder
+# Helper function to create directories if they do not exist
+function Create-DirectoryIfNeeded($path) {
+    if (-not (Test-Path $path)) {
+        New-Item -Path $path -ItemType Directory
+    }
 }
 
+# Helper function to remove directories if they exist
+function Remove-DirectoryIfExists($path) {
+    if (Test-Path $path) {
+        Remove-Item -Recurse -Force $path
+    }
+}
 
+# Clean previous build artifacts
+Remove-DirectoryIfExists $distFolder
+Remove-DirectoryIfExists $buildFolder
 
-#@ Step 1: Build the one-directory app
+# Create required directories
+Create-DirectoryIfNeeded $distFolder
+Create-DirectoryIfNeeded $oneDirFolder
+
+# Build the one-directory app with PyInstaller
+Write-Output "Building the one-directory app..."
 pyinstaller `
     --name "YouTube Downloader" `
     --onedir `
     --windowed `
     --icon=$iconPath `
     --add-data $iconsData `
+    --add-binary "$ffmpegBinaryPath;ffmpeg\ffmpeg.exe" `
     $uiScript
 
-#@ Step 2: Compress only the "_internal" directory within the one-directory app
-Compress-Archive -Path "$oneDirFolder\_internal" -DestinationPath $internalZipPath -Force
+# Compress internal directory if exists
+if (Test-Path "$oneDirFolder\_internal") {
+    Compress-Archive -Path "$oneDirFolder\_internal" -DestinationPath $internalZipPath -Force
+} else {
+    Write-Output "The '_internal' directory does not exist."
+}
 
-#@ Step 3: Generate settings.json within the one-directory folder
+# Create settings.json
 $settingsContent = @"
 {
-    "video_bitrate": "10M",
     "audio_bitrate": "256k",
-    "conversion_preset": "medium",
-    "ffmpeg_path": "ffmpeg",
     "output_folder": "%APPDATA%\\YouTube Downloader\\downloads"
 }
 "@
@@ -52,7 +65,8 @@ $settingsContent | Out-File -FilePath $settingsFilePath -Encoding UTF8 -NoNewlin
 
 Write-Output "One-directory build with _internal compression and settings.json creation completed successfully."
 
-#@ Step 4: Build the standalone one-file executable as the final output
+# Build the standalone one-file executable
+Write-Output "Building the standalone one-file executable..."
 pyinstaller `
     --name "YouTube Downloader" `
     --onefile `
@@ -61,17 +75,21 @@ pyinstaller `
     --add-data $iconsData `
     $uiScript
 
-#@ Step 5: Zip the standalone one-file executable for portable distribution
 Compress-Archive -Path $oneFileExePath -DestinationPath $oneFileZipPath -Force
-
 Write-Output "Standalone one-file build and compression completed successfully."
 
-#@ Step 6: Delete existing installer executable if it exists
+# Build the CLI version
+Write-Output "Building the YouTube Downloader CLI version..."
+pyinstaller YouTube_Downloader_CLI.spec
+
+Compress-Archive -Path "$distFolder\YouTube Downloader CLI.exe" -DestinationPath "$distFolder\YouTube_Downloader_CLI.zip" -Force
+Write-Output "YouTube Downloader CLI build and compression completed successfully."
+
+# Build the Inno Setup installer
 if (Test-Path $installerExePath) {
     Remove-Item $installerExePath -Force
 }
 
-#@ Step 7: Compile the Inno Setup installer script if ISCC.exe is available
 if (Test-Path $isccPath) {
     & $isccPath $innoScriptPath
     if ($LASTEXITCODE -eq 0) {
@@ -82,13 +100,3 @@ if (Test-Path $isccPath) {
 } else {
     Write-Output "ISCC.exe not found. Ensure Inno Setup is installed and ISCC.exe is in your PATH or update the script with the correct path."
 }
-
-
-# docker run --rm -v ${PWD}:/src python:3.8-slim /bin/bash -c "
-#     apt update && \
-#     apt install -y binutils && \
-#     pip install pyinstaller && \
-#     cd /src && \
-#     pyinstaller /src/YouTubeDownloaderLinux.spec && \
-#     tar -czvf dist/YouTube_Downloader_Linux.tar.gz -C dist/linux YouTube_Downloader_Linux
-# "

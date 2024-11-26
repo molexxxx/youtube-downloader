@@ -1,9 +1,9 @@
 # File: c:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\src\cli.py
 # Project: c:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\src
-# Created Date: Tuesday November 5th 2024
+# Created Date: Saturday November 16th 2024
 # Author: Tony Wiedman
 # -----
-# Last Modified: Thu November 14th 2024 9:25:02 
+# Last Modified: Mon November 25th 2024 8:43:17 
 # Modified By: Tony Wiedman
 # -----
 # Copyright (c) 2024 MolexWorks / Tone Web Design
@@ -13,14 +13,46 @@ import os
 import re
 import subprocess
 import argparse
+import ffmpeg
+import sys
+import gc
+import platform
 
 
-# Global Configuration
+
+
+# ----- Global Configuration ----- #
 CONFIG = {
     "audio_bitrate": "256k",
-    "ffmpeg_path": "ffmpeg",
     "output_folder": os.path.join(os.getcwd(), 'downloads')
 }
+# -------------------------------- #
+
+
+
+
+def get_ffmpeg_binary():
+    """Determine the correct FFmpeg binary based on the operating system."""
+    try:
+        base_path = sys._MEIPASS 
+    except AttributeError:
+        base_path = os.path.dirname(os.path.abspath(__file__))
+
+    if platform.system() == 'Windows':
+        ffmpeg_binary = os.path.join(base_path, 'ffmpeg', 'ffmpeg.exe')
+    elif platform.system() == 'Linux':
+        ffmpeg_binary = os.path.join(base_path, 'ffmpeg', 'ffmpeg')
+    else:
+        raise OSError("Unsupported operating system. Only Windows and Linux are supported.")
+
+    if not os.path.exists(ffmpeg_binary):
+        raise FileNotFoundError(f"FFmpeg binary not found at {ffmpeg_binary}. Please include the correct binary.")
+    
+    return ffmpeg_binary
+
+
+ffmpeg_path = get_ffmpeg_binary()
+os.environ['FFMPEG_BINARY'] = ffmpeg_path
 
 
 def sanitize_filename(filename):
@@ -90,39 +122,34 @@ def download_video(url):
 
     print(f"Download complete! Video saved as {final_output}")
 
-    # check if audio is in AAC format and convert if necessary
     convert_audio_to_aac(final_output)
 
 
 def convert_audio_to_aac(video_path):
     """Check if video audio is AAC and convert to AAC if it's not."""
+    probe = ffmpeg.probe(video_path)
+    audio_stream = next((stream for stream in probe['streams'] if stream['codec_type'] == 'audio'), None)
+
+    if not audio_stream:
+        print("No audio stream found in the video. Skipping conversion.")
+        return
+
+    codec = audio_stream.get('codec_name', '')
     
-    # probe command to check the current audio codec
-    probe_command = [
-        CONFIG['ffmpeg_path'], '-i', video_path, '-hide_banner', '-loglevel', 'error', 
-        '-select_streams', 'a:0', '-show_entries', 'stream=codec_name', '-of', 'default=noprint_wrappers=1:nokey=1'
-    ]
-    
-    codec = subprocess.run(probe_command, capture_output=True, text=True).stdout.strip()
-    
-    # If codec is not AAC, convert it to AAC
     if codec != "aac":
         print(f"Audio codec is '{codec}'. Converting to AAC...")
         aac_output = video_path.replace('.mp4', '_aac.mp4')
-        
-        convert_command = [
-            CONFIG['ffmpeg_path'], '-i', video_path, '-c:v', 'copy', '-c:a', 'aac',
-            '-b:a', CONFIG['audio_bitrate'], '-y', aac_output
-        ]
-        
-        # Run the conversion command
-        subprocess.run(convert_command, check=True)
+        (
+            ffmpeg
+            .input(video_path)
+            .output(aac_output, vcodec='copy', acodec='aac', audio_bitrate=CONFIG['audio_bitrate'])
+            .run(overwrite_output=True)
+        )
         
         os.replace(aac_output, video_path)
         print(f"Conversion to AAC complete. File saved as {video_path}")
     else:
         print("Audio is already in AAC format. No conversion needed.")
-
 
 
 def download_best_audio(url):
@@ -135,7 +162,7 @@ def download_best_audio(url):
     folder_path = os.path.join(CONFIG['output_folder'], uploader_name, 'mp3s')
     os.makedirs(folder_path, exist_ok=True)
 
-    mp3_output = os.path.join(folder_path, f"{audio_title}")
+    mp3_output = os.path.join(folder_path, f"{audio_title}.mp3")
 
     ydl_opts = {
         'format': 'bestaudio/best',
@@ -148,16 +175,66 @@ def download_best_audio(url):
             'key': 'FFmpegMetadata'
         }],
     }
-    
-    if CONFIG['ffmpeg_path'] != "ffmpeg":
-        ydl_opts['ffmpeg_location'] = CONFIG['ffmpeg_path']
 
-    # Download the audio and convert to MP3 with metadata
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
 
     print(f"Download complete! Audio saved as {mp3_output}")
 
+
+def is_playlist(url):
+    """Check if the URL corresponds to a playlist."""
+    with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+        info = ydl.extract_info(url, download=False)
+        return 'entries' in info 
+    
+    
+def download_playlist(playlist_url, download_audio=False):
+    """
+    Download all videos or audio from a playlist using yt-dlp with options in the command line.
+    
+    :param playlist_url: URL of the playlist to download
+    :param download_audio: If True, download audio-only files; otherwise, download videos
+    """
+    output_folder = CONFIG['output_folder']
+    
+    try:
+        with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+            playlist_info = ydl.extract_info(playlist_url, download=False)
+            playlist_creator = playlist_info.get('uploader', 'Unknown_Uploader')
+            playlist_title = playlist_info.get('title', 'Unknown Playlist')
+
+        if download_audio:
+            playlist_folder = os.path.join(output_folder, playlist_creator, playlist_title, 'mp3s')
+        else:
+            playlist_folder = os.path.join(output_folder, playlist_creator, playlist_title)
+
+        os.makedirs(playlist_folder, exist_ok=True)
+
+        ydl_opts = {
+            'quiet': False,
+            'outtmpl': os.path.join(playlist_folder, '%(title)s.%(ext)s'),
+            'format': 'bestaudio/best' if download_audio else 'best', 
+            'merge_output_format': 'mp4',
+            'extract_audio': download_audio,
+            'audio_format': 'mp3',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': CONFIG['audio_bitrate'].replace('k', ''),
+            }, {
+                'key': 'FFmpegMetadata'
+            }],
+        }
+
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            print(f"Downloading playlist from: {playlist_url}")
+            ydl.download([playlist_url])
+
+        print("Playlist download complete!")
+
+    except Exception as e:
+        print(f"Error occurred while downloading playlist: {e}")
 
 
 def main_menu():
@@ -166,43 +243,53 @@ def main_menu():
         print("\nMain Menu:")
         print("  [1] Download a new video")
         print("  [2] Download audio as MP3")
+        print("  [3] Download an entire playlist (videos)")
+        print("  [4] Download an entire playlist (audio/mp3)")
         print("  [q] Quit")
-        
+
         choice = input("Choose an option: ").strip().lower()
-        
+
         if choice == '1':
             url = input("Enter YouTube URL: ").strip()
-            download_video(url)
+            if is_playlist(url):
+                print("This is a playlist URL. Please choose playlist options.")
+            else:
+                download_video(url)
         elif choice == '2':
             url = input("Enter YouTube URL: ").strip()
-            download_best_audio(url)
+            if is_playlist(url):
+                print("This is a playlist URL. Please choose playlist options.")
+            else:
+                download_best_audio(url)
+        elif choice == '3':
+            url = input("Enter playlist URL: ").strip()
+            download_playlist(url, download_audio=False)
+        elif choice == '4':
+            url = input("Enter playlist URL: ").strip()
+            download_playlist(url, download_audio=True)
         elif choice == 'q':
             print("Exiting the program.")
-            break
+            sys.exit(0) 
         else:
             print("Invalid option. Please try again.")
 
 
 if __name__ == "__main__":
-    # Argument Parsing
     parser = argparse.ArgumentParser(description="YouTube Downloader")
-    parser.add_argument('url', nargs='?', help="URL of the YouTube video")
+    parser.add_argument('url', nargs='?', help="URL of the YouTube video or playlist")
+    parser.add_argument('--playlist', action='store_true', help="Download entire playlist")
+    parser.add_argument('--audio', action='store_true', help="Download audio only (MP3)")
     args = parser.parse_args()
 
     if args.url:
-        # If URL is passed via command-line argument
-        print(f"Downloading video or audio from: {args.url}")
-        print("Choose option:")
-        print("[1] Download video")
-        print("[2] Download audio (MP3)")
-
-        choice = input("Choose an option: ").strip()
-        if choice == '1':
-            download_video(args.url)
-        elif choice == '2':
+        if args.playlist:
+            print(f"Downloading playlist from: {args.url}")
+            download_playlist(args.url, download_audio=args.audio)
+        elif args.audio:
+            print(f"Downloading audio from: {args.url}")
             download_best_audio(args.url)
         else:
-            print("Invalid option. Exiting...")
+            print(f"Downloading video from: {args.url}")
+            download_video(args.url)
     else:
-        # Interactive menu when no URL is passed
         main_menu()
