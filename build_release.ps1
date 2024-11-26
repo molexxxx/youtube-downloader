@@ -1,4 +1,5 @@
-# Define paths for directories, files, and build options
+#@ ----- Global Configuration ----- @#
+#* Define paths for directories, files, and build options
 $distFolder = "dist"
 $buildFolder = "build"
 $oneDirFolder = "$distFolder\YouTube Downloader"
@@ -16,31 +17,38 @@ $cliScript = "src\cli.py"
 $iconPath = "src\icons\yt-multi-size.ico"
 $iconsData = "src\icons;icons"
 $ffmpegBinaryPath = "C:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\ffmpeg\ffmpeg.exe"
+#@ -------------------------------- @#
 
-# Helper function to create directories if they do not exist
+
+#@ ----- Helper Functions ----- @#
+#* Function to create directories if they do not exist
 function Create-DirectoryIfNeeded($path) {
     if (-not (Test-Path $path)) {
-        New-Item -Path $path -ItemType Directory
+        New-Item -Path $path -ItemType Directory -Force
     }
 }
 
-# Helper function to remove directories if they exist
+#* Function to remove directories if they exist
 function Remove-DirectoryIfExists($path) {
     if (Test-Path $path) {
         Remove-Item -Recurse -Force $path
     }
 }
+#@ --------------------------- @#
 
-# Clean previous build artifacts
+
+#@ ----- Build Process ----- @#
+
+#* Clean previous build artifacts
 Write-Output "Cleaning previous build artifacts..."
 Remove-DirectoryIfExists $distFolder
 Remove-DirectoryIfExists $buildFolder
 
-# Create required directories
+#* Create required directories
 Create-DirectoryIfNeeded $distFolder
 Create-DirectoryIfNeeded $oneDirFolder
 
-# Build the one-directory app with PyInstaller
+#* Build the one-directory app with PyInstaller
 Write-Output "Building the one-directory app..."
 pyinstaller `
     --name "YouTube Downloader" `
@@ -49,18 +57,26 @@ pyinstaller `
     --noconsole `
     --icon=$iconPath `
     --add-data $iconsData `
+    --noconfirm `
     --add-binary "C:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\ffmpeg\ffmpeg.exe;ffmpeg.exe" `
     $uiScript
 
-# Check if _internal directory exists, and compress it
+#* Check if _internal directory exists, and compress it
 if (Test-Path "$oneDirFolder\_internal") {
+    Write-Output "Waiting briefly before compressing _internal directory..."
+    Start-Sleep -Seconds 2  # Wait for 2 seconds to ensure any file locks are released
     Write-Output "Compressing _internal directory..."
-    Compress-Archive -Path "$oneDirFolder\_internal" -DestinationPath $internalZipPath -Force
+    try {
+        Compress-Archive -Path "$oneDirFolder\_internal" -DestinationPath $internalZipPath -Force
+        Write-Output "Compression completed successfully."
+    } catch {
+        Write-Output "Error occurred during compression: $_"
+    }
 } else {
     Write-Output "The '_internal' directory does not exist."
 }
 
-# Create settings.json file
+#* Create settings.json file
 $settingsContent = @"
 {
     "audio_bitrate": "256k",
@@ -71,7 +87,7 @@ $settingsContent | Out-File -FilePath $settingsFilePath -Encoding UTF8 -NoNewlin
 
 Write-Output "One-directory build with _internal compression and settings.json creation completed successfully."
 
-# Build the standalone one-file executable for GUI
+#* Build the standalone one-file executable for GUI
 Write-Output "Building the standalone one-file GUI executable..."
 pyinstaller `
     --name "YouTube Downloader" `
@@ -80,10 +96,11 @@ pyinstaller `
     --noconsole `
     --icon=$iconPath `
     --add-data $iconsData `
+    --noconfirm `
     --add-binary "C:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\ffmpeg\ffmpeg.exe;ffmpeg.exe" `
     $uiScript
 
-# Compress the one-file executable into a zip
+#* Compress the one-file executable into a zip
 if (Test-Path $oneFileExePath) {
     Write-Output "Compressing standalone GUI executable..."
     Compress-Archive -Path $oneFileExePath -DestinationPath $oneFileZipPath -Force
@@ -93,17 +110,18 @@ if (Test-Path $oneFileExePath) {
 
 Write-Output "Standalone one-file GUI build and compression completed successfully."
 
-# Build the standalone one-file executable for CLI
+#* Build the standalone one-file executable for CLI
 Write-Output "Building the standalone one-file CLI executable..."
 pyinstaller `
     --name "YouTube Downloader CLI" `
     --onefile `
+    --noconfirm `
     --console `
     --icon=$iconPath `
     --add-binary "C:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\ffmpeg\ffmpeg.exe;ffmpeg.exe" `
     $cliScript
 
-# Compress the CLI one-file executable into a zip
+#* Compress the CLI one-file executable into a zip
 if (Test-Path $cliOneFilePath) {
     Write-Output "Compressing standalone CLI executable..."
     Compress-Archive -Path $cliOneFilePath -DestinationPath $cliOneFileZipPath -Force
@@ -113,7 +131,7 @@ if (Test-Path $cliOneFilePath) {
 
 Write-Output "Standalone one-file CLI build and compression completed successfully."
 
-# Build the Inno Setup installer
+#* Build the Inno Setup installer
 if (Test-Path $installerExePath) {
     Write-Output "Removing existing installer.exe..."
     Remove-Item $installerExePath -Force
@@ -130,3 +148,5 @@ if (Test-Path $isccPath) {
 } else {
     Write-Output "ISCC.exe not found. Ensure Inno Setup is installed and ISCC.exe is in your PATH or update the script with the correct path."
 }
+
+#@ ------------------------- @#

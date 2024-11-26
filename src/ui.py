@@ -1,12 +1,14 @@
-# File: c:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\src\ui.py
-# Project: c:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\src
-# Created Date: Saturday November 16th 2024
-# Author: Tony Wiedman
-# -----
-# Last Modified: Mon November 25th 2024 8:43:33 
-# Modified By: Tony Wiedman
-# -----
-# Copyright (c) 2024 MolexWorks / Tone Web Design
+r'''
+File: c:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\src\ui.py
+Project: c:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\src
+Created Date: Monday November 25th 2024
+Author: Tony Wiedman
+-----
+Last Modified: Tue November 26th 2024 4:22:23 
+Modified By: Tony Wiedman
+-----
+Copyright (c) 2024 MolexWorks / Tone Web Design
+'''
 
 
 #@ ------------------------------ Global Imports and Dependencies -------------------------------
