@@ -46,7 +46,6 @@ You can download the latest release of the YouTube Video Downloader GUI and CLI 
 - **Download Audio as MP3**: Extract and download only the audio of a video as an MP3 file.
 - **Download an Entire Playlist (Videos)**: Download all videos in a YouTube playlist.
 - **Download an Entire Playlist (Audio/MP3)**: Download all videos from a playlist as MP3 files.
-- **Quit Option**: Exit the interactive CLI menu.
 
 ## Installation
 
