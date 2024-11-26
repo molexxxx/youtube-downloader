@@ -73,6 +73,7 @@ pyinstaller `
     --windowed `
     --icon=$iconPath `
     --add-data $iconsData `
+    --add-binary "$ffmpegBinaryPath;ffmpeg\ffmpeg.exe" `
     $uiScript
 
 Compress-Archive -Path $oneFileExePath -DestinationPath $oneFileZipPath -Force
