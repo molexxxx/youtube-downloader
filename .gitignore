@@ -1,7 +1,13 @@
+dist/
+build/
+installer_scripts/
+ffmpeg/ffmpeg
+ffmpeg/ffmpeg.exe
+
 # Distribution and build folders
 !dist/*.zip
-!installer_scripts/*.exe
-build/
+!installer_scripts/7z.exe
+!installer_scripts/installer.iss
 
 # Ignore specific subdirectories in the distribution folder
 dist/YouTube Downloader/_internal/

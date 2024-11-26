@@ -25,10 +25,12 @@ Name: "{app}\downloads"
 Source: "..\dist\YouTube Downloader\YouTube Downloader.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\dist\YouTube Downloader\settings.json"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\dist\YouTube Downloader\_internal.zip"; DestDir: "{tmp}"; Flags: deleteafterinstall
+Source: "..\dist\YouTube Downloader CLI.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "7z.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
 
 [Icons]
 Name: "{group}\YouTube Downloader"; Filename: "{app}\YouTube Downloader.exe"; Tasks: startmenuicon
+Name: "{group}\YouTube Downloader CLI"; Filename: "{app}\YouTube Downloader CLI.exe"; Tasks: startmenuicon
 Name: "{userdesktop}\YouTube Downloader"; Filename: "{app}\YouTube Downloader.exe"; Tasks: desktopicon
 
 [Run]

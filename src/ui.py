@@ -35,17 +35,26 @@ import ffmpeg
 
 # * --- File and Path Management
 
+
 def get_ffmpeg_binary():
     """Determine the correct FFmpeg binary based on the operating system."""
     try:
-        base_path = sys._MEIPASS
+        base_path = sys._MEIPASS 
     except AttributeError:
         base_path = os.path.dirname(os.path.abspath(__file__))
 
+    project_root = os.path.dirname(base_path)
+
     if platform.system() == 'Windows':
-        ffmpeg_binary = os.path.join(base_path, 'ffmpeg', 'ffmpeg.exe')
+        if os.path.exists(os.path.join(base_path, '_internal', 'ffmpeg.exe', 'ffmpeg.exe')):
+            base_path = os.path.join(base_path, '_internal', 'ffmpeg.exe')
+            ffmpeg_binary = os.path.join(base_path, 'ffmpeg.exe')
+        else:
+            ffmpeg_binary = os.path.join(base_path, 'ffmpeg.exe') 
+            if not os.path.exists(ffmpeg_binary):
+                ffmpeg_binary = os.path.join(project_root, 'ffmpeg', 'ffmpeg.exe')
     elif platform.system() == 'Linux':
-        ffmpeg_binary = os.path.join(base_path, 'ffmpeg', 'ffmpeg')
+        ffmpeg_binary = os.path.join(base_path, 'ffmpeg')
     else:
         raise OSError("Unsupported operating system. Only Windows and Linux are supported.")
 
@@ -54,8 +63,12 @@ def get_ffmpeg_binary():
     
     return ffmpeg_binary
 
+
+
+# Set the FFmpeg path for the application
 ffmpeg_path = get_ffmpeg_binary()
 os.environ['FFMPEG_BINARY'] = ffmpeg_path
+
 
 def resource_path(relative_path):
     """Access bundled files for PyInstaller."""
@@ -64,6 +77,7 @@ def resource_path(relative_path):
     except AttributeError:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
+
 
 def sanitize_filename(filename):
     """Replace special characters in filenames with underscores."""
@@ -415,10 +429,6 @@ def convert_to_mp4_with_aac(input_file, output_file):
         print(f"Error: {e}")
         show_warning_message("Error", str(e))
 
-
-
-
-# * --- Audio Extraction and Conversion
 
 def save_mp3(folder_path, video_title, url):
     """Save the audio as an MP3 file in a separate directory."""

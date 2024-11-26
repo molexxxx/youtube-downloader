@@ -29,8 +29,6 @@ CONFIG = {
 # -------------------------------- #
 
 
-
-
 def get_ffmpeg_binary():
     """Determine the correct FFmpeg binary based on the operating system."""
     try:
@@ -38,10 +36,18 @@ def get_ffmpeg_binary():
     except AttributeError:
         base_path = os.path.dirname(os.path.abspath(__file__))
 
+    project_root = os.path.dirname(base_path)
+
     if platform.system() == 'Windows':
-        ffmpeg_binary = os.path.join(base_path, 'ffmpeg', 'ffmpeg.exe')
+        if os.path.exists(os.path.join(base_path, '_internal', 'ffmpeg.exe', 'ffmpeg.exe')):
+            base_path = os.path.join(base_path, '_internal', 'ffmpeg.exe')
+            ffmpeg_binary = os.path.join(base_path, 'ffmpeg.exe')
+        else:
+            ffmpeg_binary = os.path.join(base_path, 'ffmpeg.exe') 
+            if not os.path.exists(ffmpeg_binary):
+                ffmpeg_binary = os.path.join(project_root, 'ffmpeg', 'ffmpeg.exe')
     elif platform.system() == 'Linux':
-        ffmpeg_binary = os.path.join(base_path, 'ffmpeg', 'ffmpeg')
+        ffmpeg_binary = os.path.join(base_path, 'ffmpeg')
     else:
         raise OSError("Unsupported operating system. Only Windows and Linux are supported.")
 
@@ -51,8 +57,11 @@ def get_ffmpeg_binary():
     return ffmpeg_binary
 
 
+
+# Set the FFmpeg path for the application
 ffmpeg_path = get_ffmpeg_binary()
 os.environ['FFMPEG_BINARY'] = ffmpeg_path
+
 
 
 def sanitize_filename(filename):
