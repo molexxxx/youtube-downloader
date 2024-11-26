@@ -4,11 +4,12 @@ Project: c:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\src
 Created Date: Monday November 25th 2024
 Author: Tony Wiedman
 -----
-Last Modified: Tue November 26th 2024 4:35:48 
+Last Modified: Tue November 26th 2024 4:42:27 
 Modified By: Tony Wiedman
 -----
-Copyright (c) 2024 MolexWorks / Tone Web Design
+Copyright (c) 2024 MolexWorks
 '''
+
 
 #@ ----- Imports and Dependencies ----- #
 """

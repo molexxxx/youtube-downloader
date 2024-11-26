@@ -21,14 +21,14 @@ $ffmpegBinaryPath = "C:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\ffmpeg
 
 
 #@ ----- Helper Functions ----- @#
-#* Function to create directories if they do not exist
+#* Create directories if they do not exist
 function Create-DirectoryIfNeeded($path) {
     if (-not (Test-Path $path)) {
         New-Item -Path $path -ItemType Directory -Force
     }
 }
 
-#* Function to remove directories if they exist
+#* Remove directories if they exist
 function Remove-DirectoryIfExists($path) {
     if (Test-Path $path) {
         Remove-Item -Recurse -Force $path

@@ -96,7 +96,6 @@ If you prefer to run the application from the source code, follow the steps belo
 The application includes a settings panel that allows you to configure the following options:
 - **Audio Bitrate**: Choose the desired audio bitrate from a predefined list.
 - **Output Folder**: Set the folder where downloaded videos and MP3s will be saved. The default is a `downloads/` directory relative to the script location, but you can customize it.
-- **MP3 Saving Option**: Enable the option to save a separate MP3 file from the video.
 
 Settings are stored in a `settings.json` file within the same directory as the executable.
 
@@ -111,6 +110,7 @@ print("  [1] Download a new video")
 print("  [2] Download audio as MP3")
 print("  [3] Download an entire playlist (videos)")
 print("  [4] Download an entire playlist (audio/mp3)")
+print("  [5] View Downloads")
 print("  [q] Quit")
 ```
 
@@ -118,7 +118,8 @@ print("  [q] Quit")
 2. **[2] Download audio as MP3**: Prompts the user for a video URL and extracts the audio as an MP3 file.
 3. **[3] Download an entire playlist (videos)**: Prompts the user to enter a playlist URL and downloads all videos.
 4. **[4] Download an entire playlist (audio/mp3)**: Prompts the user for a playlist URL and downloads all videos as MP3 files.
-5. **[q] Quit**: Exits the CLI tool.
+5. **[5] View Downloads**: Opens the folder where the downloaded files are saved.
+6. **[q] Quit**: Exits the CLI tool.
 
 ## Building a New Release (Portable Executable and Installer)
 
