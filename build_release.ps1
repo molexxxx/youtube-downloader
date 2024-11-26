@@ -64,7 +64,7 @@ pyinstaller `
 #* Check if _internal directory exists, and compress it
 if (Test-Path "$oneDirFolder\_internal") {
     Write-Output "Waiting briefly before compressing _internal directory..."
-    Start-Sleep -Seconds 2  # Wait for 2 seconds to ensure any file locks are released
+    Start-Sleep -Seconds 10  # Wait for 10 seconds to ensure any file locks are released
     Write-Output "Compressing _internal directory..."
     try {
         Compress-Archive -Path "$oneDirFolder\_internal" -DestinationPath $internalZipPath -Force

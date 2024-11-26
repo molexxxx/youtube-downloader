@@ -4,7 +4,7 @@ Project: c:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\src
 Created Date: Monday November 25th 2024
 Author: Tony Wiedman
 -----
-Last Modified: Tue November 26th 2024 4:42:27 
+Last Modified: Tue November 26th 2024 4:14:22 
 Modified By: Tony Wiedman
 -----
 Copyright (c) 2024 MolexWorks
@@ -51,13 +51,7 @@ def initialize_downloads_folder():
     os.makedirs(CONFIG['output_folder'], exist_ok=True)
 
 def get_ffmpeg_binary():
-    """
-    Determine the correct FFmpeg binary based on the operating system.
-
-    :return: Path to the FFmpeg binary as a string.
-    :raises FileNotFoundError: If the FFmpeg binary cannot be found.
-    :raises OSError: If the operating system is unsupported.
-    """
+    """Determine the correct FFmpeg binary based on the operating system."""
     try:
         base_path = sys._MEIPASS 
     except AttributeError:
@@ -82,6 +76,10 @@ def get_ffmpeg_binary():
         raise FileNotFoundError(f"FFmpeg binary not found at {ffmpeg_binary}. Please include the correct binary.")
     
     return ffmpeg_binary
+
+# Set the FFmpeg path for the application
+ffmpeg_path = get_ffmpeg_binary()
+os.environ['FFMPEG_BINARY'] = ffmpeg_path
 
 """
 Set the FFmpeg path for the application
