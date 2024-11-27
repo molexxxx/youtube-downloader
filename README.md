@@ -1,5 +1,5 @@
 
-![YouTube Downloader Banner](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/reademe_logo_alt.png)
+![YouTube Downloader Banner](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/reademe_logo_new.png)
 
 ![GitHub](https://img.shields.io/github/license/tonywied17/bin-scripts?style=for-the-badge)
 ![GitHub repo size](https://img.shields.io/github/repo-size/tonywied17/youtube-downloader?style=for-the-badge)
@@ -22,7 +22,7 @@ This application provides both a **graphical user interface (GUI)** and an **int
 - Download an entire playlist of videos or audio (MP3).
 - Interactive CLI with a simple menu to manage downloads easily. 
 
-Both the GUI and CLI versions offer flexible options, including the ability to specify output folders and audio bitrates.
+Both the GUI and CLI versions offer flexible options, including the ability to specify output folders and audio bitrate.
 
 ## Download the Latest Release
 
@@ -103,14 +103,13 @@ Settings are stored in a `settings.json` file within the same directory as the e
 The CLI version offers an interactive menu for easy video and audio downloading. The menu options are as follows:
 
 ```python
-print("
-Main Menu:")
-print("  [1] Download a new video")
-print("  [2] Download audio as MP3")
-print("  [3] Download an entire playlist (videos)")
-print("  [4] Download an entire playlist (audio/mp3)")
-print("  [5] View Downloads")
-print("  [q] Quit")
+Main Menu:
+   [1] Download a new video
+   [2] Download audio as MP3
+   [3] Download an entire playlist (videos)
+   [4] Download an entire playlist (audio/mp3)
+   [5] View Downloads
+   [q] Quit
 ```
 
 1. **[1] Download a new video**: Prompts the user to enter a YouTube video URL to download the video.
