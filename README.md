@@ -102,7 +102,7 @@ Settings are stored in a `settings.json` file within the same directory as the e
 
 The CLI version offers an interactive menu for easy video and audio downloading. The menu options are as follows:
 
-```python
+```plaintext
 Main Menu:
    [1] Download a new video
    [2] Download audio as MP3
