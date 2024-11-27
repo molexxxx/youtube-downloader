@@ -37,7 +37,6 @@ import ffmpeg
 
 # * --- File and Path Management
 
-
 def get_ffmpeg_binary():
     """Determine the correct FFmpeg binary based on the operating system."""
     try:
@@ -56,7 +55,9 @@ def get_ffmpeg_binary():
             if not os.path.exists(ffmpeg_binary):
                 ffmpeg_binary = os.path.join(project_root, 'ffmpeg', 'ffmpeg.exe')
     elif platform.system() == 'Linux':
-        ffmpeg_binary = os.path.join(base_path, 'ffmpeg')
+        ffmpeg_binary = os.path.join(project_root, 'ffmpeg')
+        if not os.path.exists(ffmpeg_binary):
+            ffmpeg_binary = os.path.join(base_path, 'ffmpeg')
     else:
         raise OSError("Unsupported operating system. Only Windows and Linux are supported.")
 
@@ -64,8 +65,6 @@ def get_ffmpeg_binary():
         raise FileNotFoundError(f"FFmpeg binary not found at {ffmpeg_binary}. Please include the correct binary.")
     
     return ffmpeg_binary
-
-
 
 # Set the FFmpeg path for the application
 ffmpeg_path = get_ffmpeg_binary()
