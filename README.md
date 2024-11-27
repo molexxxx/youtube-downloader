@@ -30,9 +30,7 @@ You can download the latest release of the YouTube Video Downloader GUI and CLI 
 - [Download Standalone CLI Version](https://github.com/tonywied17/youtube-downloader/releases)
 - [Download Windows Installer](https://github.com/tonywied17/youtube-downloader/releases)
 
-## Features
-
-### Interactive CLI Features
+## Interactive CLI Features
 ![YouTube Downloader CLI](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/yt-cli-main-menu.png)
 - **Download a New Video**: Download a specific video from YouTube.
 - **Download Audio as MP3**: Extract and download only the audio of a video as an MP3 file.
@@ -40,17 +38,19 @@ You can download the latest release of the YouTube Video Downloader GUI and CLI 
 - **Download an Entire Playlist (Audio/MP3)**: Download all videos from a playlist as MP3 files.
 - **Selectively Download from a Playlist**: Choose specific videos/mp3s from a playlist to download.
 - **Search YouTube Videos**: Search for videos on YouTube and download the desired video.
+
 ![YouTube Downloader CLI Search](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/yt-cli-search.png)
 ![YouTube Downloader CLI Playlist](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/yt-cli-select-playlist.png)
 
 
-### GUI Features
+## GUI Features
 ![YouTube Downloader GUI](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/yt-gui-windows.png)
 - **Download YouTube videos**: Select and download videos at the best available quality.
 - **Automatic AAC Conversion**: Download videos with the best audio quality and original video quality merged into a highly compatible MP4 format.
 - **MP3 File Saving Option**: Save a separate MP3 copy of the video’s audio in a clean and accessible folder.
 - **Settings Panel**: Easily customize audio bitrate, output folder, and other settings.
 - **Standalone Executable**: Runs as a standalone application without needing external dependencies like FFmpeg (which is bundled).
+
 ![YouTube Downloader GUI Select Quality](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/yt-gui-settings.png)
 ![YouTube Downloader GUI Downloading](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/yt-gui-downloading.png)
 ![YouTube Downloader GUI Completed](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/yt-gui-completed.png)
