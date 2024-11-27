@@ -51,7 +51,7 @@ You can download the latest release of the YouTube Video Downloader GUI and CLI 
 - **Settings Panel**: Easily customize audio bitrate, output folder, and other settings.
 - **Standalone Executable**: Runs as a standalone application without needing external dependencies like FFmpeg (which is bundled).
 
-![YouTube Downloader GUI Select Quality](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/yt-gui-settings.png)
+![YouTube Downloader GUI Select Quality](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/yt-gui-select-quality.png)
 ![YouTube Downloader GUI Downloading](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/yt-gui-downloading.png)
 ![YouTube Downloader GUI Completed](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/yt-gui-completed.png)
 
