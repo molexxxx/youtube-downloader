@@ -13,16 +13,14 @@
 
 # YouTube Video Downloader and Converter
 
-This application provides both a  and an **graphical user interface (GUI)** for downloading YouTube videos. The features include:
+This application provides both a **command line interface (CLI)** and an **graphical user interface (GUI)** for downloading YouTube videos. The features include:
 
 - Download videos at specified quality.
 - Automatically merge the best available audio with video into a highly compatible MP4 file.
-- Optional audio conversion to AAC format for better compatibility.
+- Automatic audio conversion to AAC format for better compatibility.
 - Save audio separately as MP3 files with embedded metadata (e.g., title, artist, album).
 - Download a playlist of videos or audio (MP3).
 - Interactive CLI with a simple menu to manage downloads easily. 
-
-Both the GUI and CLI versions offer flexible options, including the ability to specify output folders and audio bitrate.
 
 ## Download the Latest Release
 
@@ -35,19 +33,27 @@ You can download the latest release of the YouTube Video Downloader GUI and CLI 
 ## Features
 
 ### Interactive CLI Features
+![YouTube Downloader CLI](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/yt-cli-main-menu.png)
 - **Download a New Video**: Download a specific video from YouTube.
 - **Download Audio as MP3**: Extract and download only the audio of a video as an MP3 file.
 - **Download an Entire Playlist (Videos)**: Download all videos in a YouTube playlist.
 - **Download an Entire Playlist (Audio/MP3)**: Download all videos from a playlist as MP3 files.
 - **Selectively Download from a Playlist**: Choose specific videos/mp3s from a playlist to download.
 - **Search YouTube Videos**: Search for videos on YouTube and download the desired video.
+![YouTube Downloader CLI Search](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/yt-cli-search.png)
+![YouTube Downloader CLI Playlist](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/yt-cli-select-playlist.png)
+
 
 ### GUI Features
+![YouTube Downloader GUI](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/yt-gui-windows.png)
 - **Download YouTube videos**: Select and download videos at the best available quality.
 - **Automatic AAC Conversion**: Download videos with the best audio quality and original video quality merged into a highly compatible MP4 format.
 - **MP3 File Saving Option**: Save a separate MP3 copy of the video’s audio in a clean and accessible folder.
 - **Settings Panel**: Easily customize audio bitrate, output folder, and other settings.
 - **Standalone Executable**: Runs as a standalone application without needing external dependencies like FFmpeg (which is bundled).
+![YouTube Downloader GUI Select Quality](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/yt-gui-settings.png)
+![YouTube Downloader GUI Downloading](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/yt-gui-downloading.png)
+![YouTube Downloader GUI Completed](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/yt-gui-completed.png)
 
 ## Installation
 
@@ -90,36 +96,16 @@ If you prefer to run the application from the source code, follow the steps belo
    python cli.py "https://www.youtube.com/watch?v=VIDEO_ID"
    ```
 
+5. **Run the GUI Version**:
+
+   Navigate to the `src` directory and run the GUI script:
+
+   ```bash
+   cd src/
+   python gui.py
+   ```
+
    For more detailed instructions, refer to the **Interactive CLI Features** section below.
-
-## Settings Panel
-
-The application includes a settings panel that allows you to configure the following options:
-- **Audio Bitrate**: Choose the desired audio bitrate from a predefined list.
-- **Output Folder**: Set the folder where downloaded videos and MP3s will be saved. The default is a `downloads/` directory relative to the script location, but you can customize it.
-
-Settings are stored in a `settings.json` file within the same directory as the executable.
-
-## Interactive CLI Features
-
-The CLI version offers an interactive menu for easy video and audio downloading. The menu options are as follows:
-
-```plaintext
-  Option │ Description
-╶────────┼───────────────────────────────────────────╴
-   [1]   │ Download YouTube URL
-   [2]   │ Download an entire playlist
-   [3]   │ Search YouTube by Keywords
-   [4]   │ Selectively Download Videos from Playlist
-   [5]   │ Open Downloads Folder
-   [q]   │ Quit
-```
-**[1] Download YouTube URL**: Enter a YouTube video URL to download the video.
-**[2] Download an entire playlist**: Enter a YouTube playlist URL to download all videos.
-**[3] Search YouTube by Keywords**: Search for videos on YouTube and download the desired video.
-**[4] Selectively Download Videos from Playlist**: Choose specific videos from a playlist to download.
-**[5] Open Downloads Folder**: Open the folder where downloaded files are saved.
-**[q] Quit**: Exit the CLI tool.
 
 ## Building a New Release (Portable Executable and Installer)
 
