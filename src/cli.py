@@ -77,7 +77,9 @@ def get_ffmpeg_binary():
             if not os.path.exists(ffmpeg_binary):
                 ffmpeg_binary = os.path.join(project_root, 'ffmpeg', 'ffmpeg.exe')
     elif platform.system() == 'Linux':
-        ffmpeg_binary = os.path.join(base_path, 'ffmpeg')
+        ffmpeg_binary = os.path.join(project_root, 'ffmpeg')
+        if not os.path.exists(ffmpeg_binary):
+            ffmpeg_binary = os.path.join(base_path, 'ffmpeg')
     else:
         raise OSError("Unsupported operating system. Only Windows and Linux are supported.")
 
