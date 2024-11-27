@@ -4,7 +4,7 @@
 a = Analysis(
     ['src/ui.py'],
     pathex=[],
-    binaries=[('ffmpeg/ffmpeg', 'ffmpeg/ffmpeg')],
+    binaries=[('/home/molex/clone/youtube-downloader/ffmpeg/ffmpeg', 'ffmpeg')],
     datas=[('src/icons', 'icons')],
     hiddenimports=['PIL._tkinter_finder'],
     hookspath=[],
