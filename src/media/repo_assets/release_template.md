@@ -1,6 +1,5 @@
 YouTube Downloader Release
 
-
 ![YouTube Downloader Banner](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/reademe_logo_new.png)
 ![GitHub Downloads (all assets, specific tag)](https://img.shields.io/github/downloads/tonywied17/youtube-downloader/RELEASE/total?style=for-the-badge)
 
