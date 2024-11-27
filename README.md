@@ -1,5 +1,5 @@
 
-![YouTube Downloader Banner](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/reademe_logo.png)
+![YouTube Downloader Banner](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/reademe_logo_alt.png)
 
 ![GitHub](https://img.shields.io/github/license/tonywied17/bin-scripts?style=for-the-badge)
 ![GitHub repo size](https://img.shields.io/github/repo-size/tonywied17/youtube-downloader?style=for-the-badge)

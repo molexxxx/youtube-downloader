@@ -1,5 +1,9 @@
+YouTube Downloader Release
 
-![YouTube Downloader Banner](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/reademe_logo.png)
+
+
+
+![YouTube Downloader Banner](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/reademe_logo_alt.png)
 ![GitHub Downloads (all assets, specific tag)](https://img.shields.io/github/downloads/tonywied17/youtube-downloader/RELEASE/total?style=for-the-badge)
 
 ## Features
@@ -16,7 +20,6 @@
 - **Download Audio as MP3**: Extract and download only the audio of a video as an MP3 file.
 - **Download an Entire Playlist (Videos)**: Download all videos in a YouTube playlist.
 - **Download an Entire Playlist (Audio/MP3)**: Download all videos from a playlist as MP3 files.
-- **Quit Option**: Exit the interactive CLI menu.
 
 ## Installation Options
 
@@ -28,4 +31,6 @@ The latest release includes four installation options for flexibility and ease o
 
 - **Standalone CLI Executable `.zip`** (Windows): A single-file version of the CLI that allows you to run the interactive command-line interface without installation. This option is great for users who prefer working directly from the command line and need a portable solution.
 
-- **Linux `.tar.gz` Archive** (Standalone): A compressed archive containing the Linux version of the application. Simply extract the contents of the `.tar.gz` file and run the executable within. This option is ideal for Linux users who prefer a standalone application that can be run directly after extraction.
+- **Linux `.tar.gz` Archive** (GUI and CLI Executables): A compressed archive containing the Linux version of the applications. Simply extract the contents of the `.tar.gz` file and run the executable within. This option is ideal for Linux users who prefer a standalone application that can be run directly after extraction. **Note:* For the CLI application launch from the terminal using `./yt-cli`
+
+**Full Changelog**: https://github.com/tonywied17/youtube-downloader/commits/RELEASE
