@@ -13,13 +13,13 @@
 
 # YouTube Video Downloader and Converter
 
-This application provides both a **graphical user interface (GUI)** and an **interactive command-line interface (CLI)** for downloading YouTube videos. The features include:
+This application provides both a  and an **graphical user interface (GUI)** for downloading YouTube videos. The features include:
 
 - Download videos at specified quality.
 - Automatically merge the best available audio with video into a highly compatible MP4 file.
 - Optional audio conversion to AAC format for better compatibility.
 - Save audio separately as MP3 files with embedded metadata (e.g., title, artist, album).
-- Download an entire playlist of videos or audio (MP3).
+- Download a playlist of videos or audio (MP3).
 - Interactive CLI with a simple menu to manage downloads easily. 
 
 Both the GUI and CLI versions offer flexible options, including the ability to specify output folders and audio bitrate.
@@ -34,18 +34,20 @@ You can download the latest release of the YouTube Video Downloader GUI and CLI 
 
 ## Features
 
+### Interactive CLI Features
+- **Download a New Video**: Download a specific video from YouTube.
+- **Download Audio as MP3**: Extract and download only the audio of a video as an MP3 file.
+- **Download an Entire Playlist (Videos)**: Download all videos in a YouTube playlist.
+- **Download an Entire Playlist (Audio/MP3)**: Download all videos from a playlist as MP3 files.
+- **Selectively Download from a Playlist**: Choose specific videos/mp3s from a playlist to download.
+- **Search YouTube Videos**: Search for videos on YouTube and download the desired video.
+
 ### GUI Features
 - **Download YouTube videos**: Select and download videos at the best available quality.
 - **Automatic AAC Conversion**: Download videos with the best audio quality and original video quality merged into a highly compatible MP4 format.
 - **MP3 File Saving Option**: Save a separate MP3 copy of the video’s audio in a clean and accessible folder.
 - **Settings Panel**: Easily customize audio bitrate, output folder, and other settings.
 - **Standalone Executable**: Runs as a standalone application without needing external dependencies like FFmpeg (which is bundled).
-
-### Interactive CLI Features
-- **Download a New Video**: Download a specific video from YouTube.
-- **Download Audio as MP3**: Extract and download only the audio of a video as an MP3 file.
-- **Download an Entire Playlist (Videos)**: Download all videos in a YouTube playlist.
-- **Download an Entire Playlist (Audio/MP3)**: Download all videos from a playlist as MP3 files.
 
 ## Installation
 
@@ -103,21 +105,21 @@ Settings are stored in a `settings.json` file within the same directory as the e
 The CLI version offers an interactive menu for easy video and audio downloading. The menu options are as follows:
 
 ```plaintext
-Main Menu:
-   [1] Download a new video
-   [2] Download audio as MP3
-   [3] Download an entire playlist (videos)
-   [4] Download an entire playlist (audio/mp3)
-   [5] View Downloads
-   [q] Quit
+  Option │ Description
+╶────────┼───────────────────────────────────────────╴
+   [1]   │ Download YouTube URL
+   [2]   │ Download an entire playlist
+   [3]   │ Search YouTube by Keywords
+   [4]   │ Selectively Download Videos from Playlist
+   [5]   │ Open Downloads Folder
+   [q]   │ Quit
 ```
-
-1. **[1] Download a new video**: Prompts the user to enter a YouTube video URL to download the video.
-2. **[2] Download audio as MP3**: Prompts the user for a video URL and extracts the audio as an MP3 file.
-3. **[3] Download an entire playlist (videos)**: Prompts the user to enter a playlist URL and downloads all videos.
-4. **[4] Download an entire playlist (audio/mp3)**: Prompts the user for a playlist URL and downloads all videos as MP3 files.
-5. **[5] View Downloads**: Opens the folder where the downloaded files are saved.
-6. **[q] Quit**: Exits the CLI tool.
+**[1] Download YouTube URL**: Enter a YouTube video URL to download the video.
+**[2] Download an entire playlist**: Enter a YouTube playlist URL to download all videos.
+**[3] Search YouTube by Keywords**: Search for videos on YouTube and download the desired video.
+**[4] Selectively Download Videos from Playlist**: Choose specific videos from a playlist to download.
+**[5] Open Downloads Folder**: Open the folder where downloaded files are saved.
+**[q] Quit**: Exit the CLI tool.
 
 ## Building a New Release (Portable Executable and Installer)
 
