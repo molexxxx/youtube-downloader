@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['src/ui.py'],
+    ['src/cli.py'],
     pathex=[],
     binaries=[('/home/molex/clone/youtube-downloader/ffmpeg/ffmpeg', 'ffmpeg')],
     datas=[],
