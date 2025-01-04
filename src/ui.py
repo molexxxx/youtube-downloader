@@ -4,7 +4,7 @@ Project: c:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\src
 Created Date: Monday November 25th 2024
 Author: Tony Wiedman
 -----
-Last Modified: Tue November 26th 2024 4:42:18 
+Last Modified: Sat January 4th 2025 4:01:47 
 Modified By: Tony Wiedman
 -----
 Copyright (c) 2024 MolexWorks
@@ -360,6 +360,7 @@ def download_and_convert(url, quality_index):
             'outtmpl': temp_file,
             'progress_hooks': [progress_hook],
             'postprocessors': [{'key': 'FFmpegMetadata'}],
+            'postprocessor_args': ['-ffmpeg-location', ffmpeg_path],
             'logger': YTDLLogger()
         }
 
@@ -384,11 +385,9 @@ def download_and_convert(url, quality_index):
     start_download_and_process()
 
 
-
 def convert_to_mp4_with_aac(input_file, output_file):
-    """Convert a video to MP4 format with AAC audio using python-ffmpeg."""
+    """Convert a video to MP4 format with AAC audio silently using python-ffmpeg."""
     try:
-        # Probe the input file to check the current audio codec
         probe = ffmpeg.probe(input_file)
         audio_stream = next((stream for stream in probe['streams'] if stream['codec_type'] == 'audio'), None)
         
@@ -396,31 +395,26 @@ def convert_to_mp4_with_aac(input_file, output_file):
             raise ValueError("No audio stream found in the input file.")
 
         codec = audio_stream.get('codec_name', '')
-        print(f"Detected audio codec: {codec}")
 
         if codec != 'aac':
-            print("Audio codec is not AAC. Starting conversion...")
-            (
+            command = (
                 ffmpeg
                 .input(input_file)
                 .output(output_file, vcodec='copy', acodec='aac', strict='experimental')
-                .run(overwrite_output=True)
+                .compile()
             )
         else:
-            print("Audio is already AAC. Copying video without re-encoding...")
-            (
+            command = (
                 ffmpeg
                 .input(input_file)
                 .output(output_file, vcodec='copy', acodec='copy')
-                .run(overwrite_output=True)
+                .compile()
             )
 
-        print(f"Conversion to MP4 with AAC complete: {output_file}")
-
+        subprocess.run(command, creationflags=subprocess.CREATE_NO_WINDOW, check=True)
 
         if os.path.exists(input_file):
             os.remove(input_file)
-            print(f"Temporary file '{input_file}' removed.")
 
     except ffmpeg.Error as e:
         error_message = e.stderr.decode() if hasattr(e, 'stderr') else str(e)
@@ -432,7 +426,7 @@ def convert_to_mp4_with_aac(input_file, output_file):
 
 
 def save_mp3(folder_path, video_title, url):
-    """Save the audio as an MP3 file in a separate directory."""
+    """Save the audio as an MP3 file in a separate directory silently."""
     mp3_folder = os.path.join(folder_path, "mp3s")
     os.makedirs(mp3_folder, exist_ok=True)
 
@@ -449,31 +443,35 @@ def save_mp3(folder_path, video_title, url):
             'format': 'bestaudio/best',
             'outtmpl': temp_audio_file,
             'postprocessors': [{'key': 'FFmpegMetadata'}],
+            'postprocessor_args': ['-ffmpeg-location', ffmpeg_path],
             'logger': YTDLLogger()
         }
 
-        print(f"Downloading audio to temporary file: {temp_audio_file}")
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
 
-        print(f"Converting '{temp_audio_file}' to MP3...")
-        (
-            ffmpeg
-            .input(temp_audio_file)
-            .output(mp3_output, format='mp3', audio_bitrate=audio_bitrate)
-            .run(overwrite_output=True)
-        )
-        print(f"MP3 saved: {mp3_output}")
+        probe = ffmpeg.probe(temp_audio_file)
+        file_format = probe.get('format', {}).get('format_name', '')
+
+        if 'mp3' in file_format.lower():
+            os.rename(temp_audio_file, mp3_output)
+        else:
+            command = (
+                ffmpeg
+                .input(temp_audio_file)
+                .output(mp3_output, format='mp3', audio_bitrate=audio_bitrate)
+                .compile()
+            )
+            subprocess.run(command, creationflags=subprocess.CREATE_NO_WINDOW, check=True)
 
     except ffmpeg.Error as e:
         error_message = e.stderr.decode() if hasattr(e, 'stderr') else str(e)
-        print(f"ffmpeg error: {error_message}")
         show_warning_message("Conversion Error", "An error occurred during MP3 conversion.")
-
+    except Exception as e:
+        show_warning_message("Error", str(e))
     finally:
         if os.path.exists(temp_audio_file):
             os.remove(temp_audio_file)
-            print(f"Temporary file '{temp_audio_file}' removed.")
 
 
 

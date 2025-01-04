@@ -48,7 +48,6 @@ def extract_cipher_operations(js_code):
     logging.debug(f"Operations string: {operations}")
 
     # Extract transformations from the function definition
-    # Example pattern; YouTube might obfuscate this differently
     op_pattern = r'\w+\.(\w+)\(\w+,\d+\)'
     operations_list = re.findall(op_pattern, operations)
     logging.info(f"Found operations: {operations_list}")

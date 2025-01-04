@@ -4,7 +4,7 @@ Project: c:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\src
 Created Date: Monday November 25th 2024
 Author: Tony Wiedman
 -----
-Last Modified: Wed November 27th 2024 4:10:00 
+Last Modified: Sat January 4th 2025 4:01:36 
 Modified By: Tony Wiedman
 -----
 Copyright (c) 2024 MolexWorks
@@ -231,6 +231,7 @@ def download_video(url):
         'outtmpl': final_output,
         'merge_output_format': 'mp4',
         'postprocessors': [{'key': 'FFmpegMetadata'}],
+        'postprocessor_args': ['-ffmpeg-location', ffmpeg_path],
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -302,6 +303,7 @@ def download_best_audio(url):
                 'key': 'FFmpegMetadata'
             }
         ],
+        'postprocessor_args': ['-ffmpeg-location', ffmpeg_path],
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -339,7 +341,8 @@ def download_playlist(playlist_url, download_audio=False):
             'quiet': False,
             'outtmpl': os.path.join(playlist_folder, '%(title)s.%(ext)s'),
             'format': 'bestaudio/best' if download_audio else 'bestvideo+bestaudio/best',
-            'postprocessors': []
+            'postprocessors': [],
+            'postprocessor_args': ['-ffmpeg-location', ffmpeg_path],
         }
 
         if download_audio:
@@ -466,7 +469,8 @@ def download_selected_videos(selected_urls, playlist_url, download_audio=False):
             'quiet': False,
             'outtmpl': os.path.join(playlist_folder, '%(title)s.%(ext)s'),
             'format': 'bestaudio/best' if download_audio else 'bestvideo+bestaudio/best',
-            'postprocessors': []
+            'postprocessors': [],
+            'postprocessor_args': ['-ffmpeg-location', ffmpeg_path],
         }
 
         if download_audio:
