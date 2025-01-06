@@ -4,7 +4,7 @@ Project: c:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\src
 Created Date: Monday November 25th 2024
 Author: Tony Wiedman
 -----
-Last Modified: Sat January 4th 2025 4:01:36 
+Last Modified: Mon January 6th 2025 3:03:57 
 Modified By: Tony Wiedman
 -----
 Copyright (c) 2024 MolexWorks
@@ -23,6 +23,7 @@ import argparse
 import ffmpeg
 import sys
 import platform
+import shutil
 from rich.console import Console
 from rich import box
 from rich.table import Table
@@ -41,7 +42,7 @@ Global settings for the application, including output folder and audio bitrate.
 CONFIG = {
     "audio_bitrate": "256k",
     "output_folder": os.path.join(os.getcwd(), 'downloads'),
-    "youtube_api_key": ""
+    "youtube_api_key": "AIzaSyBP6LZXdczjnnnU4sFNyTAF3SRRlgtFq6g"
 }
 console = Console()
 #@ -------------------------------- @#
@@ -58,41 +59,46 @@ def initialize_downloads_folder():
     :return: None
     """
     os.makedirs(CONFIG['output_folder'], exist_ok=True)
-
+    
 def get_ffmpeg_binary():
-    """Determine the correct FFmpeg binary based on the operating system."""
+    """
+    Locate the FFmpeg binary, considering PyInstaller's one-file and one-folder modes.
+    :return: Path to the FFmpeg binary.
+    """
+    # ffmpeg_path = shutil.which("ffmpeg")
+    # if ffmpeg_path:
+    #     return ffmpeg_path
+    
     try:
-        base_path = sys._MEIPASS 
+        base_path = sys._MEIPASS
     except AttributeError:
         base_path = os.path.dirname(os.path.abspath(__file__))
 
-    project_root = os.path.dirname(base_path)
+    potential_paths = [
+        os.path.join(base_path, '_internal', 'ffmpeg.exe', 'ffmpeg.exe'),  # Windows (nested inside folder)
+        os.path.join(base_path, '_internal', 'ffmpeg', 'ffmpeg'),           # Linux
+        os.path.join(base_path, 'ffmpeg.exe', 'ffmpeg.exe'),                # Windows (nested folder)
+        os.path.join(base_path, 'ffmpeg', 'ffmpeg'),                        # Linux
+        
+        os.path.join(base_path, '..', 'ffmpeg', 'ffmpeg.exe'),          # Dev Path
+    ]
 
-    if platform.system() == 'Windows':
-        if os.path.exists(os.path.join(base_path, '_internal', 'ffmpeg.exe', 'ffmpeg.exe')):
-            base_path = os.path.join(base_path, '_internal', 'ffmpeg.exe')
-            ffmpeg_binary = os.path.join(base_path, 'ffmpeg.exe')
-        else:
-            ffmpeg_binary = os.path.join(base_path, 'ffmpeg.exe') 
-            if not os.path.exists(ffmpeg_binary):
-                ffmpeg_binary = os.path.join(project_root, 'ffmpeg', 'ffmpeg.exe')
-    elif platform.system() == 'Linux':
-        ffmpeg_binary = os.path.join(project_root, 'ffmpeg')
-        if not os.path.exists(ffmpeg_binary):
-            ffmpeg_binary = os.path.join(base_path, 'ffmpeg')
-    else:
-        raise OSError("Unsupported operating system. Only Windows and Linux are supported.")
+    for path in potential_paths:
+        if os.path.exists(path):
+            return path
 
-    if not os.path.exists(ffmpeg_binary):
-        raise FileNotFoundError(f"FFmpeg binary not found at {ffmpeg_binary}. Please include the correct binary.")
-    
-    return ffmpeg_binary
+    raise FileNotFoundError(
+        "FFmpeg binary not found in expected locations. "
+        "Ensure it is included in '_internal/ffmpeg/' for one-folder mode or root for one-file mode."
+    )
+
 
 """
 Set the FFmpeg path for the application
 """
 ffmpeg_path = get_ffmpeg_binary()
-os.environ['FFMPEG_BINARY'] = ffmpeg_path
+os.environ["FFMPEG_BINARY"] = ffmpeg_path
+print(f"FFmpeg binary located at: {ffmpeg_path}")
 
 #@ -------------------------------------- @#
 
@@ -227,11 +233,12 @@ def download_video(url):
     final_output = os.path.join(folder_path, f"{video_title}_{selected_quality['resolution']}.mp4")
 
     ydl_opts = {
+        'ffmpeg_location': ffmpeg_path,
         'format': f"{selected_quality['format_id']}+bestaudio/best",
         'outtmpl': final_output,
         'merge_output_format': 'mp4',
         'postprocessors': [{'key': 'FFmpegMetadata'}],
-        'postprocessor_args': ['-ffmpeg-location', ffmpeg_path],
+        # 'postprocessor_args': ['-ffmpeg-location', ffmpeg_path],
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -291,6 +298,7 @@ def download_best_audio(url):
     mp3_output = os.path.join(folder_path, f"{audio_title}.mp3")
 
     ydl_opts = {
+        'ffmpeg_location': ffmpeg_path,
         'format': 'bestaudio/best',
         'outtmpl': mp3_output,
         'postprocessors': [
@@ -303,7 +311,7 @@ def download_best_audio(url):
                 'key': 'FFmpegMetadata'
             }
         ],
-        'postprocessor_args': ['-ffmpeg-location', ffmpeg_path],
+        # 'postprocessor_args': ['-ffmpeg-location', ffmpeg_path],
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -338,11 +346,12 @@ def download_playlist(playlist_url, download_audio=False):
         os.makedirs(playlist_folder, exist_ok=True)
 
         ydl_opts = {
+            'ffmpeg_location': ffmpeg_path,
             'quiet': False,
             'outtmpl': os.path.join(playlist_folder, '%(title)s.%(ext)s'),
             'format': 'bestaudio/best' if download_audio else 'bestvideo+bestaudio/best',
             'postprocessors': [],
-            'postprocessor_args': ['-ffmpeg-location', ffmpeg_path],
+            # 'postprocessor_args': ['-ffmpeg-location', ffmpeg_path],
         }
 
         if download_audio:
@@ -466,11 +475,12 @@ def download_selected_videos(selected_urls, playlist_url, download_audio=False):
             os.makedirs(playlist_folder, exist_ok=True)
 
         ydl_opts = {
+            'ffmpeg_location': ffmpeg_path,
             'quiet': False,
             'outtmpl': os.path.join(playlist_folder, '%(title)s.%(ext)s'),
             'format': 'bestaudio/best' if download_audio else 'bestvideo+bestaudio/best',
             'postprocessors': [],
-            'postprocessor_args': ['-ffmpeg-location', ffmpeg_path],
+            # 'postprocessor_args': ['-ffmpeg-location', ffmpeg_path],
         }
 
         if download_audio:

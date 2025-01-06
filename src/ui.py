@@ -4,7 +4,7 @@ Project: c:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\src
 Created Date: Monday November 25th 2024
 Author: Tony Wiedman
 -----
-Last Modified: Sat January 4th 2025 4:01:47 
+Last Modified: Mon January 6th 2025 3:03:53 
 Modified By: Tony Wiedman
 -----
 Copyright (c) 2024 MolexWorks
@@ -29,8 +29,7 @@ except ImportError as e:
     print(f"Import error: {e}")
 from CTkMessagebox import CTkMessagebox
 import ffmpeg
-
-
+import shutil
 
 #@ ------------------------------ Global Settings and Variables -------------------------------
 
@@ -38,35 +37,40 @@ import ffmpeg
 # * --- File and Path Management
 
 def get_ffmpeg_binary():
-    """Determine the correct FFmpeg binary based on the operating system."""
+    """
+    Locate the FFmpeg binary, considering PyInstaller's one-file and one-folder modes.
+    :return: Path to the FFmpeg binary.
+    """
+    # ffmpeg_path = shutil.which("ffmpeg")
+    # if ffmpeg_path:
+    #     return ffmpeg_path
+    
     try:
-        base_path = sys._MEIPASS 
+        base_path = sys._MEIPASS
     except AttributeError:
         base_path = os.path.dirname(os.path.abspath(__file__))
 
-    project_root = os.path.dirname(base_path)
+    potential_paths = [
+        os.path.join(base_path, '_internal', 'ffmpeg.exe', 'ffmpeg.exe'),  # Windows (nested inside folder)
+        os.path.join(base_path, '_internal', 'ffmpeg', 'ffmpeg'),           # Linux
+        os.path.join(base_path, 'ffmpeg.exe', 'ffmpeg.exe'),                # Windows (nested folder)
+        os.path.join(base_path, 'ffmpeg', 'ffmpeg'),                        # Linux
+        
+        os.path.join(base_path, '..', 'ffmpeg', 'ffmpeg.exe'),          # Dev Path
+    ]
 
-    if platform.system() == 'Windows':
-        if os.path.exists(os.path.join(base_path, '_internal', 'ffmpeg.exe', 'ffmpeg.exe')):
-            base_path = os.path.join(base_path, '_internal', 'ffmpeg.exe')
-            ffmpeg_binary = os.path.join(base_path, 'ffmpeg.exe')
-        else:
-            ffmpeg_binary = os.path.join(base_path, 'ffmpeg.exe') 
-            if not os.path.exists(ffmpeg_binary):
-                ffmpeg_binary = os.path.join(project_root, 'ffmpeg', 'ffmpeg.exe')
-    elif platform.system() == 'Linux':
-        ffmpeg_binary = os.path.join(project_root, 'ffmpeg')
-        if not os.path.exists(ffmpeg_binary):
-            ffmpeg_binary = os.path.join(base_path, 'ffmpeg')
-    else:
-        raise OSError("Unsupported operating system. Only Windows and Linux are supported.")
+    for path in potential_paths:
+        if os.path.exists(path):
+            return path
 
-    if not os.path.exists(ffmpeg_binary):
-        raise FileNotFoundError(f"FFmpeg binary not found at {ffmpeg_binary}. Please include the correct binary.")
-    
-    return ffmpeg_binary
+    raise FileNotFoundError(
+        "FFmpeg binary not found in expected locations. "
+        "Ensure it is included in '_internal/ffmpeg/' for one-folder mode or root for one-file mode."
+    )
 
-# Set the FFmpeg path for the application
+"""
+Set the FFmpeg path for the application
+"""
 ffmpeg_path = get_ffmpeg_binary()
 os.environ['FFMPEG_BINARY'] = ffmpeg_path
 
@@ -356,11 +360,12 @@ def download_and_convert(url, quality_index):
 
     def start_download_and_process():
         ydl_opts = {
+            'ffmpeg_location': ffmpeg_path,
             'format': f"{selected_quality['format_id']}+bestaudio/best",
             'outtmpl': temp_file,
             'progress_hooks': [progress_hook],
             'postprocessors': [{'key': 'FFmpegMetadata'}],
-            'postprocessor_args': ['-ffmpeg-location', ffmpeg_path],
+            # 'postprocessor_args': ['-ffmpeg-location', ffmpeg_path],
             'logger': YTDLLogger()
         }
 
@@ -440,10 +445,11 @@ def save_mp3(folder_path, video_title, url):
 
     try:
         ydl_opts = {
+            'ffmpeg_location': ffmpeg_path,
             'format': 'bestaudio/best',
             'outtmpl': temp_audio_file,
             'postprocessors': [{'key': 'FFmpegMetadata'}],
-            'postprocessor_args': ['-ffmpeg-location', ffmpeg_path],
+            # 'postprocessor_args': ['-ffmpeg-location', ffmpeg_path],
             'logger': YTDLLogger()
         }
 
