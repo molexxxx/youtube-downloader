@@ -4,7 +4,7 @@ Project: c:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\src
 Created Date: Monday November 25th 2024
 Author: Tony Wiedman
 -----
-Last Modified: Mon January 6th 2025 3:03:57 
+Last Modified: Mon January 6th 2025 4:02:45 
 Modified By: Tony Wiedman
 -----
 Copyright (c) 2024 MolexWorks
@@ -23,7 +23,6 @@ import argparse
 import ffmpeg
 import sys
 import platform
-import shutil
 from rich.console import Console
 from rich import box
 from rich.table import Table
@@ -42,7 +41,7 @@ Global settings for the application, including output folder and audio bitrate.
 CONFIG = {
     "audio_bitrate": "256k",
     "output_folder": os.path.join(os.getcwd(), 'downloads'),
-    "youtube_api_key": "AIzaSyBP6LZXdczjnnnU4sFNyTAF3SRRlgtFq6g"
+    "youtube_api_key": ""
 }
 console = Console()
 #@ -------------------------------- @#
@@ -75,12 +74,12 @@ def get_ffmpeg_binary():
         base_path = os.path.dirname(os.path.abspath(__file__))
 
     potential_paths = [
-        os.path.join(base_path, '_internal', 'ffmpeg.exe', 'ffmpeg.exe'),  # Windows (nested inside folder)
+        os.path.join(base_path, '_internal', 'ffmpeg.exe', 'ffmpeg.exe'),   # Windows (nested inside folder)
         os.path.join(base_path, '_internal', 'ffmpeg', 'ffmpeg'),           # Linux
         os.path.join(base_path, 'ffmpeg.exe', 'ffmpeg.exe'),                # Windows (nested folder)
         os.path.join(base_path, 'ffmpeg', 'ffmpeg'),                        # Linux
         
-        os.path.join(base_path, '..', 'ffmpeg', 'ffmpeg.exe'),          # Dev Path
+        os.path.join(base_path, '..', 'ffmpeg', 'ffmpeg.exe'),              # Dev Path
     ]
 
     for path in potential_paths:

@@ -4,7 +4,7 @@ Project: c:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\src
 Created Date: Monday November 25th 2024
 Author: Tony Wiedman
 -----
-Last Modified: Mon January 6th 2025 3:03:53 
+Last Modified: Mon January 6th 2025 4:02:58 
 Modified By: Tony Wiedman
 -----
 Copyright (c) 2024 MolexWorks
@@ -51,12 +51,12 @@ def get_ffmpeg_binary():
         base_path = os.path.dirname(os.path.abspath(__file__))
 
     potential_paths = [
-        os.path.join(base_path, '_internal', 'ffmpeg.exe', 'ffmpeg.exe'),  # Windows (nested inside folder)
+        os.path.join(base_path, '_internal', 'ffmpeg.exe', 'ffmpeg.exe'),   # Windows (nested inside folder)
         os.path.join(base_path, '_internal', 'ffmpeg', 'ffmpeg'),           # Linux
         os.path.join(base_path, 'ffmpeg.exe', 'ffmpeg.exe'),                # Windows (nested folder)
         os.path.join(base_path, 'ffmpeg', 'ffmpeg'),                        # Linux
         
-        os.path.join(base_path, '..', 'ffmpeg', 'ffmpeg.exe'),          # Dev Path
+        os.path.join(base_path, '..', 'ffmpeg', 'ffmpeg.exe'),              # Dev Path
     ]
 
     for path in potential_paths:
@@ -416,7 +416,10 @@ def convert_to_mp4_with_aac(input_file, output_file):
                 .compile()
             )
 
-        subprocess.run(command, creationflags=subprocess.CREATE_NO_WINDOW, check=True)
+        if platform.system() == 'Windows':
+            subprocess.run(command, creationflags=subprocess.CREATE_NO_WINDOW, check=True)
+        else: 
+            subprocess.run(command, check=True)
 
         if os.path.exists(input_file):
             os.remove(input_file)
@@ -449,7 +452,6 @@ def save_mp3(folder_path, video_title, url):
             'format': 'bestaudio/best',
             'outtmpl': temp_audio_file,
             'postprocessors': [{'key': 'FFmpegMetadata'}],
-            # 'postprocessor_args': ['-ffmpeg-location', ffmpeg_path],
             'logger': YTDLLogger()
         }
 
@@ -468,12 +470,18 @@ def save_mp3(folder_path, video_title, url):
                 .output(mp3_output, format='mp3', audio_bitrate=audio_bitrate)
                 .compile()
             )
-            subprocess.run(command, creationflags=subprocess.CREATE_NO_WINDOW, check=True)
+
+            if platform.system() == 'Windows':
+                subprocess.run(command, creationflags=subprocess.CREATE_NO_WINDOW, check=True)
+            else:
+                subprocess.run(command, check=True)
 
     except ffmpeg.Error as e:
         error_message = e.stderr.decode() if hasattr(e, 'stderr') else str(e)
+        print(f"FFmpeg error: {error_message}")
         show_warning_message("Conversion Error", "An error occurred during MP3 conversion.")
     except Exception as e:
+        print(f"Error: {e}")
         show_warning_message("Error", str(e))
     finally:
         if os.path.exists(temp_audio_file):
