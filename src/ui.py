@@ -4,7 +4,7 @@ Project: c:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\src
 Created Date: Monday November 25th 2024
 Author: Tony Wiedman
 -----
-Last Modified: Mon January 6th 2025 4:02:58 
+Last Modified: Mon January 6th 2025 8:16:38 
 Modified By: Tony Wiedman
 -----
 Copyright (c) 2024 MolexWorks
@@ -28,8 +28,6 @@ try:
 except ImportError as e:
     print(f"Import error: {e}")
 from CTkMessagebox import CTkMessagebox
-import ffmpeg
-import shutil
 
 #@ ------------------------------ Global Settings and Variables -------------------------------
 
@@ -275,7 +273,13 @@ def is_valid_youtube_url(url):
         return False
 
     try:
-        with yt_dlp.YoutubeDL({'quiet': True, 'skip_download': True}) as ydl:
+        ydl_opts = {
+            'quiet': True,
+            'skip_download': True,
+            'ffmpeg_location': ffmpeg_path 
+        }
+        
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.extract_info(url, download=False)
         return True
 
@@ -292,16 +296,27 @@ def retry_url_entry():
     """Callback to reset the UI when retrying an invalid URL."""
     app.after(100, perform_reset)
   
+  
 def check_audio_codec(filepath):
     """Check if the audio codec of the downloaded file is AAC."""
     try:
-        result = subprocess.run([ffmpeg_path, '-i', filepath], stderr=subprocess.PIPE, text=True)
-        return "aac" in result.stderr
-    except Exception:
+        probe_cmd = [ffmpeg_path, '-v', 'verbose', '-i', filepath]
+        result = subprocess.run(probe_cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, text=True, check=True)
+        stderr = result.stderr.lower()
+
+        if 'audio' in stderr and 'aac' in stderr:
+            print("Audio codec is AAC.")
+            return True
+        else:
+            print("Audio codec is not AAC.")
+            return False
+
+    except subprocess.CalledProcessError as e:
+        print(f"Error checking audio codec: {e.stderr if e.stderr else str(e)}")
         return False
-
-
-
+    except Exception as e:
+        print(f"Error: {e}")
+        return False
 
 
 #@ --------------------------- yt-dlp Functions ---------------------------
@@ -312,7 +327,7 @@ def check_audio_codec(filepath):
 def list_available_qualities(url):
     """Fetch available video qualities from a YouTube URL."""
     try:
-        with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+        with yt_dlp.YoutubeDL({'quiet': True, 'ffmpeg_location': ffmpeg_path}) as ydl:
             info = ydl.extract_info(url, download=False)
             formats = info.get('formats', [])
             
@@ -325,7 +340,6 @@ def list_available_qualities(url):
             for f in webm_formats:
                 resolution = f.get('resolution', 'unknown')
                 fps = f.get('fps', 'unknown')
-                # Avoid duplicates by creating unique keys based on resolution and fps
                 if (resolution, fps) not in seen_qualities:
                     seen_qualities[(resolution, fps)] = {
                         'format_id': f['format_id'],
@@ -347,7 +361,7 @@ def download_and_convert(url, quality_index):
     available_qualities = list_available_qualities(url)
     selected_quality = available_qualities[quality_index]
 
-    with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+    with yt_dlp.YoutubeDL({'quiet': True, 'ffmpeg_location': ffmpeg_path}) as ydl:
         info = ydl.extract_info(url, download=False)
         video_title = sanitize_filename(info.get('title', 'downloaded_video').replace(" ", "_"))
         uploader_name = sanitize_filename(info.get('uploader', 'Unknown_Uploader').replace(" ", "_"))
@@ -365,7 +379,6 @@ def download_and_convert(url, quality_index):
             'outtmpl': temp_file,
             'progress_hooks': [progress_hook],
             'postprocessors': [{'key': 'FFmpegMetadata'}],
-            # 'postprocessor_args': ['-ffmpeg-location', ffmpeg_path],
             'logger': YTDLLogger()
         }
 
@@ -377,13 +390,12 @@ def download_and_convert(url, quality_index):
             progress_label.set("Saving MP3...")
             save_mp3(full_output_folder, video_title, url)
 
-        # Convert video to MP4 with AAC audio
         progress_label.set("Converting video...")
+        # time.sleep(5)
         convert_to_mp4_with_aac(temp_file, final_output)
 
         finalize_download(full_output_folder)
 
-    # Remove existing webm file if it exists
     if os.path.exists(final_output):
         os.remove(final_output)
 
@@ -391,46 +403,32 @@ def download_and_convert(url, quality_index):
 
 
 def convert_to_mp4_with_aac(input_file, output_file):
-    """Convert a video to MP4 format with AAC audio silently using python-ffmpeg."""
+    """Convert a video to MP4 format with AAC audio silently using ffmpeg."""
     try:
-        probe = ffmpeg.probe(input_file)
-        audio_stream = next((stream for stream in probe['streams'] if stream['codec_type'] == 'audio'), None)
-        
-        if not audio_stream:
-            raise ValueError("No audio stream found in the input file.")
+        print(f"{ffmpeg_path} -i {input_file} -c:v copy -c:a aac -b:a 192k {output_file}")
+        print(f"Input file: {input_file}")
+        print(f"Output file: {output_file}")
 
-        codec = audio_stream.get('codec_name', '')
+        convert_cmd = [
+            ffmpeg_path,
+            '-i', input_file,
+            '-c:v', 'copy', 
+            '-c:a', 'aac',
+            '-b:a', audio_bitrate,
+            output_file 
+        ]
 
-        if codec != 'aac':
-            command = (
-                ffmpeg
-                .input(input_file)
-                .output(output_file, vcodec='copy', acodec='aac', strict='experimental')
-                .compile()
-            )
-        else:
-            command = (
-                ffmpeg
-                .input(input_file)
-                .output(output_file, vcodec='copy', acodec='copy')
-                .compile()
-            )
-
-        if platform.system() == 'Windows':
-            subprocess.run(command, creationflags=subprocess.CREATE_NO_WINDOW, check=True)
-        else: 
-            subprocess.run(command, check=True)
+        result = subprocess.run(convert_cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, text=True, check=True)
 
         if os.path.exists(input_file):
             os.remove(input_file)
 
-    except ffmpeg.Error as e:
-        error_message = e.stderr.decode() if hasattr(e, 'stderr') else str(e)
-        print(f"ffmpeg error: {error_message}")
-        show_warning_message("Conversion Error", "An error occurred during video conversion.")
+        print(f"Conversion complete. File saved as {output_file}")
+
+    except subprocess.CalledProcessError as e:
+        print(f"FFmpeg error: {e.stderr if e.stderr else str(e)}")
     except Exception as e:
         print(f"Error: {e}")
-        show_warning_message("Error", str(e))
 
 
 def save_mp3(folder_path, video_title, url):
@@ -440,7 +438,6 @@ def save_mp3(folder_path, video_title, url):
 
     sanitized_title = sanitize_filename(video_title)
     mp3_output = os.path.join(mp3_folder, f"{sanitized_title}.mp3")
-    temp_audio_file = os.path.join(mp3_folder, f"{sanitized_title}.webm")
 
     if os.path.exists(mp3_output):
         print(f"MP3 file '{mp3_output}' already exists. Skipping download.")
@@ -450,43 +447,28 @@ def save_mp3(folder_path, video_title, url):
         ydl_opts = {
             'ffmpeg_location': ffmpeg_path,
             'format': 'bestaudio/best',
-            'outtmpl': temp_audio_file,
-            'postprocessors': [{'key': 'FFmpegMetadata'}],
-            'logger': YTDLLogger()
+            'outtmpl': mp3_output,
+            'postprocessors': [
+                {
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': audio_bitrate, 
+                },
+                {
+                    'key': 'FFmpegMetadata'
+                }
+            ],
+            'logger': YTDLLogger(),
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
 
-        probe = ffmpeg.probe(temp_audio_file)
-        file_format = probe.get('format', {}).get('format_name', '')
+        print(f"Download complete! Audio saved as {mp3_output}")
 
-        if 'mp3' in file_format.lower():
-            os.rename(temp_audio_file, mp3_output)
-        else:
-            command = (
-                ffmpeg
-                .input(temp_audio_file)
-                .output(mp3_output, format='mp3', audio_bitrate=audio_bitrate)
-                .compile()
-            )
-
-            if platform.system() == 'Windows':
-                subprocess.run(command, creationflags=subprocess.CREATE_NO_WINDOW, check=True)
-            else:
-                subprocess.run(command, check=True)
-
-    except ffmpeg.Error as e:
-        error_message = e.stderr.decode() if hasattr(e, 'stderr') else str(e)
-        print(f"FFmpeg error: {error_message}")
-        show_warning_message("Conversion Error", "An error occurred during MP3 conversion.")
     except Exception as e:
         print(f"Error: {e}")
         show_warning_message("Error", str(e))
-    finally:
-        if os.path.exists(temp_audio_file):
-            os.remove(temp_audio_file)
-
 
 
 # * --- Finalization and Progress

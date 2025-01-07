@@ -4,7 +4,7 @@ Project: c:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\src
 Created Date: Monday November 25th 2024
 Author: Tony Wiedman
 -----
-Last Modified: Mon January 6th 2025 4:02:45 
+Last Modified: Mon January 6th 2025 8:17:17 
 Modified By: Tony Wiedman
 -----
 Copyright (c) 2024 MolexWorks
@@ -20,7 +20,6 @@ import os
 import re
 import subprocess
 import argparse
-import ffmpeg
 import sys
 import platform
 from rich.console import Console
@@ -161,7 +160,12 @@ def list_available_qualities(url):
     :param url: YouTube URL as a string.
     :return: List of available qualities.
     """
-    with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+    ydl_opts = {
+        'quiet': True, 
+        'ffmpeg_location': ffmpeg_path 
+    }
+    
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
         formats = info.get('formats', [])
         seen_qualities = {}
@@ -201,14 +205,14 @@ def list_available_qualities(url):
 
 def download_video(url):
     """
-    Download a video from URL in selected quality and save to output folder.
+    Download a video from URL in selected quality and save to the output folder.
 
     :param url: YouTube URL as a string.
     :return: Path to the folder where the video is saved.
     """
     available_qualities = list_available_qualities(url)
     if not available_qualities:
-        return
+        return None
 
     while True:
         try:
@@ -221,14 +225,14 @@ def download_video(url):
 
     selected_quality = available_qualities[selected_index]
 
-    with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+    with yt_dlp.YoutubeDL({'quiet': True, 'ffmpeg_location': ffmpeg_path}) as ydl:
         info = ydl.extract_info(url, download=False)
         video_title = sanitize_filename(info.get('title', 'downloaded_video').replace(" ", "_"))
         uploader_name = sanitize_filename(info.get('uploader', 'Unknown_Uploader').replace(" ", "_"))
-    
+
     folder_path = os.path.join(CONFIG['output_folder'], uploader_name)
     os.makedirs(folder_path, exist_ok=True)
-    
+
     final_output = os.path.join(folder_path, f"{video_title}_{selected_quality['resolution']}.mp4")
 
     ydl_opts = {
@@ -237,47 +241,51 @@ def download_video(url):
         'outtmpl': final_output,
         'merge_output_format': 'mp4',
         'postprocessors': [{'key': 'FFmpegMetadata'}],
-        # 'postprocessor_args': ['-ffmpeg-location', ffmpeg_path],
+        'quiet': True,
+        'verbose': False,
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
 
     print(f"Download complete! Video saved as {final_output}")
+
     convert_audio_to_aac(final_output)
-    
+
     return folder_path
+
 
 def convert_audio_to_aac(video_path):
     """
     Check if video audio is AAC and convert to AAC if it's not.
-
+    
     :param video_path: Path to the video file as a string.
     :return: None
     """
-    probe = ffmpeg.probe(video_path)
-    audio_stream = next((stream for stream in probe['streams'] if stream['codec_type'] == 'audio'), None)
-
-    if not audio_stream:
-        print("No audio stream found in the video. Skipping conversion.")
-        return
-
-    codec = audio_stream.get('codec_name', '')
-    
-    if codec != "aac":
-        print(f"Audio codec is '{codec}'. Converting to AAC...")
+    try:
+        print(f"Input file: {video_path}")
         aac_output = video_path.replace('.mp4', '_aac.mp4')
-        (
-            ffmpeg
-            .input(video_path)
-            .output(aac_output, vcodec='copy', acodec='aac', audio_bitrate=CONFIG['audio_bitrate'])
-            .run(overwrite_output=True)
-        )
-        
+        print(f"Output file: {aac_output}")
+
+        convert_cmd = [
+            ffmpeg_path,
+            '-i', video_path,
+            '-c:v', 'copy', 
+            '-c:a', 'aac',
+            '-b:a', CONFIG['audio_bitrate'],
+            aac_output
+        ]
+
+        result = subprocess.run(convert_cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, text=True, check=True)
+
         os.replace(aac_output, video_path)
         print(f"Conversion to AAC complete. File saved as {video_path}")
-    else:
-        print("Audio is already in AAC format. No conversion needed.")
+
+    except subprocess.CalledProcessError as e:
+        print(f"FFmpeg error: {e.stderr if e.stderr else str(e)}")
+    except Exception as e:
+        print(f"Error: {e}")
+
 
 def download_best_audio(url):
     """
@@ -286,7 +294,7 @@ def download_best_audio(url):
     :param url: YouTube URL as a string.
     :return: Path to the folder where the MP3 file is saved.
     """
-    with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+    with yt_dlp.YoutubeDL({'quiet': True, 'ffmpeg_location': ffmpeg_path}) as ydl:
         info = ydl.extract_info(url, download=False)
         audio_title = sanitize_filename(info.get('title', 'downloaded_audio').replace(" ", "_"))
         uploader_name = sanitize_filename(info.get('uploader', 'Unknown_Uploader').replace(" ", "_"))
@@ -310,7 +318,6 @@ def download_best_audio(url):
                 'key': 'FFmpegMetadata'
             }
         ],
-        # 'postprocessor_args': ['-ffmpeg-location', ffmpeg_path],
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -332,7 +339,7 @@ def download_playlist(playlist_url, download_audio=False):
     output_folder = CONFIG['output_folder']
     
     try:
-        with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+        with yt_dlp.YoutubeDL({'quiet': True, 'ffmpeg_location': ffmpeg_path}) as ydl:
             playlist_info = ydl.extract_info(playlist_url, download=False)
             playlist_creator = sanitize_filename(playlist_info.get('uploader', 'Unknown_Uploader'))
             playlist_title = sanitize_filename(playlist_info.get('title', 'Unknown Playlist'))
@@ -350,7 +357,6 @@ def download_playlist(playlist_url, download_audio=False):
             'outtmpl': os.path.join(playlist_folder, '%(title)s.%(ext)s'),
             'format': 'bestaudio/best' if download_audio else 'bestvideo+bestaudio/best',
             'postprocessors': [],
-            # 'postprocessor_args': ['-ffmpeg-location', ffmpeg_path],
         }
 
         if download_audio:
@@ -372,7 +378,6 @@ def download_playlist(playlist_url, download_audio=False):
             ]
             ydl_opts['merge_output_format'] = 'mp4'
 
-
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             print(f"Downloading playlist from: {playlist_url}")
             ydl.download([playlist_url])
@@ -383,6 +388,7 @@ def download_playlist(playlist_url, download_audio=False):
     except Exception as e:
         print(f"Error occurred while downloading playlist: {e}")
         return None
+
 
 #@ ------------------------------- @#
 
@@ -425,7 +431,7 @@ def select_videos_from_playlist(url):
     :param url: Playlist URL as a string.
     :return: List of selected video URLs.
     """
-    with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+    with yt_dlp.YoutubeDL({'quiet': True, 'ffmpeg_location': ffmpeg_path}) as ydl:
         playlist_info = ydl.extract_info(url, download=False)
         entries = playlist_info.get('entries', [])
         
@@ -444,6 +450,7 @@ def select_videos_from_playlist(url):
         selected_urls = [video_urls[int(i.strip()) - 1] for i in selected_indices if i.strip().isdigit() and int(i.strip()) - 1 < len(video_urls)]
         return selected_urls
 
+
 def download_selected_videos(selected_urls, playlist_url, download_audio=False):
     """
     Download selected videos from a playlist with the best quality and save them in a folder.
@@ -459,7 +466,7 @@ def download_selected_videos(selected_urls, playlist_url, download_audio=False):
     output_folder = CONFIG['output_folder']
     
     try:
-        with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+        with yt_dlp.YoutubeDL({'quiet': True, 'ffmpeg_location': ffmpeg_path}) as ydl:
             playlist_info = ydl.extract_info(playlist_url, download=False)
             playlist_creator = sanitize_filename(playlist_info.get('uploader', 'Unknown_Uploader'))
             playlist_title = sanitize_filename(playlist_info.get('title', 'Unknown Playlist'))
@@ -479,7 +486,6 @@ def download_selected_videos(selected_urls, playlist_url, download_audio=False):
             'outtmpl': os.path.join(playlist_folder, '%(title)s.%(ext)s'),
             'format': 'bestaudio/best' if download_audio else 'bestvideo+bestaudio/best',
             'postprocessors': [],
-            # 'postprocessor_args': ['-ffmpeg-location', ffmpeg_path],
         }
 
         if download_audio:
@@ -513,6 +519,7 @@ def download_selected_videos(selected_urls, playlist_url, download_audio=False):
     except Exception as e:
         print(f"Error occurred while downloading selected videos: {e}")
         return None
+
 
 #@ ------------------------------ @#
 
