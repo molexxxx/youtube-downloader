@@ -26,9 +26,9 @@ This application provides both a **command line interface (CLI)** and an **graph
 
 You can download the latest release of the YouTube Video Downloader GUI and CLI versions from the following link:
 
-- [Download Standalone GUI Version](https://github.com/tonywied17/youtube-downloader/releases)
-- [Download Standalone CLI Version](https://github.com/tonywied17/youtube-downloader/releases)
-- [Download Windows Installer](https://github.com/tonywied17/youtube-downloader/releases)
+- [Download Windows Standalone - .zip](https://github.com/tonywied17/youtube-downloader/releases)
+- [Download Linux Standalone - .tar.gz](https://github.com/tonywied17/youtube-downloader/releases)
+- [Download GUI/CLI Bundles - .zip, .tar.gz](https://github.com/tonywied17/youtube-downloader/releases)
 
 ## Interactive CLI Features
 ![YouTube Downloader CLI](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/yt-cli-main-menu.png)
