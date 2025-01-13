@@ -3,7 +3,7 @@
 
 a = Analysis(
     ['src\\cli.py'],
-    pathex=[],
+    pathex=['src'],
     binaries=[('C:\\Users\\tonyw\\Desktop\\YouTube DL\\youtube-downloader\\ffmpeg\\ffmpeg.exe', 'ffmpeg.exe')],
     datas=[],
     hiddenimports=['customtkinter', 'CTkMessagebox', 'ffmpeg', 'rich', 'googleapiclient.discovery', 'googleapiclient.errors', 'googleapiclient.http'],

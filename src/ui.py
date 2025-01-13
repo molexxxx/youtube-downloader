@@ -4,7 +4,7 @@ Project: c:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\src
 Created Date: Monday November 25th 2024
 Author: Tony Wiedman
 -----
-Last Modified: Mon January 6th 2025 8:16:38 
+Last Modified: Mon January 13th 2025 10:20:03 
 Modified By: Tony Wiedman
 -----
 Copyright (c) 2024 MolexWorks
@@ -14,7 +14,7 @@ Copyright (c) 2024 MolexWorks
 #@ ------------------------------ Global Imports and Dependencies -------------------------------
 
 
-import os, sys, re, json, time, threading, subprocess, webbrowser, platform
+import os, sys, re, json, time, threading, subprocess, webbrowser, shutil
 import yt_dlp
 import yt_dlp.utils
 import customtkinter as ctk
@@ -28,8 +28,10 @@ try:
 except ImportError as e:
     print(f"Import error: {e}")
 from CTkMessagebox import CTkMessagebox
+from cookies import CookieExporter
 
 #@ ------------------------------ Global Settings and Variables -------------------------------
+
 
 
 # * --- File and Path Management
@@ -39,9 +41,9 @@ def get_ffmpeg_binary():
     Locate the FFmpeg binary, considering PyInstaller's one-file and one-folder modes.
     :return: Path to the FFmpeg binary.
     """
-    # ffmpeg_path = shutil.which("ffmpeg")
-    # if ffmpeg_path:
-    #     return ffmpeg_path
+    ffmpeg_path = shutil.which("ffmpeg")
+    if ffmpeg_path:
+        return ffmpeg_path
     
     try:
         base_path = sys._MEIPASS
@@ -112,9 +114,10 @@ settings_window = None
 
 def load_settings():
     """Load user settings from a JSON file or use defaults."""
-    global audio_bitrate, output_folder
+    global audio_bitrate, output_folder, cookie_file_path, settings_path
     audio_bitrate = '256k'
     output_folder = os.path.join(os.getcwd(), 'downloads')
+    cookie_file_path = os.path.join(output_folder, 'cookies.txt')
     settings_path = 'settings.json'
     
     if os.path.exists(settings_path):
@@ -132,6 +135,9 @@ def load_settings():
     else:
         os.makedirs(output_folder, exist_ok=True)
 
+    if not os.path.exists(cookie_file_path):
+        cookie_exporter = CookieExporter(file_path=cookie_file_path, filter_domain="youtube.com")
+        cookie_exporter.export_cookies_to_netscape()
 
 def open_settings():
     global settings_window
@@ -251,11 +257,51 @@ def open_settings():
 
 # * --- Video and Audio Validation
 
+# def is_valid_youtube_url(url):
+#     """Check if the URL is a valid YouTube video or Shorts URL, excluding playlists."""
+#     if 'list=' in url:
+#         show_playlist_window(url)
+#         return False
+    
+#     youtube_video_patterns = [
+#         r"^(https://)?(www\.)?(youtube\.com/watch\?v=|youtu\.be/)([a-zA-Z0-9_-]{11})(?:[?&]|$)",
+#         r"^(https://)?(www\.)?(youtube\.com/shorts/)([a-zA-Z0-9_-]{11})(?:[?&]|$)"
+#     ]
+    
+#     match = any(re.match(pattern, url) for pattern in youtube_video_patterns)
+    
+#     if not match:
+#         show_warning_message(
+#             "Invalid URL",
+#             "The provided URL is not a valid YouTube or Shorts link.",
+#             retry_callback=retry_url_entry
+#         )
+#         return False
+
+#     try:
+#         ydl_opts = {
+#             'quiet': True,
+#             'skip_download': True,
+#             'ffmpeg_location': ffmpeg_path,
+#             'cookiefile': cookie_file_path
+#         }
+        
+#         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+#             ydl.extract_info(url, download=False)
+#         return True
+
+#     except yt_dlp.utils.DownloadError:
+#         show_warning_message(
+#             "Invalid Video",
+#             "The provided video could not be accessed. Please check the URL.",
+#             retry_callback=retry_url_entry
+#         )
+#         return False
+
+
 def is_valid_youtube_url(url):
     """Check if the URL is a valid YouTube video or Shorts URL, excluding playlists."""
-    if 'list=' in url:
-        show_playlist_window(url)
-        return False
+    url = re.sub(r"[?&]list=[^&]+", "", url)
     
     youtube_video_patterns = [
         r"^(https://)?(www\.)?(youtube\.com/watch\?v=|youtu\.be/)([a-zA-Z0-9_-]{11})(?:[?&]|$)",
@@ -276,7 +322,8 @@ def is_valid_youtube_url(url):
         ydl_opts = {
             'quiet': True,
             'skip_download': True,
-            'ffmpeg_location': ffmpeg_path 
+            'ffmpeg_location': ffmpeg_path,
+            'cookiefile': cookie_file_path
         }
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -327,7 +374,7 @@ def check_audio_codec(filepath):
 def list_available_qualities(url):
     """Fetch available video qualities from a YouTube URL."""
     try:
-        with yt_dlp.YoutubeDL({'quiet': True, 'ffmpeg_location': ffmpeg_path}) as ydl:
+        with yt_dlp.YoutubeDL({'quiet': True, 'ffmpeg_location': ffmpeg_path, 'cookiefile': cookie_file_path}) as ydl:
             info = ydl.extract_info(url, download=False)
             formats = info.get('formats', [])
             
@@ -361,7 +408,7 @@ def download_and_convert(url, quality_index):
     available_qualities = list_available_qualities(url)
     selected_quality = available_qualities[quality_index]
 
-    with yt_dlp.YoutubeDL({'quiet': True, 'ffmpeg_location': ffmpeg_path}) as ydl:
+    with yt_dlp.YoutubeDL({'quiet': True, 'ffmpeg_location': ffmpeg_path, 'cookiefile': cookie_file_path}) as ydl:
         info = ydl.extract_info(url, download=False)
         video_title = sanitize_filename(info.get('title', 'downloaded_video').replace(" ", "_"))
         uploader_name = sanitize_filename(info.get('uploader', 'Unknown_Uploader').replace(" ", "_"))
@@ -375,11 +422,12 @@ def download_and_convert(url, quality_index):
     def start_download_and_process():
         ydl_opts = {
             'ffmpeg_location': ffmpeg_path,
+            'cookiefile': cookie_file_path,
             'format': f"{selected_quality['format_id']}+bestaudio/best",
             'outtmpl': temp_file,
             'progress_hooks': [progress_hook],
             'postprocessors': [{'key': 'FFmpegMetadata'}],
-            'logger': YTDLLogger()
+            'logger': YTDLLogger(),
         }
 
         progress_label.set("Starting download...")
@@ -446,6 +494,7 @@ def save_mp3(folder_path, video_title, url):
     try:
         ydl_opts = {
             'ffmpeg_location': ffmpeg_path,
+            'cookiefile': cookie_file_path,
             'format': 'bestaudio/best',
             'outtmpl': mp3_output,
             'postprocessors': [

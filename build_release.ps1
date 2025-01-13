@@ -49,49 +49,55 @@ Write-Output "Cleaning previous build artifacts..."
 Remove-DirectoryIfExists $distFolder
 Remove-DirectoryIfExists $buildFolder
 
+# * check pip upgrade with pip-compile and sync
+Write-Output "Checking pip upgrade with pip-compile and sync..."
+pip-compile --upgrade --generate-hashes --output-file requirements.txt
+pip-sync requirements.txt
+
 #* Create required directories
 Create-DirectoryIfNeeded $distFolder
-Create-DirectoryIfNeeded $oneDirFolder
+# Create-DirectoryIfNeeded $oneDirFolder
 
 #* Build the one-directory app with PyInstaller
-Write-Output "Building the one-directory app..."
-pyinstaller `
-    --name "YouTube Downloader" `
-    --onedir `
-    --windowed `
-    --noconsole `
-    --icon=$iconPath `
-    --add-data $iconsData `
-    --noconfirm `
-    --add-binary "$ffmpegBinaryPath;ffmpeg.exe" `
-    $(ForEach ($import in $hiddenImports) { "--hidden-import=$import" }) `
-    $uiScript
+# Write-Output "Building the one-directory app..."
+# pyinstaller `
+#     --name "YouTube Downloader" `
+#     --onedir `
+#     --windowed `
+#     --noconsole `
+#     --icon=$iconPath `
+#     --add-data $iconsData `
+#     --noconfirm `
+#     --add-binary "$ffmpegBinaryPath;ffmpeg.exe" `
+#     --paths "src" `
+#     $(ForEach ($import in $hiddenImports) { "--hidden-import=$import" }) `
+#     $uiScript
 
-#* Check if _internal directory exists, and compress it
-if (Test-Path "$oneDirFolder\_internal") {
-    Write-Output "Waiting briefly before compressing _internal directory..."
-    Start-Sleep -Seconds 10
-    Write-Output "Compressing _internal directory..."
-    try {
-        Compress-Archive -Path "$oneDirFolder\_internal" -DestinationPath $internalZipPath -Force
-        Write-Output "Compression completed successfully."
-    } catch {
-        Write-Output "Error occurred during compression: $_"
-    }
-} else {
-    Write-Output "The '_internal' directory does not exist."
-}
+# #* Check if _internal directory exists, and compress it
+# if (Test-Path "$oneDirFolder\_internal") {
+#     Write-Output "Waiting briefly before compressing _internal directory..."
+#     Start-Sleep -Seconds 10
+#     Write-Output "Compressing _internal directory..."
+#     try {
+#         Compress-Archive -Path "$oneDirFolder\_internal" -DestinationPath $internalZipPath -Force
+#         Write-Output "Compression completed successfully."
+#     } catch {
+#         Write-Output "Error occurred during compression: $_"
+#     }
+# } else {
+#     Write-Output "The '_internal' directory does not exist."
+# }
 
-#* Create settings.json file
-$settingsContent = @"
-{
-    "audio_bitrate": "256k",
-    "output_folder": "%APPDATA%\\YouTube Downloader\\downloads"
-}
-"@
-$settingsContent | Out-File -FilePath $settingsFilePath -Encoding UTF8 -NoNewline -Force
+# #* Create settings.json file
+# $settingsContent = @"
+# {
+#     "audio_bitrate": "256k",
+#     "output_folder": "%APPDATA%\\YouTube Downloader\\downloads"
+# }
+# "@
+# $settingsContent | Out-File -FilePath $settingsFilePath -Encoding UTF8 -NoNewline -Force
 
-Write-Output "One-directory build with _internal compression and settings.json creation completed successfully."
+# Write-Output "One-directory build with _internal compression and settings.json creation completed successfully."
 
 #* Build the standalone one-file executable for GUI
 Write-Output "Building the standalone one-file GUI executable..."
@@ -104,6 +110,7 @@ pyinstaller `
     --add-data $iconsData `
     --noconfirm `
     --add-binary "$ffmpegBinaryPath;ffmpeg.exe" `
+    --paths "src" `
     $(ForEach ($import in $hiddenImports) { "--hidden-import=$import" }) `
     $uiScript
 
@@ -126,6 +133,7 @@ pyinstaller `
     --console `
     --icon=$iconPath `
     --add-binary "$ffmpegBinaryPath;ffmpeg.exe" `
+    --paths "src" `
     $(ForEach ($import in $hiddenImports) { "--hidden-import=$import" }) `
     $cliScript
 
@@ -139,22 +147,28 @@ if (Test-Path $cliOneFilePath) {
 
 Write-Output "Standalone one-file CLI build and compression completed successfully."
 
-#* Build the Inno Setup installer
-if (Test-Path $installerExePath) {
-    Write-Output "Removing existing installer.exe..."
-    Remove-Item $installerExePath -Force
-}
+#* Compress the CLI and GUI one-file executables into a single zip
+$combinedZipPath = "$distFolder\(WINDOWS) YouTube_Downloader_CLI_and_GUI.zip"
+Write-Output "Compressing CLI and GUI one-file executables into a single zip..."
+Compress-Archive -Path $oneFileZipPath, $cliOneFileZipPath -DestinationPath $combinedZipPath -Force
 
-if (Test-Path $isccPath) {
-    Write-Output "Compiling Inno Setup installer..."
-    & $isccPath $innoScriptPath
-    if ($LASTEXITCODE -eq 0) {
-        Write-Output "Inno Setup installer compiled successfully."
-    } else {
-        Write-Output "Failed to compile the Inno Setup installer."
-    }
-} else {
-    Write-Output "ISCC.exe not found. Ensure Inno Setup is installed and ISCC.exe is in your PATH or update the script with the correct path."
-}
+
+# #* Build the Inno Setup installer
+# if (Test-Path $installerExePath) {
+#     Write-Output "Removing existing installer.exe..."
+#     Remove-Item $installerExePath -Force
+# }
+
+# if (Test-Path $isccPath) {
+#     Write-Output "Compiling Inno Setup installer..."
+#     & $isccPath $innoScriptPath
+#     if ($LASTEXITCODE -eq 0) {
+#         Write-Output "Inno Setup installer compiled successfully."
+#     } else {
+#         Write-Output "Failed to compile the Inno Setup installer."
+#     }
+# } else {
+#     Write-Output "ISCC.exe not found. Ensure Inno Setup is installed and ISCC.exe is in your PATH or update the script with the correct path."
+# }
 
 #@ ------------------------- @#

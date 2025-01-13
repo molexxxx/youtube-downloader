@@ -4,7 +4,7 @@ Project: c:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\src
 Created Date: Monday November 25th 2024
 Author: Tony Wiedman
 -----
-Last Modified: Mon January 13th 2025 7:41:45 
+Last Modified: Mon January 13th 2025 10:34:27 
 Modified By: Tony Wiedman
 -----
 Copyright (c) 2024 MolexWorks
@@ -22,6 +22,7 @@ import subprocess
 import argparse
 import sys
 import platform
+import shutil
 from rich.console import Console
 from rich import box
 from rich.table import Table
@@ -31,6 +32,8 @@ from rich.box import MINIMAL
 from rich import box
 from googleapiclient.discovery import build
 from cookies import CookieExporter
+from dotenv import load_dotenv
+load_dotenv()
 
 #@ ------------------------------------ @#
 
@@ -41,7 +44,7 @@ Global settings for the application, including output folder and audio bitrate.
 CONFIG = {
     "audio_bitrate": "256k",
     "output_folder": os.path.join(os.getcwd(), 'downloads'),
-    "youtube_api_key": ""
+    "youtube_api_key": os.getenv("YOUTUBE_API_KEY")
 }
 console = Console()
 cookie_file_path = os.path.join(CONFIG["output_folder"], 'cookies.txt')
@@ -65,9 +68,9 @@ def get_ffmpeg_binary():
     Locate the FFmpeg binary, considering PyInstaller's one-file and one-folder modes.
     :return: Path to the FFmpeg binary.
     """
-    # ffmpeg_path = shutil.which("ffmpeg")
-    # if ffmpeg_path:
-    #     return ffmpeg_path
+    ffmpeg_path = shutil.which("ffmpeg")
+    if ffmpeg_path:
+        return ffmpeg_path
     
     try:
         base_path = sys._MEIPASS
@@ -98,7 +101,7 @@ Set the FFmpeg path for the application
 """
 ffmpeg_path = get_ffmpeg_binary()
 os.environ["FFMPEG_BINARY"] = ffmpeg_path
-print(f"FFmpeg binary located at: {ffmpeg_path}")
+console.print(f"[green]FFmpeg binary path:[/green] {ffmpeg_path}")
 
 #@ -------------------------------------- @#
 
@@ -271,6 +274,7 @@ def convert_audio_to_aac(video_path):
     :return: None
     """
     try:
+        console.print("[yellow]Please wait.. Converting to AAC for compatibility..[/yellow]")
         print(f"Input file: {video_path}")
         aac_output = video_path.replace('.mp4', '_aac.mp4')
         print(f"Output file: {aac_output}")
@@ -724,6 +728,7 @@ if __name__ == "__main__":
     initialize_downloads_folder()
     
     if not os.path.exists(cookie_file_path):
+        # console.print(f"[yellow]No cookies.txt file found in output folder.[/yellow]\n")
         cookie_exporter = CookieExporter(file_path=cookie_file_path, filter_domain="youtube.com")
         cookie_exporter.export_cookies_to_netscape()
 

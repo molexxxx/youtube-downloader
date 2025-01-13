@@ -1,4 +1,6 @@
 import browser_cookie3
+from rich.console import Console
+console = Console()
 
 class CookieExporter:
     def __init__(self, file_path="cookies.txt", filter_domain=None):
@@ -28,13 +30,16 @@ class CookieExporter:
             ]
             
             cookies = []
-            print("Checking for browser cookies to export...")
+            console.print("\n[bold yellow]Checking for browser cookies to export...[/bold yellow]")
 
             for method in browser_methods:
                 try:
                     cookies.extend(method())
                 except Exception as e:
-                    print(f"Error fetching cookies from {method.__name__.split('.')[-1]}: {e}")
+                    console.print(f"[yellow]No cookies found for {method.__name__.split('.')[-1]}[/yellow]")
+                    
+            youtube_cookies = [cookie for cookie in cookies if 'youtube.com' in cookie.domain]
+            console.print(f"[blue]({len(youtube_cookies)}) cookies found for youtube.com in {method.__name__.split('.')[-1]}[/blue]")
 
             #* Filter cookies by domain if specified
             if self.filter_domain:
@@ -63,8 +68,9 @@ class CookieExporter:
                                 f"{int(cookie.expires) if cookie.expires else 0}\t"
                                 f"{cookie.name}\t"
                                 f"{cookie.value}\n")
-                print(f"Cookies exported successfully to {self.file_path}")
+                console.print(f"\n[green]Cookies exported:[/green] {self.file_path}\n")
             else:
-                print("No cookies found for the specified browsers.")
+                console.print("\n[yellow]No cookies found to export. Please ensure you have logged into https://www.youtube.com and then [bold]close the browser[/bold] before running this program.[/yellow]")
         except Exception as e:
-            print(f"Error exporting cookies: {e}")
+            console.print(f"\n[red]Error exporting cookies: {e}[/red]") 
+            console.print("\n[yellow]Please ensure you have logged into https://www.youtube.com and then [bold]close the browser[/bold] before running this program.[/yellow]")

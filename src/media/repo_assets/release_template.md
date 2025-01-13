@@ -3,6 +3,18 @@
 
 ## Features
 
+## Automatic Browser Cookie Import (New Feature)
+This application will attempt to import browser cookies now required for youtube downloads which also happens to allow the downloads of private and paid videos. 
+<br>
+**Please ensure that you have...**
+ - Logged into your youtube account in your browser
+ - After logging in youtube make sure to close all browser windows and tabs
+ - Run the application and it will automatically import the cookies required from your browser to a `cookies.txt` file in your download output folder.
+
+ If you are having issues with cookies, please delete any cookies.txt in your output folder and re-follow the steps above.
+
+ If cookies are not auto-imported, you can manually import them by exporting with a browser extension such as [Get cookies.txt LOCALLY](https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc) and navigate to youtube.com and login, then export/save the cookies to a `cookies.txt` file in the output folder using the extension.
+
 ### Interactive CLI Features
 - **Download a New Video**: Download a specific video from YouTube.
 - **Download Audio as MP3**: Extract and download only the audio of a video as an MP3 file.
@@ -25,5 +37,3 @@
 - **Standalone CLI `.zip` (Windows):** A single-file version of the CLI that allows you to run the interactive command-line interface without installation. This option is great for users who prefer working directly from the command line and need a portable solution.
 
 - **BUNDLE  Archives `.zip` `.tar.gz` (Windows, Linux):**  Contains both the CLI and GUI standalone executables for Windows, or Linux.
-
-**Full Changelog**: https://github.com/tonywied17/youtube-downloader/commits/RELEASE

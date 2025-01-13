@@ -17,3 +17,6 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+# Ignore dot-env
+.env

@@ -30,6 +30,16 @@ You can download the latest release of the YouTube Video Downloader GUI and CLI 
 - [Download Linux Standalone](https://github.com/tonywied17/youtube-downloader/releases)
 - [Download GUI/CLI Bundles](https://github.com/tonywied17/youtube-downloader/releases)
 
+## Automatic Browser Cookie Import (New Feature)
+This application will attempt to import browser cookies required for youtube downloads as well as private and paid videos. 
+<br>
+**Please ensure that you have...**
+ - Logged into your youtube account in your browser
+ - After logging in youtube make sure to close all browser windows and tabs
+ - Run the application and it will automatically import the cookies required from your browser to a `cookies.txt` file in your download output folder.
+
+**If you are getting an error message about cookies, please delete any cookies.txt in your output folder and re-follow the steps above.**
+
 ## Interactive CLI Features
 ![YouTube Downloader CLI](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/yt-cli-main-menu.png)
 - **Download a New Video**: Download a specific video from YouTube.
