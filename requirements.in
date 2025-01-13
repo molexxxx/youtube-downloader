@@ -1,0 +1,9 @@
+yt-dlp
+pyinstaller
+pillow
+customtkinter
+CTkMessagebox
+ffmpeg-python
+rich
+google-api-python-client
+browser-cookie3

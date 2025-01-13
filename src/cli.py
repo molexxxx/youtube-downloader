@@ -4,7 +4,7 @@ Project: c:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\src
 Created Date: Monday November 25th 2024
 Author: Tony Wiedman
 -----
-Last Modified: Tue January 7th 2025 2:03:07 
+Last Modified: Mon January 13th 2025 7:41:45 
 Modified By: Tony Wiedman
 -----
 Copyright (c) 2024 MolexWorks
@@ -30,6 +30,7 @@ from rich.box import SIMPLE
 from rich.box import MINIMAL
 from rich import box
 from googleapiclient.discovery import build
+from cookies import CookieExporter
 
 #@ ------------------------------------ @#
 
@@ -43,6 +44,7 @@ CONFIG = {
     "youtube_api_key": ""
 }
 console = Console()
+cookie_file_path = os.path.join(CONFIG["output_folder"], 'cookies.txt')
 #@ -------------------------------- @#
 
 
@@ -162,7 +164,8 @@ def list_available_qualities(url):
     """
     ydl_opts = {
         'quiet': True, 
-        'ffmpeg_location': ffmpeg_path 
+        'ffmpeg_location': ffmpeg_path ,
+        'cookiefile': os.path.join(CONFIG['output_folder'], 'cookies.txt'),
     }
     
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -225,7 +228,11 @@ def download_video(url):
 
     selected_quality = available_qualities[selected_index]
 
-    with yt_dlp.YoutubeDL({'quiet': True, 'ffmpeg_location': ffmpeg_path}) as ydl:
+    with yt_dlp.YoutubeDL({
+        'quiet': True, 
+        'ffmpeg_location': ffmpeg_path,
+        'cookiefile': os.path.join(CONFIG['output_folder'], 'cookies.txt')
+    }) as ydl:
         info = ydl.extract_info(url, download=False)
         video_title = sanitize_filename(info.get('title', 'downloaded_video').replace(" ", "_"))
         uploader_name = sanitize_filename(info.get('uploader', 'Unknown_Uploader').replace(" ", "_"))
@@ -237,6 +244,7 @@ def download_video(url):
 
     ydl_opts = {
         'ffmpeg_location': ffmpeg_path,
+        'cookiefile': os.path.join(CONFIG['output_folder'], 'cookies.txt'),
         'format': f"{selected_quality['format_id']}+bestaudio/best",
         'outtmpl': final_output,
         'merge_output_format': 'mp4',
@@ -294,7 +302,7 @@ def download_best_audio(url):
     :param url: YouTube URL as a string.
     :return: Path to the folder where the MP3 file is saved.
     """
-    with yt_dlp.YoutubeDL({'quiet': True, 'ffmpeg_location': ffmpeg_path}) as ydl:
+    with yt_dlp.YoutubeDL({'quiet': True, 'ffmpeg_location': ffmpeg_path, 'cookiefile': os.path.join(CONFIG['output_folder'], 'cookies.txt')}) as ydl:
         info = ydl.extract_info(url, download=False)
         audio_title = sanitize_filename(info.get('title', 'downloaded_audio').replace(" ", "_"))
         uploader_name = sanitize_filename(info.get('uploader', 'Unknown_Uploader').replace(" ", "_"))
@@ -306,6 +314,7 @@ def download_best_audio(url):
 
     ydl_opts = {
         'ffmpeg_location': ffmpeg_path,
+        'cookiefile': os.path.join(CONFIG['output_folder'], 'cookies.txt'),
         'format': 'bestaudio/best',
         'outtmpl': mp3_output,
         'postprocessors': [
@@ -339,7 +348,7 @@ def download_playlist(playlist_url, download_audio=False):
     output_folder = CONFIG['output_folder']
     
     try:
-        with yt_dlp.YoutubeDL({'quiet': True, 'ffmpeg_location': ffmpeg_path}) as ydl:
+        with yt_dlp.YoutubeDL({'quiet': True, 'ffmpeg_location': ffmpeg_path, 'cookiefile': os.path.join(CONFIG['output_folder'], 'cookies.txt'),}) as ydl:
             playlist_info = ydl.extract_info(playlist_url, download=False)
             playlist_creator = sanitize_filename(playlist_info.get('uploader', 'Unknown_Uploader'))
             playlist_title = sanitize_filename(playlist_info.get('title', 'Unknown Playlist'))
@@ -353,6 +362,7 @@ def download_playlist(playlist_url, download_audio=False):
 
         ydl_opts = {
             'ffmpeg_location': ffmpeg_path,
+            'cookiefile': os.path.join(CONFIG['output_folder'], 'cookies.txt'),
             'quiet': False,
             'outtmpl': os.path.join(playlist_folder, '%(title)s.%(ext)s'),
             'format': 'bestaudio/best' if download_audio else 'bestvideo+bestaudio/best',
@@ -431,7 +441,7 @@ def select_videos_from_playlist(url):
     :param url: Playlist URL as a string.
     :return: List of selected video URLs.
     """
-    with yt_dlp.YoutubeDL({'quiet': True, 'ffmpeg_location': ffmpeg_path}) as ydl:
+    with yt_dlp.YoutubeDL({'quiet': True, 'ffmpeg_location': ffmpeg_path, 'cookiefile': os.path.join(CONFIG['output_folder'], 'cookies.txt'),}) as ydl:
         playlist_info = ydl.extract_info(url, download=False)
         entries = playlist_info.get('entries', [])
         
@@ -466,7 +476,7 @@ def download_selected_videos(selected_urls, playlist_url, download_audio=False):
     output_folder = CONFIG['output_folder']
     
     try:
-        with yt_dlp.YoutubeDL({'quiet': True, 'ffmpeg_location': ffmpeg_path}) as ydl:
+        with yt_dlp.YoutubeDL({'quiet': True, 'ffmpeg_location': ffmpeg_path, 'cookiefile': os.path.join(CONFIG['output_folder'], 'cookies.txt')}) as ydl:
             playlist_info = ydl.extract_info(playlist_url, download=False)
             playlist_creator = sanitize_filename(playlist_info.get('uploader', 'Unknown_Uploader'))
             playlist_title = sanitize_filename(playlist_info.get('title', 'Unknown Playlist'))
@@ -482,6 +492,7 @@ def download_selected_videos(selected_urls, playlist_url, download_audio=False):
 
         ydl_opts = {
             'ffmpeg_location': ffmpeg_path,
+            'cookiefile': os.path.join(CONFIG['output_folder'], 'cookies.txt'),
             'quiet': False,
             'outtmpl': os.path.join(playlist_folder, '%(title)s.%(ext)s'),
             'format': 'bestaudio/best' if download_audio else 'bestvideo+bestaudio/best',
@@ -711,6 +722,10 @@ if __name__ == "__main__":
     :return: None
     """
     initialize_downloads_folder()
+    
+    if not os.path.exists(cookie_file_path):
+        cookie_exporter = CookieExporter(file_path=cookie_file_path, filter_domain="youtube.com")
+        cookie_exporter.export_cookies_to_netscape()
 
     parser = argparse.ArgumentParser(description="YouTube Downloader")
     parser.add_argument('url', nargs='?', help="URL of the YouTube video or playlist")
