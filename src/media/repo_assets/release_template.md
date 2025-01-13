@@ -4,15 +4,16 @@
 ## Features
 
 ## Automatic Browser Cookie Import (New Feature)
-This application will attempt to import browser cookies now required for youtube downloads which also happens to allow the downloads of private and paid videos. 
+This application will attempt to import browser cookies required for youtube downloads as well as private and paid videos. 
 <br>
 **Please ensure that you have...**
  - Logged into your youtube account in your browser
- - After logging in youtube make sure to close all browser windows and tabs
+ - After logging into youtube, **close all browser windows and tabs**
  - Run the application and it will automatically import the cookies required from your browser to a `cookies.txt` file in your download output folder.
 
- If you are having issues with cookies, please delete any cookies.txt in your output folder and re-follow the steps above.
+**If you are getting an error message about cookies, please delete any cookies.txt in your output folder and re-follow the steps above.**
 
+**Manually Import:**
  If cookies are not auto-imported, you can manually import them by exporting with a browser extension such as [Get cookies.txt LOCALLY](https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc) and navigate to youtube.com and login, then export/save the cookies to a `cookies.txt` file in the output folder using the extension.
 
 ### Interactive CLI Features

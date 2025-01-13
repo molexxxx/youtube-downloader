@@ -35,10 +35,13 @@ This application will attempt to import browser cookies required for youtube dow
 <br>
 **Please ensure that you have...**
  - Logged into your youtube account in your browser
- - After logging in youtube make sure to close all browser windows and tabs
+ - After logging into youtube, **close all browser windows and tabs**
  - Run the application and it will automatically import the cookies required from your browser to a `cookies.txt` file in your download output folder.
 
 **If you are getting an error message about cookies, please delete any cookies.txt in your output folder and re-follow the steps above.**
+
+**Manually Import:**
+ If cookies are not auto-imported, you can manually import them by exporting with a browser extension such as [Get cookies.txt LOCALLY](https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc) and navigate to youtube.com and login, then export/save the cookies to a `cookies.txt` file in the output folder using the extension.
 
 ## Interactive CLI Features
 ![YouTube Downloader CLI](https://raw.githubusercontent.com/tonywied17/youtube-downloader/refs/heads/main/src/media/repo_assets/yt-cli-main-menu.png)
