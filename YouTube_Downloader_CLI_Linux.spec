@@ -3,7 +3,7 @@
 
 a = Analysis(
     ['src/cli.py'],
-    pathex=[],
+    pathex=['src'],
     binaries=[('/home/molex/clone/youtube-downloader/ffmpeg/ffmpeg', 'ffmpeg')],
     datas=[],
     hiddenimports=['ffmpeg', 'rich', 'googleapiclient.discovery', 'googleapiclient.errors', 'googleapiclient.http'],

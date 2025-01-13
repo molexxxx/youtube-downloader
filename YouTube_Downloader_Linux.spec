@@ -3,7 +3,7 @@
 
 a = Analysis(
     ['src/ui.py'],
-    pathex=[],
+    pathex=['src'],
     binaries=[('/home/molex/clone/youtube-downloader/ffmpeg/ffmpeg', 'ffmpeg')],
     datas=[('src/icons', 'icons')],
     hiddenimports=['PIL._tkinter_finder', 'customtkinter', 'CTkMessagebox', 'ffmpeg', 'googleapiclient.discovery', 'googleapiclient.errors', 'googleapiclient.http'],
