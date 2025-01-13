@@ -57,7 +57,6 @@ This application will attempt to import browser cookies required for youtube dow
 | `./yt-cli --search "keywords"`             | Search YouTube using keywords and choose a video to download.                   |
 | `./yt-cli [URL] --selective`               | Selectively download videos from the specified playlist URL.                    |
 | `./yt-cli --open-downloads`                   | Open the downloads folder in the file explorer.                                 |
-| `./yt-cli --quit`                          | Quit the application immediately.                                               |
 
 ### Examples
 - **Download a single video**:
