@@ -148,9 +148,9 @@ if (Test-Path $cliOneFilePath) {
 Write-Output "Standalone one-file CLI build and compression completed successfully."
 
 #* Compress the CLI and GUI one-file executables into a single zip
-$combinedZipPath = "$distFolder\(WINDOWS) YouTube_Downloader_CLI_and_GUI.zip"
+$combinedZipPath = "$distFolder\(WINDOWS) YouTube_Downloader_BUNDLE.zip"
 Write-Output "Compressing CLI and GUI one-file executables into a single zip..."
-Compress-Archive -Path $oneFileZipPath, $cliOneFileZipPath -DestinationPath $combinedZipPath -Force
+Compress-Archive -Path $oneFileExePath, $cliOneFilePath -DestinationPath $combinedZipPath -Force
 
 
 # #* Build the Inno Setup installer

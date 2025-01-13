@@ -4,7 +4,7 @@ Project: c:\Users\tonyw\Desktop\YouTube DL\youtube-downloader\src
 Created Date: Monday November 25th 2024
 Author: Tony Wiedman
 -----
-Last Modified: Mon January 13th 2025 10:34:27 
+Last Modified: Mon January 13th 2025 11:56:14 
 Modified By: Tony Wiedman
 -----
 Copyright (c) 2024 MolexWorks
@@ -726,28 +726,72 @@ if __name__ == "__main__":
     :return: None
     """
     initialize_downloads_folder()
-    
+
     if not os.path.exists(cookie_file_path):
-        # console.print(f"[yellow]No cookies.txt file found in output folder.[/yellow]\n")
         cookie_exporter = CookieExporter(file_path=cookie_file_path, filter_domain="youtube.com")
         cookie_exporter.export_cookies_to_netscape()
 
-    parser = argparse.ArgumentParser(description="YouTube Downloader")
-    parser.add_argument('url', nargs='?', help="URL of the YouTube video or playlist")
-    parser.add_argument('--playlist', action='store_true', help="Download entire playlist")
-    parser.add_argument('--audio', action='store_true', help="Download audio only (MP3)")
+    parser = argparse.ArgumentParser(
+        description="YouTube Downloader CLI",
+        epilog="Use 'cli.py' to interactively or programmatically download YouTube content."
+    )
+
+    parser.add_argument(
+        'url',
+        nargs='?',
+        help="URL of the YouTube video or playlist to download."
+    )
+    parser.add_argument(
+        '--playlist',
+        action='store_true',
+        help="Download an entire playlist. Must be used with a playlist URL."
+    )
+    parser.add_argument(
+        '--audio',
+        action='store_true',
+        help="Download audio only (MP3). Applies to videos or playlists."
+    )
+    parser.add_argument(
+        '--search',
+        metavar='KEYWORDS',
+        help="Search YouTube using keywords and select a video to download."
+    )
+    parser.add_argument(
+        '--selective',
+        action='store_true',
+        help="Selectively download videos from a playlist. Must be used with a playlist URL."
+    )
+    parser.add_argument(
+        '--open-downloads',
+        action='store_true',
+        help="Open the downloads folder in the file explorer."
+    )
+    
     args = parser.parse_args()
 
     if args.url:
-        if args.playlist:
-            print(f"Downloading playlist from: {args.url}")
+        if args.playlist and args.selective:
+            selected_urls = select_videos_from_playlist(args.url)
+            if selected_urls:
+                download_selected_videos(selected_urls, args.url, download_audio=args.audio)
+        elif args.playlist:
             download_playlist(args.url, download_audio=args.audio)
         elif args.audio:
-            print(f"Downloading audio from: {args.url}")
             download_best_audio(args.url)
         else:
-            print(f"Downloading video from: {args.url}")
             download_video(args.url)
+    elif args.search:
+        video_results = search_youtube_videos(args.search)
+        if video_results:
+            console.print("Search complete! Choose a video by index to download.")
+            selected_index = input("Enter the index of the video to download: ").strip()
+            if selected_index.isdigit():
+                selected_index = int(selected_index)
+                if 1 <= selected_index <= len(video_results):
+                    selected_url = video_results[selected_index - 1][1]
+                    download_video(selected_url) if not args.audio else download_best_audio(selected_url)
+    elif args.open_downloads:
+        open_in_explorer(CONFIG['output_folder'])
     else:
         main_menu()
 
