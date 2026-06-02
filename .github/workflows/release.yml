@@ -76,3 +76,14 @@ jobs:
             dist/*.AppImage
             dist/*.yml
             dist/*.blockmap
+
+  publish:
+    needs: release
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Publish the release
+        # The matrix uploads to a shared draft so all platform assets land
+        # without racing. Flip it to a published, latest release once done.
+        run: gh release edit "${{ github.ref_name }}" --repo "${{ github.repository }}" --draft=false --latest
