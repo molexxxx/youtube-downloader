@@ -17,10 +17,10 @@ export function setQuitting(value: boolean): void {
 
 export function createMainWindow(): BrowserWindow {
   const window = new BrowserWindow({
-    width: 1180,
-    height: 760,
-    minWidth: 940,
-    minHeight: 600,
+    width: 1240,
+    height: 880,
+    minWidth: 980,
+    minHeight: 700,
     show: false,
     autoHideMenuBar: true,
     frame: false,
