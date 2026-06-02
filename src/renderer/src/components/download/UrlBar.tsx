@@ -1,11 +1,20 @@
 import { useState } from 'react'
-import { Search, Loader2, X, Play } from 'lucide-react'
+import { Search, Loader2, X, Play, Video, ListVideo } from 'lucide-react'
 import { useAppStore } from '../../stores/appStore'
-import { looksLikeUrl, formatDuration, looksLikeAuthError } from '../../lib/format'
+import {
+  looksLikeUrl,
+  formatDuration,
+  looksLikeAuthError,
+  playlistChoiceId,
+  playlistUrl
+} from '../../lib/format'
 
 export function UrlBar(): React.JSX.Element {
   const [url, setUrl] = useState('')
   const [searching, setSearching] = useState(false)
+  // When a pasted watch link also carries a playlist, hold it here so the user
+  // can choose between the single video and the whole playlist before we probe.
+  const [choice, setChoice] = useState<{ url: string; listId: string } | null>(null)
   const resolving = useAppStore((s) => s.resolving)
   const setResolving = useAppStore((s) => s.setResolving)
   const setInfo = useAppStore((s) => s.setInfo)
@@ -56,8 +65,34 @@ export function UrlBar(): React.JSX.Element {
   function submit(): void {
     const trimmed = url.trim()
     if (!trimmed) return
-    if (looksLikeUrl(trimmed)) void resolveUrl(trimmed)
-    else void runSearch(trimmed)
+    if (looksLikeUrl(trimmed)) {
+      // A watch link that also carries a playlist is ambiguous — ask which one
+      // the user wants instead of silently grabbing only the single video.
+      const listId = playlistChoiceId(trimmed)
+      if (listId) {
+        setError(null)
+        setCookieHint(false)
+        setInfo(null)
+        setResults([])
+        setChoice({ url: trimmed, listId })
+        return
+      }
+      void resolveUrl(trimmed)
+    } else void runSearch(trimmed)
+  }
+
+  function chooseSingle(): void {
+    if (!choice) return
+    const target = choice.url
+    setChoice(null)
+    void resolveUrl(target)
+  }
+
+  function choosePlaylist(): void {
+    if (!choice) return
+    const target = playlistUrl(choice.listId)
+    setChoice(null)
+    void resolveUrl(target)
   }
 
   const busy = resolving || searching
@@ -90,6 +125,7 @@ export function UrlBar(): React.JSX.Element {
               onClick={() => {
                 setUrl('')
                 setResults([])
+                setChoice(null)
               }}
               title="Clear"
               className="shrink-0 rounded-md p-0.5 text-white/30 transition-colors hover:bg-white/10 hover:text-white/70"
@@ -111,6 +147,45 @@ export function UrlBar(): React.JSX.Element {
           {action}
         </button>
       </div>
+
+      {choice && (
+        <div className="flex flex-col gap-3 rounded-xl border border-red-500/25 bg-red-500/[0.06] p-3.5">
+          <div className="flex items-start gap-2.5">
+            <ListVideo size={18} className="mt-0.5 shrink-0 text-red-400" />
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-white/90">
+                This link is part of a playlist
+              </p>
+              <p className="mt-0.5 text-xs text-white/50">
+                Download just this video, or the entire playlist it belongs to?
+              </p>
+            </div>
+            <button
+              onClick={() => setChoice(null)}
+              title="Cancel"
+              className="ml-auto shrink-0 rounded-md p-0.5 text-white/30 transition-colors hover:bg-white/10 hover:text-white/70"
+            >
+              <X size={15} />
+            </button>
+          </div>
+          <div className="flex gap-2.5">
+            <button
+              onClick={chooseSingle}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-white/80 transition-colors hover:border-white/20 hover:bg-white/[0.07] hover:text-white"
+            >
+              <Video size={16} />
+              Just this video
+            </button>
+            <button
+              onClick={choosePlaylist}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-500 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-red-500/20 transition-all hover:bg-red-600 hover:shadow-red-500/30 active:scale-[0.98]"
+            >
+              <ListVideo size={16} />
+              Entire playlist
+            </button>
+          </div>
+        </div>
+      )}
 
       {results.length > 0 && (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-white/10 bg-white/[0.02]">

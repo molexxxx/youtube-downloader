@@ -3,7 +3,9 @@ import {
   formatBytes,
   formatDuration,
   looksLikeAuthError,
-  looksLikeUrl
+  looksLikeUrl,
+  playlistChoiceId,
+  playlistUrl
 } from '@renderer/lib/format'
 
 describe('formatBytes', () => {
@@ -62,5 +64,34 @@ describe('looksLikeAuthError', () => {
     expect(looksLikeAuthError('Video unavailable')).toBe(false)
     expect(looksLikeAuthError('Requested format is not available')).toBe(false)
     expect(looksLikeAuthError('HTTP Error 404: Not Found')).toBe(false)
+  })
+})
+
+describe('playlistChoiceId', () => {
+  it('returns the list id for a watch link that carries a playlist', () => {
+    expect(
+      playlistChoiceId('https://www.youtube.com/watch?v=abc123&list=PL456')
+    ).toBe('PL456')
+    expect(playlistChoiceId('youtube.com/watch?v=abc123&list=PL456')).toBe('PL456')
+  })
+  it('ignores watch links without a playlist', () => {
+    expect(playlistChoiceId('https://www.youtube.com/watch?v=abc123')).toBeNull()
+  })
+  it('ignores bare playlist links (no video id)', () => {
+    expect(playlistChoiceId('https://www.youtube.com/playlist?list=PL456')).toBeNull()
+  })
+  it('ignores auto-generated mixes/radios', () => {
+    expect(
+      playlistChoiceId('https://www.youtube.com/watch?v=abc123&list=RD456')
+    ).toBeNull()
+  })
+  it('returns null for non-URLs', () => {
+    expect(playlistChoiceId('not a url')).toBeNull()
+  })
+})
+
+describe('playlistUrl', () => {
+  it('builds a canonical playlist URL', () => {
+    expect(playlistUrl('PL456')).toBe('https://www.youtube.com/playlist?list=PL456')
   })
 })
