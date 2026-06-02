@@ -24,6 +24,58 @@
 
 ---
 
+## Screenshots
+
+<div align="center">
+
+<a href=".github/assets/main-window.png"><img src=".github/assets/main-window.png" alt="Main window" width="860"></a>
+
+<br/>
+<br/>
+
+<table>
+  <tr>
+    <td align="center" width="215">
+      <a href=".github/assets/thumbs/1-youtube-search.png"><img src=".github/assets/thumbs/1-youtube-search.png" alt="YouTube Search" width="200"></a>
+      <br/><sub><b>YouTube Search</b></sub>
+    </td>
+    <td align="center" width="215">
+      <a href=".github/assets/thumbs/2-video-download-details.png"><img src=".github/assets/thumbs/2-video-download-details.png" alt="Video Download Details" width="200"></a>
+      <br/><sub><b>Video Download Details</b></sub>
+    </td>
+    <td align="center" width="215">
+      <a href=".github/assets/thumbs/3-playlist-download-details.png"><img src=".github/assets/thumbs/3-playlist-download-details.png" alt="Playlist Download Details" width="200"></a>
+      <br/><sub><b>Playlist Download Details</b></sub>
+    </td>
+    <td align="center" width="215">
+      <a href=".github/assets/thumbs/4-download-history.png"><img src=".github/assets/thumbs/4-download-history.png" alt="Download History" width="200"></a>
+      <br/><sub><b>Download History</b></sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="215">
+      <a href=".github/assets/thumbs/5-view-logs.png"><img src=".github/assets/thumbs/5-view-logs.png" alt="View Logs" width="200"></a>
+      <br/><sub><b>View Logs</b></sub>
+    </td>
+    <td align="center" width="215">
+      <a href=".github/assets/thumbs/6-settings-top.png"><img src=".github/assets/thumbs/6-settings-top.png" alt="Settings — Top" width="200"></a>
+      <br/><sub><b>Settings — Top</b></sub>
+    </td>
+    <td align="center" width="215">
+      <a href=".github/assets/thumbs/7-settings-middle.png"><img src=".github/assets/thumbs/7-settings-middle.png" alt="Settings — Middle" width="200"></a>
+      <br/><sub><b>Settings — Middle</b></sub>
+    </td>
+    <td align="center" width="215">
+      <a href=".github/assets/thumbs/8-settings-bottom.png"><img src=".github/assets/thumbs/8-settings-bottom.png" alt="Settings — Bottom" width="200"></a>
+      <br/><sub><b>Settings — Bottom</b></sub>
+    </td>
+  </tr>
+</table>
+
+</div>
+
+---
+
 ## Features
 
 ### Download & Resolve
