@@ -60,7 +60,32 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get update && sudo apt-get install -y rpm
 
-      - name: Build and package
+      # macOS, signed + notarized: runs only when the Apple Developer ID cert
+      # and notarization secrets are configured. Produces a Gatekeeper-approved
+      # .pkg/.zip that opens without warnings.
+      - name: Build and package (macOS, signed)
+        if: matrix.os == 'macos-latest' && secrets.MAC_CSC_LINK != ''
+        run: npm run ${{ matrix.script }}
+        env:
+          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      # macOS fallback before signing secrets exist: unsigned build so the
+      # release pipeline keeps working. Drop this once signing is in place.
+      - name: Build and package (macOS, unsigned)
+        if: matrix.os == 'macos-latest' && secrets.MAC_CSC_LINK == ''
+        run: npm run ${{ matrix.script }}
+        env:
+          # Unsigned CI build: don't define CSC_LINK/CSC_KEY_PASSWORD at all -
+          # an empty value makes electron-builder treat it as a cert file path
+          # and fail with "<projectDir> not a file". Disable identity discovery.
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+      - name: Build and package (Windows/Linux)
+        if: matrix.os != 'macos-latest'
         run: npm run ${{ matrix.script }}
         env:
           # Unsigned CI build: don't define CSC_LINK/CSC_KEY_PASSWORD at all -

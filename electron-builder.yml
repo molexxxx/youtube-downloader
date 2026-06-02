@@ -46,6 +46,10 @@ mac:
   gatekeeperAssess: false
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
+  # Notarization runs only when Apple credentials (APPLE_ID,
+  # APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID) are present in the environment
+  # and the build is signed. Unsigned local/CI builds skip it automatically.
+  notarize: true
   target:
     - target: pkg
       arch:
