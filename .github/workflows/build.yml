@@ -20,6 +20,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       YOUTUBE_DL_SKIP_DOWNLOAD: '1'
+      # Surfaced to job env so step `if:` can test it - the `secrets` context
+      # is not allowed inside `if` expressions, but `env` is.
+      MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
     steps:
       - uses: actions/checkout@v6
 
@@ -39,7 +42,7 @@ jobs:
       # and notarization secrets are configured. Signs the .app and .pkg and
       # notarizes both the installer .pkg and the updater .zip.
       - name: Build and package (macOS, signed)
-        if: matrix.os == 'macos-latest' && secrets.MAC_CSC_LINK != ''
+        if: matrix.os == 'macos-latest' && env.MAC_CSC_LINK != ''
         run: npm run ${{ matrix.script }}
         env:
           CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
@@ -51,7 +54,7 @@ jobs:
       # macOS fallback before signing secrets exist: unsigned build so the
       # build pipeline keeps working. Drop this once signing is in place.
       - name: Build and package (macOS, unsigned)
-        if: matrix.os == 'macos-latest' && secrets.MAC_CSC_LINK == ''
+        if: matrix.os == 'macos-latest' && env.MAC_CSC_LINK == ''
         run: npm run ${{ matrix.script }}
         env:
           # Unsigned CI build: don't define CSC_LINK/CSC_KEY_PASSWORD at all -

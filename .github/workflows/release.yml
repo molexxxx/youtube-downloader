@@ -45,6 +45,9 @@ jobs:
     env:
       YOUTUBE_DL_SKIP_DOWNLOAD: '1'
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Surfaced to job env so step `if:` can test it - the `secrets` context
+      # is not allowed inside `if` expressions, but `env` is.
+      MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
     steps:
       - uses: actions/checkout@v6
 
@@ -64,7 +67,7 @@ jobs:
       # and notarization secrets are configured. Produces a Gatekeeper-approved
       # .pkg/.zip that opens without warnings.
       - name: Build and package (macOS, signed)
-        if: matrix.os == 'macos-latest' && secrets.MAC_CSC_LINK != ''
+        if: matrix.os == 'macos-latest' && env.MAC_CSC_LINK != ''
         run: npm run ${{ matrix.script }}
         env:
           CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
@@ -76,7 +79,7 @@ jobs:
       # macOS fallback before signing secrets exist: unsigned build so the
       # release pipeline keeps working. Drop this once signing is in place.
       - name: Build and package (macOS, unsigned)
-        if: matrix.os == 'macos-latest' && secrets.MAC_CSC_LINK == ''
+        if: matrix.os == 'macos-latest' && env.MAC_CSC_LINK == ''
         run: npm run ${{ matrix.script }}
         env:
           # Unsigned CI build: don't define CSC_LINK/CSC_KEY_PASSWORD at all -
