@@ -34,10 +34,9 @@ jobs:
       - name: Build and package
         run: npm run ${{ matrix.script }}
         env:
-          # Code signing — no-op when these secrets are unset (unsigned build).
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          # Skip identity auto-discovery so unsigned macOS builds don't fail in CI.
+          # Unsigned CI build: don't define CSC_LINK/CSC_KEY_PASSWORD at all —
+          # an empty value makes electron-builder treat it as a cert file path
+          # and fail with "<projectDir> not a file". Disable identity discovery.
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
 
       - name: Upload draft artifacts
