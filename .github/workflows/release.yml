@@ -75,7 +75,6 @@ jobs:
             dist/*.zip
             dist/*.AppImage
             dist/latest*.yml
-            dist/*.blockmap
 
   publish:
     needs: release
