@@ -18,7 +18,7 @@
 
 <br/>
 
-[Download](#install) · [Features](#features) · [Quick Start](#quick-start) · [Contributing](#contributing) · [Report a Bug](https://github.com/tonywied17/youtube-downloader/issues/new) · [Request a Feature](https://github.com/tonywied17/youtube-downloader/issues/new)
+[Download](#install) · [Features](#features) · [Quick Start](#quick-start) · [Contributing](#contributing) · [Report a Bug](https://github.com/tonywied17/youtube-downloader/issues/new?template=bug_report.yml) · [Request a Feature](https://github.com/tonywied17/youtube-downloader/issues/new?template=feature_request.yml)
 
 </div>
 

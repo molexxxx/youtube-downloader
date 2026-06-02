@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import {
   AlertTriangle,
+  Bug,
   CheckCircle2,
   Code2,
   Download,
   ExternalLink,
   FolderOpen,
-  Heart,
   Info,
+  Lightbulb,
   Loader2,
   RefreshCw,
   RotateCcw,
@@ -629,6 +630,8 @@ function AppUpdatePanel({
 
 const REPO_URL = 'https://github.com/tonywied17/youtube-downloader'
 const AUTHOR_URL = 'https://github.com/tonywied17'
+const BUG_REPORT_URL = `${REPO_URL}/issues/new?template=bug_report.yml`
+const FEATURE_REQUEST_URL = `${REPO_URL}/issues/new?template=feature_request.yml`
 
 /** Cookies are refreshed in the background once older than 7 days. */
 const COOKIE_STALE_MS = 7 * 24 * 60 * 60 * 1000
@@ -731,11 +734,19 @@ function AboutPanel({ version }: { version: string | null }): React.JSX.Element 
           <ExternalLink size={12} className="text-white/30" />
         </button>
         <button
-          onClick={open(`${REPO_URL}/issues`)}
+          onClick={open(BUG_REPORT_URL)}
           className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs text-white/70 hover:border-white/20"
         >
-          <Heart size={14} className="text-red-400" />
-          Report an issue
+          <Bug size={14} className="text-red-400" />
+          Report a bug
+          <ExternalLink size={12} className="text-white/30" />
+        </button>
+        <button
+          onClick={open(FEATURE_REQUEST_URL)}
+          className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs text-white/70 hover:border-white/20"
+        >
+          <Lightbulb size={14} className="text-amber-400" />
+          Request a feature
           <ExternalLink size={12} className="text-white/30" />
         </button>
       </div>
