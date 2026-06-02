@@ -66,4 +66,11 @@ describe('appStore', () => {
     expect(logs[logs.length - 1].message).toBe('m1004')
     expect(logs[0].message).toBe('m5')
   })
+
+  it('toggles the cookie hint', () => {
+    useAppStore.getState().setCookieHint(true)
+    expect(useAppStore.getState().cookieHint).toBe(true)
+    useAppStore.getState().setCookieHint(false)
+    expect(useAppStore.getState().cookieHint).toBe(false)
+  })
 })

@@ -33,6 +33,7 @@ import {
   cookieArgs,
   cookieFlags,
   clearCookies,
+  browserLabel,
   getCookieInfo
 } from '@main/ytdlp/cookies'
 
@@ -103,11 +104,30 @@ describe('cookie cache branches', () => {
     expect(info.browser).toBe('')
     expect(info.cached).toBe(false)
     expect(info.ageMs).toBeNull()
+    expect(info.effectiveBrowser).toBeNull()
+    expect(info.effectiveLabel).toBeNull()
+  })
+
+  it('resolves the effective browser and label', () => {
+    fsState.exists = true
+    fsState.size = 100
+    fsState.mtimeMs = Date.now() - DAY
+
+    const info = getCookieInfo(makeConfig({ cookiesFromBrowser: 'chrome' }))
+    expect(info.effectiveBrowser).toBe('chrome')
+    expect(info.effectiveLabel).toBe('Google Chrome')
   })
 
   it('clearCookies removes the cached file without throwing', () => {
     fsState.exists = true
     expect(() => clearCookies()).not.toThrow()
     expect(fsState.exists).toBe(false)
+  })
+
+  it('browserLabel maps ids to friendly names and passes through unknowns', () => {
+    expect(browserLabel('chrome')).toBe('Google Chrome')
+    expect(browserLabel('firefox')).toBe('Firefox')
+    expect(browserLabel('unknown-browser')).toBe('unknown-browser')
+    expect(browserLabel(null)).toBeNull()
   })
 })

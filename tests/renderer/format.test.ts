@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { formatBytes, formatDuration, looksLikeUrl } from '@renderer/lib/format'
+import {
+  formatBytes,
+  formatDuration,
+  looksLikeAuthError,
+  looksLikeUrl
+} from '@renderer/lib/format'
 
 describe('formatBytes', () => {
   it('handles empty values', () => {
@@ -39,5 +44,23 @@ describe('looksLikeUrl', () => {
     expect(looksLikeUrl('lofi hip hop')).toBe(false)
     expect(looksLikeUrl('rickroll')).toBe(false)
     expect(looksLikeUrl('')).toBe(false)
+  })
+})
+
+describe('looksLikeAuthError', () => {
+  it('matches auth-gated content errors', () => {
+    expect(looksLikeAuthError('Sign in to confirm your age')).toBe(true)
+    expect(looksLikeAuthError('This video is age-restricted')).toBe(true)
+    expect(looksLikeAuthError('ERROR: Private video')).toBe(true)
+    expect(looksLikeAuthError('Join this channel to get access')).toBe(true)
+    expect(looksLikeAuthError('members-only content')).toBe(true)
+    expect(looksLikeAuthError('This content requires payment')).toBe(true)
+    expect(looksLikeAuthError("Sign in to confirm you're not a bot")).toBe(true)
+    expect(looksLikeAuthError('Login required to view this')).toBe(true)
+  })
+  it('does not match ordinary errors', () => {
+    expect(looksLikeAuthError('Video unavailable')).toBe(false)
+    expect(looksLikeAuthError('Requested format is not available')).toBe(false)
+    expect(looksLikeAuthError('HTTP Error 404: Not Found')).toBe(false)
   })
 })
