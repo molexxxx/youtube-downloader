@@ -55,7 +55,7 @@ export function updateTray(jobs: DownloadJob[]): void {
       ? Math.round(downloading.reduce((sum, j) => sum + j.percent, 0) / downloading.length)
       : 0
   tray.setToolTip(
-    `YouTube Downloader — ${active.length} active${avg > 0 ? ` (${avg}%)` : ''}`
+    `YouTube Downloader - ${active.length} active${avg > 0 ? ` (${avg}%)` : ''}`
   )
 }
 

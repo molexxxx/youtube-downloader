@@ -1,5 +1,5 @@
 /**
- * Smart download presets — shared across processes so the renderer can present
+ * Smart download presets - shared across processes so the renderer can present
  * them and `config.defaultPreset` can reference them by id.
  */
 import type { AudioFormat, DownloadKind, VideoContainer } from './types'

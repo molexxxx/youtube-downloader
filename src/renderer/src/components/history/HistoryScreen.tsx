@@ -80,7 +80,7 @@ function HistoryRow({
         </p>
         <p className="truncate text-xs text-white/40">
           {formatWhen(entry.completedAt)}
-          {!ok && entry.error ? ` — ${entry.error}` : ''}
+          {!ok && entry.error ? ` - ${entry.error}` : ''}
         </p>
       </div>
       {ok && entry.outputPath && (

@@ -16,8 +16,37 @@ interface RunningJob {
   kill: () => void
 }
 
+interface QueuedItem {
+  id: string
+  req: DownloadRequest
+}
+
+/** States in which a job is still active (not finished or cancelled). */
+function isActiveState(state: DownloadJob['state']): boolean {
+  return (
+    state === 'queued' ||
+    state === 'downloading' ||
+    state === 'processing' ||
+    state === 'extracting'
+  )
+}
+
+/** Whether two requests target the exact same download (used for de-duplication). */
+function sameRequest(a: DownloadRequest, b: DownloadRequest): boolean {
+  return (
+    a.url === b.url &&
+    a.kind === b.kind &&
+    a.formatId === b.formatId &&
+    a.container === b.container &&
+    a.audioFormat === b.audioFormat &&
+    a.audioBitrate === b.audioBitrate &&
+    a.playlistItems === b.playlistItems &&
+    Boolean(a.noPlaylist) === Boolean(b.noPlaylist)
+  )
+}
+
 /**
- * Builds the yt-dlp argument list for a download request. Pure function — unit tested.
+ * Builds the yt-dlp argument list for a download request. Pure function - unit tested.
  */
 export function buildArgs(req: DownloadRequest, cfg = getConfig(), includeCookies = true): string[] {
   const args: string[] = [
@@ -94,10 +123,13 @@ function parsePercent(value: string): number {
  * Concurrency-limited download manager. Emits `update` events with the changed job.
  */
 export class DownloadManager extends EventEmitter {
-  private queue: DownloadRequest[] = []
+  private queue: QueuedItem[] = []
   private running = new Map<string, RunningJob>()
   private jobs = new Map<string, DownloadJob>()
   private lastError = new Map<string, string>()
+  // The request backing each job, kept so retries (e.g. cookie fallback) and
+  // dedupe can reason about the exact parameters that started it.
+  private requests = new Map<string, DownloadRequest>()
 
   enqueue(req: DownloadRequest): DownloadJob {
     // Dedupe: if an identical request is already active (queued or in progress),
@@ -111,7 +143,7 @@ export class DownloadManager extends EventEmitter {
     const job: DownloadJob = {
       id: randomUUID(),
       url: req.url,
-      title: req.url,
+      title: req.title?.trim() || req.url,
       kind: req.kind,
       state: 'queued',
       percent: 0,
@@ -122,31 +154,23 @@ export class DownloadManager extends EventEmitter {
       createdAt: Date.now()
     }
     this.jobs.set(job.id, job)
-    this.queue.push({ ...req, url: req.url })
-    // store id alongside the queued request
-    this.queueIds.push(job.id)
+    this.requests.set(job.id, req)
+    this.queue.push({ id: job.id, req })
     logger.info(`Queued ${req.kind} download`, job.id, req.url)
     this.emitUpdate(job)
     this.pump()
     return job
   }
 
-  /** Find an active job matching a request's url + kind + chosen format. */
+  /** Find an active job started by an identical request. */
   private findActive(req: DownloadRequest): DownloadJob | null {
     for (const job of this.jobs.values()) {
-      const active =
-        job.state === 'queued' ||
-        job.state === 'downloading' ||
-        job.state === 'processing' ||
-        job.state === 'extracting'
-      if (active && job.url === req.url && job.kind === req.kind) {
-        return job
-      }
+      if (!isActiveState(job.state)) continue
+      const original = this.requests.get(job.id)
+      if (original && sameRequest(original, req)) return job
     }
     return null
   }
-
-  private queueIds: string[] = []
 
   list(): DownloadJob[] {
     return [...this.jobs.values()].sort((a, b) => a.createdAt - b.createdAt)
@@ -159,9 +183,8 @@ export class DownloadManager extends EventEmitter {
       running.kill()
       return
     }
-    const idx = this.queueIds.indexOf(id)
+    const idx = this.queue.findIndex((item) => item.id === id)
     if (idx >= 0) {
-      this.queueIds.splice(idx, 1)
       this.queue.splice(idx, 1)
       logger.info('Cancelled queued download', id)
       this.patch(id, { state: 'cancelled' })
@@ -171,8 +194,7 @@ export class DownloadManager extends EventEmitter {
   private pump(): void {
     const max = getConfig().maxConcurrentDownloads
     while (this.running.size < max && this.queue.length > 0) {
-      const req = this.queue.shift()!
-      const id = this.queueIds.shift()!
+      const { id, req } = this.queue.shift()!
       this.start(id, req)
     }
   }
@@ -241,6 +263,9 @@ export class DownloadManager extends EventEmitter {
             this.retried.add(id)
             this.lastError.delete(id)
             this.running.delete(id)
+            // Reset visible progress so the retry doesn't appear to resume from
+            // wherever the failed attempt happened to stop.
+            this.patch(id, { percent: 0, speed: null, eta: null })
             this.spawnJob(id, req, true)
             return
           }
@@ -319,12 +344,18 @@ export class DownloadManager extends EventEmitter {
     this.lastError.delete(id)
     this.retried.delete(id)
     this.stdoutBuffers.delete(id)
+    this.requests.delete(id)
     this.pump()
   }
 
   private patch(id: string, partial: Partial<DownloadJob>): void {
     const job = this.jobs.get(id)
     if (!job) return
+    // Once a job is finished, ignore any late stdout that would revive it back
+    // into an active state (e.g. a buffered progress line arriving after close).
+    if (!isActiveState(job.state) && partial.state && isActiveState(partial.state)) {
+      return
+    }
     Object.assign(job, partial)
     this.emitUpdate(job)
   }

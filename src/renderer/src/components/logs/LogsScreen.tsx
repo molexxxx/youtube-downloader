@@ -37,7 +37,7 @@ export function LogsScreen(): React.JSX.Element {
       const next = new Set(prev)
       if (next.has(level)) next.delete(level)
       else next.add(level)
-      // Never allow an empty filter — fall back to showing everything.
+      // Never allow an empty filter - fall back to showing everything.
       return next.size === 0 ? new Set(LEVELS) : next
     })
   }

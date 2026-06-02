@@ -191,7 +191,7 @@ export function cookiesEnabled(cfg = getConfig()): boolean {
 
 /**
  * Build yt-dlp CLI cookie args for a download spawn. Uses ONLY the pre-exported
- * cache file — never a live `--cookies-from-browser` read. A live read locks on
+ * cache file - never a live `--cookies-from-browser` read. A live read locks on
  * (and is blocked by) a running Chromium browser, which would make every normal
  * download fail or stall. When no cache exists yet we kick off a background
  * export and download cookie-free this time; public content works regardless,

@@ -33,7 +33,7 @@
     <rect x="0" y="0" width="1024" height="1024" rx="232" fill="url(#icSheen)"/>
 
     <g filter="url(#icGlow)">
-      <!-- Downward play (download) triangle — exact app geometry, gentle bounce -->
+      <!-- Downward play (download) triangle - exact app geometry, gentle bounce -->
       <g>
         <animateTransform attributeName="transform" type="translate" values="0 -14; 0 16; 0 -14" dur="1.9s" repeatCount="indefinite" calcMode="spline" keySplines="0.45 0 0.55 1; 0.45 0 0.55 1"/>
         <path d="M349 305 h326 a28 28 0 0 1 24 43 l-163 247 a28 28 0 0 1 -48 0 l-163 -247 a28 28 0 0 1 24 -43 z" fill="#ffffff"/>

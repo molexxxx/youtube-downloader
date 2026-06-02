@@ -8,7 +8,7 @@
 
 <br/>
 
-**Fast, modern desktop downloader for YouTube and 1000+ sites — powered by yt-dlp & FFmpeg**
+**Fast, modern desktop downloader for YouTube and 1000+ sites - powered by yt-dlp & FFmpeg**
 
 <a href="https://github.com/tonywied17/youtube-downloader/actions/workflows/ci.yml"><img src="https://raw.githubusercontent.com/tonywied17/tonywied17/main/.github/badges/youtube-downloader-ci-ytdl.svg" alt="CI" /></a>
 <a href="https://github.com/tonywied17/youtube-downloader/actions/workflows/build.yml"><img src="https://raw.githubusercontent.com/tonywied17/tonywied17/main/.github/badges/youtube-downloader-build-ytdl.svg" alt="build" /></a>
@@ -58,16 +58,16 @@
       <br/><sub><b>View Logs</b></sub>
     </td>
     <td align="center" width="215">
-      <a href=".github/assets/thumbs/6-settings-top.png"><img src=".github/assets/thumbs/6-settings-top.png" alt="Settings — Top" width="200"></a>
-      <br/><sub><b>Settings — Top</b></sub>
+      <a href=".github/assets/thumbs/6-settings-top.png"><img src=".github/assets/thumbs/6-settings-top.png" alt="Settings - Top" width="200"></a>
+      <br/><sub><b>Settings - Top</b></sub>
     </td>
     <td align="center" width="215">
-      <a href=".github/assets/thumbs/7-settings-middle.png"><img src=".github/assets/thumbs/7-settings-middle.png" alt="Settings — Middle" width="200"></a>
-      <br/><sub><b>Settings — Middle</b></sub>
+      <a href=".github/assets/thumbs/7-settings-middle.png"><img src=".github/assets/thumbs/7-settings-middle.png" alt="Settings - Middle" width="200"></a>
+      <br/><sub><b>Settings - Middle</b></sub>
     </td>
     <td align="center" width="215">
-      <a href=".github/assets/thumbs/8-settings-bottom.png"><img src=".github/assets/thumbs/8-settings-bottom.png" alt="Settings — Bottom" width="200"></a>
-      <br/><sub><b>Settings — Bottom</b></sub>
+      <a href=".github/assets/thumbs/8-settings-bottom.png"><img src=".github/assets/thumbs/8-settings-bottom.png" alt="Settings - Bottom" width="200"></a>
+      <br/><sub><b>Settings - Bottom</b></sub>
     </td>
   </tr>
 </table>
@@ -80,41 +80,41 @@
 
 ### Download & Resolve
 
-- **1000+ Sites** — Download from YouTube and any site supported by yt-dlp; paste a link or search YouTube right from the URL bar (no API key)
-- **Videos, Playlists & Channels** — Smart URL detection treats `watch?v=…&list=…` as a single video and `playlist?list=…` as a playlist; full or partial playlist selection
-- **Video Formats** — "Best quality (auto)" with automatic video + best-audio merge, or hand-pick a specific resolution / fps / codec from the enumerated format list (up to 4K when available)
-- **Containers** — Output to **MP4** or **MKV**
-- **Audio Extraction** — Pull audio-only as **MP3**, **M4A**, **Opus**, **FLAC**, or **WAV** with selectable bitrate (320K / 256K / 192K / 128K / 96K)
-- **6 Quick Presets** — Best MP4, 1080p MP4, 720p MP4, Best MKV, Audio MP3, and Audio FLAC — one click applies format, container, and resolution cap
-- **Playlist Picker** — Per-item checkboxes with toggle-all; only the selected subset is downloaded
-- **Search** — Type keywords to search YouTube via `ytsearch` and resolve any result with a click (thumbnail, title, duration)
+- **1000+ Sites** - Download from YouTube and any site supported by yt-dlp; paste a link or search YouTube right from the URL bar (no API key)
+- **Videos, Playlists & Channels** - Smart URL detection treats `watch?v=…&list=…` as a single video and `playlist?list=…` as a playlist; full or partial playlist selection
+- **Video Formats** - "Best quality (auto)" with automatic video + best-audio merge, or hand-pick a specific resolution / fps / codec from the enumerated format list (up to 4K when available)
+- **Containers** - Output to **MP4** or **MKV**
+- **Audio Extraction** - Pull audio-only as **MP3**, **M4A**, **Opus**, **FLAC**, or **WAV** with selectable bitrate (320K / 256K / 192K / 128K / 96K)
+- **6 Quick Presets** - Best MP4, 1080p MP4, 720p MP4, Best MKV, Audio MP3, and Audio FLAC - one click applies format, container, and resolution cap
+- **Playlist Picker** - Per-item checkboxes with toggle-all; only the selected subset is downloaded
+- **Search** - Type keywords to search YouTube via `ytsearch` and resolve any result with a click (thumbnail, title, duration)
 
 ### Post-Processing
 
-- **Embed Thumbnail** — Cover art written into the output file
-- **Embed Metadata** — Title, uploader, and date written to file tags
-- **Embed Chapters** — YouTube chapter markers preserved
-- **Subtitles** — Optionally download subtitle files with configurable language codes
-- **SponsorBlock** — Automatically strip sponsor / intro / outro segments
-- **Download Archive** — Skip already-downloaded items on re-run via an archive file
-- **Cookie Support** — Import cookies from your browser (auto-detect or pick one) for age-gated, private, or members-only content, with automatic retry on auth failures
+- **Embed Thumbnail** - Cover art written into the output file
+- **Embed Metadata** - Title, uploader, and date written to file tags
+- **Embed Chapters** - YouTube chapter markers preserved
+- **Subtitles** - Optionally download subtitle files with configurable language codes
+- **SponsorBlock** - Automatically strip sponsor / intro / outro segments
+- **Download Archive** - Skip already-downloaded items on re-run via an archive file
+- **Cookie Support** - Import cookies from your browser (auto-detect or pick one) for age-gated, private, or members-only content, with automatic retry on auth failures
 
 ### Queue, Progress & History
 
-- **Concurrent Queue** — Configurable 1–8 simultaneous downloads with per-job cancellation and de-duplication of identical requests
-- **Live Progress** — Real-time percent, speed, and ETA per download with desktop notifications on completion or failure
-- **History** — Persistent record of every download (title, kind, URL, status, output path, timestamp) with one-click "Show in folder" and clear controls
-- **Logs** — Filterable real-time log viewer (debug / info / warn / error) with tail-follow and copy-all
+- **Concurrent Queue** - Configurable 1–8 simultaneous downloads with per-job cancellation and de-duplication of identical requests
+- **Live Progress** - Real-time percent, speed, and ETA per download with desktop notifications on completion or failure
+- **History** - Persistent record of every download (title, kind, URL, status, output path, timestamp) with one-click "Show in folder" and clear controls
+- **Logs** - Filterable real-time log viewer (debug / info / warn / error) with tail-follow and copy-all
 
 ### App & UI
 
-- **Zero Setup** — yt-dlp and FFmpeg are downloaded automatically on first launch, with a guided bootstrap (checking → downloading → extracting → verifying)
-- **Binary Manager** — View yt-dlp / FFmpeg versions and update them on demand, or let them auto-update on launch
-- **Auto-Updater** — Check / download / install app updates straight from GitHub Releases with live progress
-- **System Tray** — Live download count and average progress in the tooltip; optional close-to-tray
-- **Frameless UI** — Custom titlebar, native right-click context menu, and a polished animated empty state
-- **Themes** — System, Dark, or Light
-- **Desktop Notifications** — Click-to-focus alerts when a download finishes
+- **Zero Setup** - yt-dlp and FFmpeg are downloaded automatically on first launch, with a guided bootstrap (checking → downloading → extracting → verifying)
+- **Binary Manager** - View yt-dlp / FFmpeg versions and update them on demand, or let them auto-update on launch
+- **Auto-Updater** - Check / download / install app updates straight from GitHub Releases with live progress
+- **System Tray** - Live download count and average progress in the tooltip; optional close-to-tray
+- **Frameless UI** - Custom titlebar, native right-click context menu, and a polished animated empty state
+- **Themes** - System, Dark, or Light
+- **Desktop Notifications** - Click-to-focus alerts when a download finishes
 
 ---
 
@@ -128,7 +128,7 @@ Grab the latest release for your platform:
 | **macOS** | [Latest Release](https://github.com/tonywied17/youtube-downloader/releases/latest) | `.dmg` (Intel & Apple Silicon) |
 | **Linux** | [Latest Release](https://github.com/tonywied17/youtube-downloader/releases/latest) | `.AppImage` |
 
-> yt-dlp and FFmpeg are downloaded automatically on first launch — no manual setup required.
+> yt-dlp and FFmpeg are downloaded automatically on first launch - no manual setup required.
 
 ---
 
@@ -160,19 +160,19 @@ npm run package:linux    # Linux
 
 ## Tech Stack
 
-- **Electron** — Cross-platform desktop framework
-- **React 19** — UI with functional components and hooks
-- **TypeScript** — Full type safety across main and renderer
-- **electron-vite** — Vite build tooling for main / preload / renderer
-- **Tailwind CSS v4** — Utility-first styling
-- **Zustand** — Lightweight state management
-- **Framer Motion** — Animations and transitions
-- **Lucide React** — Icon library
-- **electron-store** — Persistent configuration
-- **electron-updater** — App auto-update from GitHub Releases
-- **electron-builder** — Packaging & distribution
-- **youtube-dl-exec** — yt-dlp wrapper for resolving and downloading
-- **Vitest** — Unit and integration testing
+- **Electron** - Cross-platform desktop framework
+- **React 19** - UI with functional components and hooks
+- **TypeScript** - Full type safety across main and renderer
+- **electron-vite** - Vite build tooling for main / preload / renderer
+- **Tailwind CSS v4** - Utility-first styling
+- **Zustand** - Lightweight state management
+- **Framer Motion** - Animations and transitions
+- **Lucide React** - Icon library
+- **electron-store** - Persistent configuration
+- **electron-updater** - App auto-update from GitHub Releases
+- **electron-builder** - Packaging & distribution
+- **youtube-dl-exec** - yt-dlp wrapper for resolving and downloading
+- **Vitest** - Unit and integration testing
 
 ---
 
@@ -180,9 +180,9 @@ npm run package:linux    # Linux
 
 Found a bug or have an idea?
 
-- [**Report a Bug**](https://github.com/tonywied17/youtube-downloader/issues/new) — Something isn't working as expected
-- [**Request a Feature**](https://github.com/tonywied17/youtube-downloader/issues/new) — Suggest a new feature or enhancement
-- [**Browse Open Issues**](https://github.com/tonywied17/youtube-downloader/issues) — See what's already been reported
+- [**Report a Bug**](https://github.com/tonywied17/youtube-downloader/issues/new) - Something isn't working as expected
+- [**Request a Feature**](https://github.com/tonywied17/youtube-downloader/issues/new) - Suggest a new feature or enhancement
+- [**Browse Open Issues**](https://github.com/tonywied17/youtube-downloader/issues) - See what's already been reported
 
 Please search existing issues before opening a new one to avoid duplicates.
 
@@ -196,10 +196,10 @@ Contributions are welcome! Fork the repo, create a feature branch, and open a pu
 
 ## License
 
-[MIT](LICENSE) — build cool things with it.
+[MIT](LICENSE) - build cool things with it.
 
 ---
 
 <div align="center">
-<sub>Downloads are your responsibility — respect the terms of service of the sites you use and the rights of content creators.</sub>
+<sub>Downloads are your responsibility - respect the terms of service of the sites you use and the rights of content creators.</sub>
 </div>

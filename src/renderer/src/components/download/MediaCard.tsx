@@ -124,6 +124,7 @@ export function MediaCard(): React.JSX.Element | null {
     await window.api.download.start({
       url: info.webpageUrl,
       kind,
+      title: info.title,
       formatId: kind === 'video' ? formatId || undefined : undefined,
       container: kind === 'video' ? container : undefined,
       audioFormat: kind === 'audio' ? audioFormat : undefined,

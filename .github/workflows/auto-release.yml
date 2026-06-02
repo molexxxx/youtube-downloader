@@ -29,7 +29,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          # A PAT is required so the tag push triggers release.yml — pushes made
+          # A PAT is required so the tag push triggers release.yml - pushes made
           # with the default GITHUB_TOKEN do not start new workflow runs.
           token: ${{ secrets.GH_TOKEN }}
           fetch-depth: 0

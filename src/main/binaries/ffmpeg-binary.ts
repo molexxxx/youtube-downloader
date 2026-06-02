@@ -95,7 +95,7 @@ async function extractArchive(
     await extractZip(archivePath, { dir: dest })
     return
   }
-  // tar.xz — decompress xz is not built-in; BtbN linux uses .tar.xz which `tar`
+  // tar.xz - decompress xz is not built-in; BtbN linux uses .tar.xz which `tar`
   // handles when the xz binary is present. Fall back to gzip-safe handling.
   if (archivePath.endsWith('.xz')) {
     await tar.x({ file: archivePath, cwd: dest })

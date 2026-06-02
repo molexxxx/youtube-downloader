@@ -230,3 +230,73 @@ describe('DownloadManager cancel + concurrency', () => {
     expect(spawnMock).toHaveBeenCalledTimes(2)
   })
 })
+
+describe('DownloadManager concurrent correctness', () => {
+  it('tracks two concurrent jobs independently when they finish out of order', () => {
+    const manager = new DownloadManager()
+    const a = manager.enqueue({ url: 'https://a', kind: 'video' })
+    const b = manager.enqueue({ url: 'https://b', kind: 'video' })
+    expect(spawnMock).toHaveBeenCalledTimes(2)
+
+    const childA = children[0]
+    const childB = children[1]
+
+    // Job B progresses, then finishes first — job A must stay downloading.
+    childB.stdout.emit(
+      'data',
+      Buffer.from('progress:{"percent":"50%","speed":"1MiB/s","eta":"00:10"}\n')
+    )
+    childB.emit('close', 0)
+
+    let jobA = manager.list().find((j) => j.id === a.id)!
+    let jobB = manager.list().find((j) => j.id === b.id)!
+    expect(jobB.state).toBe('completed')
+    expect(jobB.percent).toBe(100)
+    expect(jobA.state).toBe('downloading')
+    expect(jobA.percent).toBe(0)
+
+    // Job A progresses and finishes afterwards — B stays completed, unaffected.
+    childA.stdout.emit(
+      'data',
+      Buffer.from('progress:{"percent":"75%","speed":"2MiB/s","eta":"00:05"}\n')
+    )
+    childA.emit('close', 0)
+
+    jobA = manager.list().find((j) => j.id === a.id)!
+    jobB = manager.list().find((j) => j.id === b.id)!
+    expect(jobA.state).toBe('completed')
+    expect(jobA.percent).toBe(100)
+    expect(jobB.state).toBe('completed')
+  })
+
+  it('ignores a late progress line that arrives after a job completed', () => {
+    const manager = new DownloadManager()
+    const job = manager.enqueue({ url: 'https://x', kind: 'video' })
+    const child = latestChild()
+    child.emit('close', 0)
+    // A stray buffered progress line must not revive a finished job.
+    child.stdout.emit(
+      'data',
+      Buffer.from('progress:{"percent":"30%","speed":"1MiB/s","eta":"00:20"}\n')
+    )
+    const last = manager.list().find((j) => j.id === job.id)!
+    expect(last.state).toBe('completed')
+    expect(last.percent).toBe(100)
+  })
+
+  it('does not dedupe downloads of the same URL with different formats', () => {
+    const manager = new DownloadManager()
+    const hd = manager.enqueue({ url: 'https://x', kind: 'video', formatId: '137' })
+    const sd = manager.enqueue({ url: 'https://x', kind: 'video', formatId: '136' })
+    expect(sd.id).not.toBe(hd.id)
+    expect(manager.list()).toHaveLength(2)
+  })
+
+  it('uses the provided title for the queue, falling back to the URL', () => {
+    const manager = new DownloadManager()
+    const named = manager.enqueue({ url: 'https://x', kind: 'video', title: 'My Clip' })
+    const bare = manager.enqueue({ url: 'https://y', kind: 'video' })
+    expect(named.title).toBe('My Clip')
+    expect(bare.title).toBe('https://y')
+  })
+})

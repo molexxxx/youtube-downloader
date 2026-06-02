@@ -123,6 +123,8 @@ export type DownloadKind = 'video' | 'audio'
 export interface DownloadRequest {
   url: string
   kind: DownloadKind
+  /** Human-readable title for the queue UI; falls back to the URL when omitted. */
+  title?: string
   formatId?: string
   container?: VideoContainer
   audioFormat?: AudioFormat

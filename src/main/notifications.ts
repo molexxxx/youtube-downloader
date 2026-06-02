@@ -13,7 +13,7 @@ export function notifyDownload(job: DownloadJob): void {
   const success = job.state === 'completed'
   const notification = new Notification({
     title: success ? 'Download complete' : 'Download failed',
-    body: success ? job.title : `${job.title} — ${job.error ?? 'unknown error'}`,
+    body: success ? job.title : `${job.title} - ${job.error ?? 'unknown error'}`,
     icon: ICON,
     silent: false
   })
