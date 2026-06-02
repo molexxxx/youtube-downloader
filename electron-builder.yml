@@ -48,13 +48,11 @@ mac:
   target:
     - target: dmg
       arch:
-        - x64
-        - arm64
+        - universal
     - target: zip
       arch:
-        - x64
-        - arm64
-  artifactName: ${productName}-${version}-${arch}.${ext}
+        - universal
+  artifactName: ${productName}-${version}.${ext}
 
 linux:
   target:
