@@ -131,13 +131,18 @@ export function MediaCard(): React.JSX.Element | null {
     if (!info || loadingMore) return
     const start = info.entries.length + 1
     const limit = config?.playlistFetchLimit || 200
-    const end = info.playlistCount > 0 ? Math.min(info.playlistCount, start + limit - 1) : start + limit - 1
+    // When the true total is known (real playlists), don't fetch past it. Mixes
+    // report no total, so just request a full page beyond what we already have.
+    const end =
+      info.playlistCount > info.entries.length
+        ? Math.min(info.playlistCount, start + limit - 1)
+        : start + limit - 1
     setLoadingMore(true)
     try {
       const page = await window.api.extract.playlistPage(info.webpageUrl, start, end)
       appendEntries(page)
-      // A short (or empty) page means we've paged past the end of a list whose
-      // size yt-dlp never reported - stop offering "load more".
+      // A short (or empty) page means we've reached the end of a list whose
+      // size yt-dlp never reported (e.g. a Mix) - stop offering "load more".
       if (page.length < limit) setReachedEnd(true)
       // Newly loaded items default to selected, matching the initial behavior.
       setSelectedItems((prev) => {
@@ -387,7 +392,7 @@ export function MediaCard(): React.JSX.Element | null {
         <PlaylistPicker
           entries={info.entries}
           total={info.playlistCount}
-          fetchLimit={config?.playlistFetchLimit || 200}
+          fetchLimit={config?.playlistFetchLimit ?? 200}
           reachedEnd={reachedEnd}
           selected={selectedItems}
           onToggle={toggleItem}
@@ -491,22 +496,22 @@ function PlaylistPicker({
   loadingMore: boolean
 }): React.JSX.Element {
   const allSelected = selected.size === entries.length
-  // yt-dlp reports the full list size in `total`; when we've only fetched a
-  // capped slice, page in the rest. Show the exact remaining count.
+  // The real playlist size, when yt-dlp reports one larger than what we've
+  // fetched. Mixes/radios report no usable total (it gets backfilled to the
+  // fetched count), so this is 0 for them.
   const remaining = total > entries.length ? total - entries.length : 0
-  // YouTube Mixes/radios never report a total. If we filled a complete page
-  // (a multiple of the fetch limit) and haven't yet hit a short page, assume
-  // there's more to pull so the user can keep going.
-  const mightHaveMore =
-    total <= 0 && !reachedEnd && entries.length > 0 && entries.length % fetchLimit === 0
-  const canLoadMore = remaining > 0 || mightHaveMore
+  // Offer to page in more whenever the last fetch filled a complete page and we
+  // haven't yet hit a short page. This is the only reliable signal for Mixes,
+  // which never advertise a total. Disabled when the fetch cap is 0 (unlimited,
+  // so everything is already loaded).
+  const canLoadMore = fetchLimit > 0 && !reachedEnd && entries.length >= fetchLimit
   return (
     <div className="mt-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-white/10">
       <div className="flex shrink-0 items-center justify-between bg-white/[0.03] px-3 py-2">
         <span className="text-xs text-white/45">
           {selected.size} of {entries.length} selected
           {remaining > 0 && <span className="text-white/30"> · {total} total</span>}
-          {remaining <= 0 && mightHaveMore && <span className="text-white/30"> · more available</span>}
+          {remaining <= 0 && canLoadMore && <span className="text-white/30"> · more available</span>}
         </span>
         <button
           onClick={onToggleAll}
