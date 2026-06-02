@@ -1,0 +1,115 @@
+# -----------------------------------------------------
+# Complete macOS Notarization (manual fallback)
+#
+# Use this when the notarize-macos job in the release workflow timed out
+# because Apple's notarization queue took longer than 6 hours (common on
+# brand-new Developer accounts).
+#
+# How to run:
+#   1. Go to Actions → "Complete macOS Notarization" → Run workflow
+#   2. Enter the release tag (e.g. v0.1.11)
+#   3. Enter the Apple submission UUID printed in the macOS build log:
+#        "Notarization submitted — id: <UUID>"
+#
+# What it does:
+#   - Waits for Apple to accept the submission (up to 6 h from trigger time)
+#   - Downloads the signed-but-unstapled .pkg from the draft release
+#   - Staples the notarization ticket
+#   - Replaces the draft release asset with the stapled .pkg
+#   - Publishes the release
+# -----------------------------------------------------
+name: Complete macOS Notarization
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v0.1.11)'
+        required: true
+      submission_id:
+        description: 'Apple notarization submission UUID (from the macOS build log)'
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: notarize-${{ inputs.tag }}
+  cancel-in-progress: true
+
+jobs:
+  notarize-staple-publish:
+    name: Notarize, Staple & Publish
+    runs-on: macos-latest
+    timeout-minutes: 360
+    steps:
+      - name: Wait for Apple notarization
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          echo "Waiting on submission: ${{ inputs.submission_id }}"
+
+          for attempt in $(seq 1 5); do
+            if xcrun notarytool wait "${{ inputs.submission_id }}" \
+                --apple-id "$APPLE_ID" \
+                --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+                --team-id "$APPLE_TEAM_ID"; then
+              echo "Accepted on attempt $attempt"
+              exit 0
+            fi
+
+            status=$(xcrun notarytool info "${{ inputs.submission_id }}" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" \
+              --output-format json 2>/dev/null \
+              | jq -r '.status // "unknown"' 2>/dev/null || echo "unknown")
+
+            echo "Status (attempt $attempt/5): $status"
+
+            case "$status" in
+              Accepted) echo "Already accepted"; exit 0 ;;
+              Invalid|Rejected)
+                xcrun notarytool log "${{ inputs.submission_id }}" \
+                  --apple-id "$APPLE_ID" \
+                  --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+                  --team-id "$APPLE_TEAM_ID" || true
+                exit 1
+                ;;
+              *)
+                [ "$attempt" -lt 5 ] && sleep 60 || exit 1
+                ;;
+            esac
+          done
+
+      - name: Download installer from draft release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p dist
+          gh release download "${{ inputs.tag }}" \
+            --pattern "*-macOS-Installer.pkg" \
+            --dir dist/ \
+            --repo "${{ github.repository }}"
+
+      - name: Staple notarization ticket
+        run: xcrun stapler staple dist/YouTube-Downloader-*-macOS-Installer.pkg
+
+      - name: Upload stapled installer to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ inputs.tag }}" \
+            dist/YouTube-Downloader-*-macOS-Installer.pkg \
+            --repo "${{ github.repository }}" \
+            --clobber
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release edit "${{ inputs.tag }}" \
+            --repo "${{ github.repository }}" \
+            --draft=false --latest
