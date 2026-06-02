@@ -1,0 +1,68 @@
+appId: com.molex.youtube-downloader
+productName: YouTube Downloader
+copyright: Copyright © 2026 molex
+
+directories:
+  output: dist
+  buildResources: build
+
+files:
+  - '!**/.vscode/*'
+  - '!src/*'
+  - '!docs/*'
+  - '!tests/*'
+  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!vitest.config.{js,ts,mjs,cjs}'
+  - '!{.eslintignore,.eslintrc.cjs,eslint.config.mjs,.prettierignore,.prettierrc.json}'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json,postcss.config.cjs}'
+  - '!{.editorconfig,.gitignore,.gitattributes}'
+  - '!{coverage,.github,.git}'
+  - '!{README.md,LICENSE}'
+
+asarUnpack:
+  - resources/**
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.png
+  artifactName: ${productName}-${version}-Setup.${ext}
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: YouTube Downloader
+
+mac:
+  category: public.app-category.utilities
+  icon: build/icon.png
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+  artifactName: ${productName}-${version}-${arch}.${ext}
+
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+  icon: build/icon.png
+  category: AudioVideo
+  maintainer: molex
+  artifactName: ${productName}-${version}.${ext}
+
+publish:
+  provider: github
+  owner: tonywied17
+  repo: youtube-downloader

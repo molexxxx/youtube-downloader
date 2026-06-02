@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      YOUTUBE_DL_SKIP_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test (coverage)
+        run: npm run test:coverage
+
+      - name: Build
+        run: npm run build
+
+  smoke:
+    runs-on: ubuntu-latest
+    needs: verify
+    env:
+      YOUTUBE_DL_SKIP_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build
+        run: npm run build
+
+      - name: Launch smoke test
+        run: xvfb-run --auto-servernum npx electron ./out/main/index.js --smoke-test --no-sandbox
+

@@ -1,22 +1,27 @@
+# Dependencies
+node_modules/
+
+# Build output
+out/
 dist/
-build/
-installer_scripts/
-ffmpeg/ffmpeg
-ffmpeg/ffmpeg.exe
+coverage/
 
-# Distribution and build folders
-!dist/*.zip
-!installer_scripts/7z.exe
-!installer_scripts/installer.iss
+# Logs
+*.log
+npm-debug.log*
 
-# Ignore specific subdirectories in the distribution folder
-dist/YouTube Downloader/_internal/
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+*.local
 
-# Ignore PyInstaller and build-related files
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# Ignore dot-env
+# Env
 .env
+.env.*
+!.env.example
+
+# Managed binaries (downloaded at runtime)
+resources/bin/
+
+docs/

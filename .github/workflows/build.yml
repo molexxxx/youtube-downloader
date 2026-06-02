@@ -1,0 +1,50 @@
+name: Build
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            script: package:win
+          - os: macos-latest
+            script: package:mac
+          - os: ubuntu-latest
+            script: package:linux
+    runs-on: ${{ matrix.os }}
+    env:
+      YOUTUBE_DL_SKIP_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build and package
+        run: npm run ${{ matrix.script }}
+        env:
+          # Code signing — no-op when these secrets are unset (unsigned build).
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+
+      - name: Upload draft artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-package
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            dist/*.exe
+            dist/*.dmg
+            dist/*.AppImage

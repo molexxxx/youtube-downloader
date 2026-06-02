@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="YouTube Downloader icon">
+  <defs>
+    <linearGradient id="icTile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff4757"/>
+      <stop offset="100%" stop-color="#e0162b"/>
+    </linearGradient>
+    <radialGradient id="icSheen" cx="0.5" cy="0.3" r="0.8">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="62%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="icGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <!-- Progress sweep clip over the baseline bar (app coords) -->
+    <clipPath id="icBarClip">
+      <rect x="349" y="676" width="326" height="58" rx="29"/>
+    </clipPath>
+  </defs>
+
+  <!-- Drawn in the app's native 1024 coordinate space, scaled to 256 -->
+  <g transform="scale(0.25)">
+    <!-- Pulsing halo -->
+    <rect x="0" y="0" width="1024" height="1024" rx="232" fill="none" stroke="url(#icTile)" stroke-width="10" opacity="0.22">
+      <animate attributeName="opacity" values="0.22;0.06;0.22" dur="3s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- Tile -->
+    <rect x="0" y="0" width="1024" height="1024" rx="232" fill="url(#icTile)"/>
+    <rect x="0" y="0" width="1024" height="1024" rx="232" fill="url(#icSheen)"/>
+
+    <g filter="url(#icGlow)">
+      <!-- Downward play (download) triangle — exact app geometry, gentle bounce -->
+      <g>
+        <animateTransform attributeName="transform" type="translate" values="0 -14; 0 16; 0 -14" dur="1.9s" repeatCount="indefinite" calcMode="spline" keySplines="0.45 0 0.55 1; 0.45 0 0.55 1"/>
+        <path d="M349 305 h326 a28 28 0 0 1 24 43 l-163 247 a28 28 0 0 1 -48 0 l-163 -247 a28 28 0 0 1 24 -43 z" fill="#ffffff"/>
+      </g>
+
+      <!-- Baseline bar (track + animated progress fill) -->
+      <rect x="349" y="676" width="326" height="58" rx="29" fill="#ffffff" opacity="0.4"/>
+      <g clip-path="url(#icBarClip)">
+        <rect x="349" y="676" width="326" height="58" rx="29" fill="#ffffff">
+          <animate attributeName="width" values="0;0;326;326" keyTimes="0;0.15;0.8;1" dur="1.9s" repeatCount="indefinite"/>
+        </rect>
+      </g>
+    </g>
+  </g>
+</svg>

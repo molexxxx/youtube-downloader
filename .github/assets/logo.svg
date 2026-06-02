@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 200" width="620" height="200" role="img" aria-label="YouTube Downloader">
+  <defs>
+    <linearGradient id="lgTile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff4757"/>
+      <stop offset="100%" stop-color="#e0162b"/>
+    </linearGradient>
+    <radialGradient id="lgSheen" cx="0.5" cy="0.3" r="0.8">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="62%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="lgText" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fecaca"/>
+      <stop offset="55%" stop-color="#f87171"/>
+      <stop offset="100%" stop-color="#ef4444"/>
+    </linearGradient>
+    <linearGradient id="lgTextSoft" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fca5a5"/>
+      <stop offset="100%" stop-color="#dc2626"/>
+    </linearGradient>
+    <filter id="lgGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <clipPath id="lgBarClip">
+      <rect x="349" y="676" width="326" height="58" rx="29"/>
+    </clipPath>
+  </defs>
+
+  <!-- === ICON: exact app geometry (1024 space) scaled to a 124px tile === -->
+  <g transform="translate(38, 38) scale(0.1211)">
+    <rect x="0" y="0" width="1024" height="1024" rx="232" fill="none" stroke="url(#lgTile)" stroke-width="10" opacity="0.22">
+      <animate attributeName="opacity" values="0.22;0.06;0.22" dur="3s" repeatCount="indefinite"/>
+    </rect>
+    <rect x="0" y="0" width="1024" height="1024" rx="232" fill="url(#lgTile)"/>
+    <rect x="0" y="0" width="1024" height="1024" rx="232" fill="url(#lgSheen)"/>
+    <g filter="url(#lgGlow)">
+      <g>
+        <animateTransform attributeName="transform" type="translate" values="0 -14; 0 16; 0 -14" dur="1.9s" repeatCount="indefinite" calcMode="spline" keySplines="0.45 0 0.55 1; 0.45 0 0.55 1"/>
+        <path d="M349 305 h326 a28 28 0 0 1 24 43 l-163 247 a28 28 0 0 1 -48 0 l-163 -247 a28 28 0 0 1 24 -43 z" fill="#ffffff"/>
+      </g>
+      <rect x="349" y="676" width="326" height="58" rx="29" fill="#ffffff" opacity="0.4"/>
+      <g clip-path="url(#lgBarClip)">
+        <rect x="349" y="676" width="326" height="58" rx="29" fill="#ffffff">
+          <animate attributeName="width" values="0;0;326;326" keyTimes="0;0.15;0.8;1" dur="1.9s" repeatCount="indefinite"/>
+        </rect>
+      </g>
+    </g>
+  </g>
+
+  <!-- === TEXT === -->
+  <g transform="translate(196, 100)">
+    <text x="0" y="-6" font-family="'SF Pro Display','Inter','Segoe UI',system-ui,sans-serif"
+          font-size="48" font-weight="700" letter-spacing="-1.5" fill="url(#lgText)">
+      YouTube
+      <animate attributeName="opacity" values="0;1" dur="0.8s" fill="freeze"/>
+    </text>
+    <text x="2" y="38" font-family="'SF Pro Display','Inter','Segoe UI',system-ui,sans-serif"
+          font-size="48" font-weight="300" letter-spacing="-1.5" fill="url(#lgTextSoft)" opacity="0.85">
+      Downloader
+      <animate attributeName="opacity" values="0;0.85" dur="0.8s" begin="0.25s" fill="freeze"/>
+    </text>
+    <text x="4" y="64" font-family="'SF Pro Display','Inter','Segoe UI',system-ui,sans-serif"
+          font-size="11.5" font-weight="400" letter-spacing="3.6" fill="#f87171" opacity="0">
+      YT-DLP · FFMPEG · 1000+ SITES
+      <animate attributeName="opacity" values="0;0.65" dur="0.6s" begin="0.6s" fill="freeze"/>
+    </text>
+  </g>
+</svg>

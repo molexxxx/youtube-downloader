@@ -1,0 +1,13 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff4757"/>
+      <stop offset="1" stop-color="#e0162b"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1024" height="1024" rx="232" fill="url(#tile)"/>
+  <!-- Downward play = download -->
+  <path d="M349 305 h326 a28 28 0 0 1 24 43 l-163 247 a28 28 0 0 1 -48 0 l-163 -247 a28 28 0 0 1 24 -43 z" fill="#ffffff"/>
+  <!-- Baseline bar -->
+  <rect x="349" y="676" width="326" height="58" rx="29" fill="#ffffff"/>
+</svg>
