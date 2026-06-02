@@ -196,6 +196,36 @@ export async function getInfo(url: string, forcePlaylist = false): Promise<Media
   }
 }
 
+/**
+ * Fetch a single page of flat playlist entries (used by the UI's "Load more"
+ * after the initial fetch limit). `start`/`end` are 1-based, inclusive, matching
+ * yt-dlp's `--playlist-items START:END` selector.
+ */
+export async function getPlaylistPage(
+  url: string,
+  start: number,
+  end: number
+): Promise<PlaylistEntry[]> {
+  const probe = (includeCookies: boolean): Promise<RawInfo> =>
+    ytdlp()(url, {
+      ...baseFlags(includeCookies),
+      dumpSingleJson: true,
+      flatPlaylist: true,
+      playlistItems: `${start}:${end}`
+    }) as unknown as Promise<RawInfo>
+
+  logger.info(`Fetching playlist page ${start}:${end} for`, url)
+  try {
+    const raw = await probe(false)
+    return (raw.entries ?? []).map(mapEntry)
+  } catch (err) {
+    if (!cookiesEnabled() || !isAuthRequiredError(err)) throw err
+    logger.warn('Playlist page needs authentication, retrying with cookies:', url)
+    const raw = await probe(true)
+    return (raw.entries ?? []).map(mapEntry)
+  }
+}
+
 /** Search YouTube via the ytsearch pseudo-extractor (no API key needed). */
 export async function search(query: string, limit = 15): Promise<PlaylistEntry[]> {
   const raw = (await ytdlp()(`ytsearch${limit}:${query}`, {

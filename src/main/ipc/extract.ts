@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron'
 import { IPC } from '@shared/types'
-import { getInfo, search } from '../ytdlp/resolver'
+import { getInfo, getPlaylistPage, search } from '../ytdlp/resolver'
 import { cleanErrorMessage } from '../errors'
 import { logger } from '../logger'
 
@@ -14,6 +14,19 @@ export function registerExtractIPC(): void {
       throw new Error(message)
     }
   })
+
+  ipcMain.handle(
+    IPC.extract.playlistPage,
+    async (_e, url: string, start: number, end: number) => {
+      try {
+        return await getPlaylistPage(url, start, end)
+      } catch (err) {
+        const message = cleanErrorMessage(err)
+        logger.error('extract.playlistPage failed:', message)
+        throw new Error(message)
+      }
+    }
+  )
 
   ipcMain.handle(IPC.extract.search, async (_e, query: string, limit?: number) => {
     try {

@@ -239,7 +239,8 @@ export const IPC = {
   },
   extract: {
     info: 'extract:info',
-    search: 'extract:search'
+    search: 'extract:search',
+    playlistPage: 'extract:playlistPage'
   },
   download: {
     start: 'download:start',

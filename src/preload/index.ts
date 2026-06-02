@@ -39,7 +39,9 @@ const api = {
     info: (url: string, forcePlaylist?: boolean): Promise<MediaInfo> =>
       ipcRenderer.invoke(IPC.extract.info, url, forcePlaylist),
     search: (query: string, limit?: number): Promise<PlaylistEntry[]> =>
-      ipcRenderer.invoke(IPC.extract.search, query, limit)
+      ipcRenderer.invoke(IPC.extract.search, query, limit),
+    playlistPage: (url: string, start: number, end: number): Promise<PlaylistEntry[]> =>
+      ipcRenderer.invoke(IPC.extract.playlistPage, url, start, end)
   },
   download: {
     start: (req: DownloadRequest): Promise<DownloadJob> =>

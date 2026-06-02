@@ -27,7 +27,7 @@ vi.mock('@main/ytdlp/cookies', () => ({
 }))
 vi.mock('youtube-dl-exec', () => ({ create: () => engineMock }))
 
-import { getInfo, isPlaylistUrl } from '@main/ytdlp/resolver'
+import { getInfo, getPlaylistPage, isPlaylistUrl } from '@main/ytdlp/resolver'
 
 beforeEach(() => {
   engineMock.mockReset()
@@ -118,5 +118,32 @@ describe('getInfo playlist handling', () => {
     const opts = engineMock.mock.calls[0][1]
     expect(opts.flatPlaylist).toBe(true)
     expect(opts.noPlaylist).toBeUndefined()
+  })
+})
+
+describe('getPlaylistPage', () => {
+  it('requests the given 1-based inclusive range and maps the entries', async () => {
+    engineMock.mockResolvedValueOnce({
+      entries: [
+        { id: 'a', title: 'A', url: 'https://a' },
+        { id: 'b', title: 'B', url: 'https://b' }
+      ]
+    })
+    const page = await getPlaylistPage('https://www.youtube.com/playlist?list=PL1', 201, 400)
+    const opts = engineMock.mock.calls[0][1]
+    expect(opts.playlistItems).toBe('201:400')
+    expect(opts.flatPlaylist).toBe(true)
+    expect(page).toHaveLength(2)
+    expect(page[0]).toMatchObject({ id: 'a', title: 'A', url: 'https://a' })
+  })
+
+  it('retries with cookies when the page requires authentication', async () => {
+    engineMock
+      .mockRejectedValueOnce(new Error('ERROR: Private video. Sign in to confirm'))
+      .mockResolvedValueOnce({ entries: [{ id: 'a', title: 'A', url: 'https://a' }] })
+    const page = await getPlaylistPage('https://x', 1, 200)
+    expect(engineMock).toHaveBeenCalledTimes(2)
+    expect(engineMock.mock.calls[1][1]).toMatchObject({ cookies: '/userdata/cookies.txt' })
+    expect(page).toHaveLength(1)
   })
 })

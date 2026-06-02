@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Music, Video, Download, SlidersHorizontal, Volume2, ListVideo, Clock, X } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Music, Video, Download, SlidersHorizontal, Volume2, ListVideo, Clock, X, Loader2, Plus } from 'lucide-react'
 import { useAppStore } from '../../stores/appStore'
 import type {
   AudioFormat,
@@ -25,6 +25,7 @@ function formatHeight(format: VideoFormat): number {
 export function MediaCard(): React.JSX.Element | null {
   const info = useAppStore((s) => s.info)
   const setInfo = useAppStore((s) => s.setInfo)
+  const appendEntries = useAppStore((s) => s.appendEntries)
   const config = useAppStore((s) => s.config)
   const [kind, setKind] = useState<DownloadKind>('video')
   const [formatId, setFormatId] = useState<string>('')
@@ -36,6 +37,7 @@ export function MediaCard(): React.JSX.Element | null {
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set())
   const [audioBitrate, setAudioBitrate] = useState<number>(320)
   const [showOptions, setShowOptions] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [embedThumbnail, setEmbedThumbnail] = useState<boolean>(
     config?.embedThumbnail ?? true
   )
@@ -53,11 +55,20 @@ export function MediaCard(): React.JSX.Element | null {
       .sort((a, b) => (b.tbr ?? 0) - (a.tbr ?? 0))
   }, [info])
 
-  // Start with every playlist item selected whenever a new playlist resolves.
+  // Start with every playlist item selected whenever a *new* playlist resolves.
+  // Keyed on the playlist id so that loading more pages (which grows
+  // `info.entries`) preserves any items the user has deselected.
+  const lastPlaylistId = useRef<string | null>(null)
   useEffect(() => {
-    setSelectedItems(
-      info?.isPlaylist ? new Set(info.entries.map((_, i) => i + 1)) : new Set()
-    )
+    if (!info?.isPlaylist) {
+      lastPlaylistId.current = null
+      setSelectedItems(new Set())
+      return
+    }
+    if (lastPlaylistId.current !== info.id) {
+      lastPlaylistId.current = info.id
+      setSelectedItems(new Set(info.entries.map((_, i) => i + 1)))
+    }
   }, [info])
 
   const formatOptions = useMemo<SelectOption[]>(() => {
@@ -110,6 +121,31 @@ export function MediaCard(): React.JSX.Element | null {
         ? new Set()
         : new Set(info.entries.map((_, i) => i + 1))
     )
+  }
+
+  async function loadMore(): Promise<void> {
+    if (!info || loadingMore) return
+    const start = info.entries.length + 1
+    const limit = config?.playlistFetchLimit || 200
+    const end = info.playlistCount > 0 ? Math.min(info.playlistCount, start + limit - 1) : start + limit - 1
+    setLoadingMore(true)
+    try {
+      const page = await window.api.extract.playlistPage(info.webpageUrl, start, end)
+      appendEntries(page)
+      // Newly loaded items default to selected, matching the initial behavior.
+      setSelectedItems((prev) => {
+        const next = new Set(prev)
+        for (let i = 0; i < page.length; i++) next.add(start + i)
+        return next
+      })
+    } catch (err) {
+      // Surface the failure but keep the already-loaded items intact.
+      useAppStore
+        .getState()
+        .setError(err instanceof Error ? err.message : 'Failed to load more items')
+    } finally {
+      setLoadingMore(false)
+    }
   }
 
   async function startDownload(): Promise<void> {
@@ -343,9 +379,12 @@ export function MediaCard(): React.JSX.Element | null {
       {info.isPlaylist && (
         <PlaylistPicker
           entries={info.entries}
+          total={info.playlistCount}
           selected={selectedItems}
           onToggle={toggleItem}
           onToggleAll={toggleAllItems}
+          onLoadMore={loadMore}
+          loadingMore={loadingMore}
         />
       )}
 
@@ -423,21 +462,31 @@ function OptionChip({
 
 function PlaylistPicker({
   entries,
+  total,
   selected,
   onToggle,
-  onToggleAll
+  onToggleAll,
+  onLoadMore,
+  loadingMore
 }: {
   entries: PlaylistEntry[]
+  total: number
   selected: Set<number>
   onToggle: (index: number) => void
   onToggleAll: () => void
+  onLoadMore: () => void
+  loadingMore: boolean
 }): React.JSX.Element {
   const allSelected = selected.size === entries.length
+  // yt-dlp reports the full list size in `total`; when we've only fetched a
+  // capped slice, offer to page in the rest.
+  const remaining = total > entries.length ? total - entries.length : 0
   return (
     <div className="mt-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-white/10">
       <div className="flex shrink-0 items-center justify-between bg-white/[0.03] px-3 py-2">
         <span className="text-xs text-white/45">
           {selected.size} of {entries.length} selected
+          {remaining > 0 && <span className="text-white/30"> · {total} total</span>}
         </span>
         <button
           onClick={onToggleAll}
@@ -480,6 +529,25 @@ function PlaylistPicker({
           )
         })}
       </ul>
+      {remaining > 0 && (
+        <button
+          onClick={onLoadMore}
+          disabled={loadingMore}
+          className="flex shrink-0 items-center justify-center gap-1.5 border-t border-white/10 bg-white/[0.03] py-2 text-xs font-medium text-white/60 hover:bg-white/[0.06] hover:text-white/90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {loadingMore ? (
+            <>
+              <Loader2 size={13} className="animate-spin" />
+              Loading…
+            </>
+          ) : (
+            <>
+              <Plus size={13} />
+              Load more ({remaining} remaining)
+            </>
+          )}
+        </button>
+      )}
     </div>
   )
 }

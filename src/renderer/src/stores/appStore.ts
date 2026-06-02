@@ -38,6 +38,7 @@ interface AppState {
   setBootstrap: (progress: BootstrapProgress | null) => void
   setView: (view: AppView) => void
   setInfo: (info: MediaInfo | null) => void
+  appendEntries: (entries: PlaylistEntry[]) => void
   setSearchResults: (results: PlaylistEntry[]) => void
   setResolving: (resolving: boolean) => void
   upsertJob: (job: DownloadJob) => void
@@ -81,6 +82,14 @@ export const useAppStore = create<AppState>((set) => ({
   setBootstrap: (bootstrap) => set({ bootstrap }),
   setView: (view) => set({ view }),
   setInfo: (info) => set({ info }),
+  appendEntries: (entries) =>
+    set((state) => {
+      if (!state.info) return state
+      // De-dupe by id in case a page overlaps an already-loaded range.
+      const seen = new Set(state.info.entries.map((e) => e.id))
+      const added = entries.filter((e) => !e.id || !seen.has(e.id))
+      return { info: { ...state.info, entries: [...state.info.entries, ...added] } }
+    }),
   setSearchResults: (searchResults) => set({ searchResults }),
   setResolving: (resolving) => set({ resolving }),
   upsertJob: (job) =>
