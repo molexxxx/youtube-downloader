@@ -77,6 +77,7 @@ const api = {
     openPath: (path: string): Promise<string> => ipcRenderer.invoke(IPC.system.openPath, path),
     showItem: (path: string): Promise<void> => ipcRenderer.invoke(IPC.system.showItem, path),
     chooseDir: (): Promise<string | null> => ipcRenderer.invoke(IPC.system.chooseDir),
+    openExternal: (url: string): Promise<void> => ipcRenderer.invoke(IPC.system.openExternal, url),
     appVersion: (): Promise<string> => ipcRenderer.invoke(IPC.system.appVersion)
   },
   logs: {

@@ -263,6 +263,7 @@ export const IPC = {
     openPath: 'system:openPath',
     showItem: 'system:showItem',
     chooseDir: 'system:chooseDir',
+    openExternal: 'system:openExternal',
     appVersion: 'system:appVersion'
   },
   logs: {

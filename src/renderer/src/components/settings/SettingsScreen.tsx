@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Download, FolderOpen, RefreshCw, RotateCcw, Trash2 } from 'lucide-react'
+import { Code2, Download, ExternalLink, FolderOpen, Heart, RefreshCw, RotateCcw, Trash2 } from 'lucide-react'
 import { useAppStore } from '../../stores/appStore'
 import { PRESETS } from '@shared/presets'
 import type { AppConfig, AppUpdateStatus, CookieInfo, Theme, VideoContainer } from '@shared/types'
@@ -28,9 +28,14 @@ export function SettingsScreen(): React.JSX.Element | null {
   const [cookies, setCookies] = useState<CookieInfo | null>(null)
   const [cookieBusy, setCookieBusy] = useState(false)
   const [checking, setChecking] = useState(false)
+  const [appVersion, setAppVersion] = useState<string | null>(null)
 
   useEffect(() => {
     void window.api.cookies.info().then(setCookies)
+  }, [])
+
+  useEffect(() => {
+    void window.api.system.appVersion().then(setAppVersion)
   }, [])
 
   if (!config) return null
@@ -311,6 +316,10 @@ export function SettingsScreen(): React.JSX.Element | null {
         />
       </Section>
 
+      <Section title="About">
+        <AboutPanel version={appVersion} />
+      </Section>
+
       <button
         onClick={reset}
         className="flex items-center gap-2 self-start rounded-lg border border-white/10 px-3 py-2 text-sm text-white/60 hover:border-red-500/40 hover:text-red-300"
@@ -557,6 +566,54 @@ function AppUpdatePanel({
           />
         </div>
       )}
+    </div>
+  )
+}
+
+const REPO_URL = 'https://github.com/tonywied17/youtube-downloader'
+const AUTHOR_URL = 'https://github.com/tonywied17'
+
+function AboutPanel({ version }: { version: string | null }): React.JSX.Element {
+  const open = (url: string) => () => void window.api.system.openExternal(url)
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-sm font-medium text-white/80 selectable">YouTube Downloader</span>
+        <span className="text-xs text-white/40 selectable">
+          {version ? `v${version}` : ''}
+        </span>
+      </div>
+
+      <p className="text-xs text-white/40">
+        Built by{' '}
+        <button
+          onClick={open(AUTHOR_URL)}
+          className="font-medium text-red-300 hover:text-red-200 hover:underline"
+        >
+          Tony Wiedman
+        </button>
+        .
+      </p>
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={open(REPO_URL)}
+          className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs text-white/70 hover:border-white/20"
+        >
+          <Code2 size={14} />
+          GitHub repository
+          <ExternalLink size={12} className="text-white/30" />
+        </button>
+        <button
+          onClick={open(`${REPO_URL}/issues`)}
+          className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs text-white/70 hover:border-white/20"
+        >
+          <Heart size={14} className="text-red-400" />
+          Report an issue
+          <ExternalLink size={12} className="text-white/30" />
+        </button>
+      </div>
     </div>
   )
 }

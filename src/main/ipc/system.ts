@@ -43,6 +43,10 @@ export function registerSystemIPC(): void {
     return result.canceled ? null : result.filePaths[0]
   })
 
+  ipcMain.handle(IPC.system.openExternal, (_e, url: string) => {
+    if (/^https?:\/\//i.test(url)) void shell.openExternal(url)
+  })
+
   ipcMain.handle(IPC.system.appVersion, () => app.getVersion())
 
   logger.debug('System IPC registered')
