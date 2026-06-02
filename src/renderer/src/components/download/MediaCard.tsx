@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Music, Video, Download, SlidersHorizontal, Volume2, ListVideo, Clock, X, Loader2, Plus } from 'lucide-react'
+import { Music, Video, Download, SlidersHorizontal, Volume2, ListVideo, Clock, X, Loader2, ChevronDown } from 'lucide-react'
 import { useAppStore } from '../../stores/appStore'
 import type {
   AudioFormat,
@@ -38,6 +38,9 @@ export function MediaCard(): React.JSX.Element | null {
   const [audioBitrate, setAudioBitrate] = useState<number>(320)
   const [showOptions, setShowOptions] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
+  // Set once a "load more" page comes back short, so we stop offering to page
+  // further on lists whose total size yt-dlp never reports (e.g. YouTube Mixes).
+  const [reachedEnd, setReachedEnd] = useState(false)
   const [embedThumbnail, setEmbedThumbnail] = useState<boolean>(
     config?.embedThumbnail ?? true
   )
@@ -68,6 +71,7 @@ export function MediaCard(): React.JSX.Element | null {
     if (lastPlaylistId.current !== info.id) {
       lastPlaylistId.current = info.id
       setSelectedItems(new Set(info.entries.map((_, i) => i + 1)))
+      setReachedEnd(false)
     }
   }, [info])
 
@@ -132,6 +136,9 @@ export function MediaCard(): React.JSX.Element | null {
     try {
       const page = await window.api.extract.playlistPage(info.webpageUrl, start, end)
       appendEntries(page)
+      // A short (or empty) page means we've paged past the end of a list whose
+      // size yt-dlp never reported - stop offering "load more".
+      if (page.length < limit) setReachedEnd(true)
       // Newly loaded items default to selected, matching the initial behavior.
       setSelectedItems((prev) => {
         const next = new Set(prev)
@@ -196,7 +203,7 @@ export function MediaCard(): React.JSX.Element | null {
               {info.isPlaylist ? (
                 <>
                   <ListVideo size={11} />
-                  {info.playlistCount} videos
+                  {info.playlistCount > 0 ? info.playlistCount : info.entries.length} videos
                 </>
               ) : (
                 <>
@@ -232,7 +239,7 @@ export function MediaCard(): React.JSX.Element | null {
           </h3>
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/45">
             <span className="selectable truncate">{info.uploader ?? 'Unknown channel'}</span>
-            {info.isPlaylist && (
+            {info.isPlaylist && info.duration != null && info.duration > 0 && (
               <span className="flex items-center gap-1">
                 <Clock size={11} />
                 {formatDuration(info.duration)} total
@@ -380,6 +387,8 @@ export function MediaCard(): React.JSX.Element | null {
         <PlaylistPicker
           entries={info.entries}
           total={info.playlistCount}
+          fetchLimit={config?.playlistFetchLimit || 200}
+          reachedEnd={reachedEnd}
           selected={selectedItems}
           onToggle={toggleItem}
           onToggleAll={toggleAllItems}
@@ -463,6 +472,8 @@ function OptionChip({
 function PlaylistPicker({
   entries,
   total,
+  fetchLimit,
+  reachedEnd,
   selected,
   onToggle,
   onToggleAll,
@@ -471,6 +482,8 @@ function PlaylistPicker({
 }: {
   entries: PlaylistEntry[]
   total: number
+  fetchLimit: number
+  reachedEnd: boolean
   selected: Set<number>
   onToggle: (index: number) => void
   onToggleAll: () => void
@@ -479,14 +492,21 @@ function PlaylistPicker({
 }): React.JSX.Element {
   const allSelected = selected.size === entries.length
   // yt-dlp reports the full list size in `total`; when we've only fetched a
-  // capped slice, offer to page in the rest.
+  // capped slice, page in the rest. Show the exact remaining count.
   const remaining = total > entries.length ? total - entries.length : 0
+  // YouTube Mixes/radios never report a total. If we filled a complete page
+  // (a multiple of the fetch limit) and haven't yet hit a short page, assume
+  // there's more to pull so the user can keep going.
+  const mightHaveMore =
+    total <= 0 && !reachedEnd && entries.length > 0 && entries.length % fetchLimit === 0
+  const canLoadMore = remaining > 0 || mightHaveMore
   return (
     <div className="mt-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-white/10">
       <div className="flex shrink-0 items-center justify-between bg-white/[0.03] px-3 py-2">
         <span className="text-xs text-white/45">
           {selected.size} of {entries.length} selected
           {remaining > 0 && <span className="text-white/30"> · {total} total</span>}
+          {remaining <= 0 && mightHaveMore && <span className="text-white/30"> · more available</span>}
         </span>
         <button
           onClick={onToggleAll}
@@ -529,21 +549,27 @@ function PlaylistPicker({
           )
         })}
       </ul>
-      {remaining > 0 && (
+      {canLoadMore && (
         <button
           onClick={onLoadMore}
           disabled={loadingMore}
-          className="flex shrink-0 items-center justify-center gap-1.5 border-t border-white/10 bg-white/[0.03] py-2 text-xs font-medium text-white/60 hover:bg-white/[0.06] hover:text-white/90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="group flex shrink-0 items-center justify-center gap-2 border-t border-red-500/20 bg-gradient-to-b from-red-500/[0.12] to-red-500/[0.04] py-3 text-sm font-semibold text-red-300 transition hover:from-red-500/20 hover:to-red-500/[0.08] hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loadingMore ? (
             <>
-              <Loader2 size={13} className="animate-spin" />
-              Loading…
+              <Loader2 size={16} className="animate-spin" />
+              Loading more…
             </>
           ) : (
             <>
-              <Plus size={13} />
-              Load more ({remaining} remaining)
+              <ChevronDown
+                size={16}
+                className="transition-transform group-hover:translate-y-0.5"
+              />
+              Load {remaining > 0 ? Math.min(remaining, fetchLimit) : fetchLimit} more
+              {remaining > 0 && (
+                <span className="font-normal text-red-300/50">· {remaining} remaining</span>
+              )}
             </>
           )}
         </button>

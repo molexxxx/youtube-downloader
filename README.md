@@ -81,7 +81,7 @@
 ### Download & Resolve
 
 - **1000+ Sites** - Download from YouTube and any site supported by yt-dlp; paste a link or search YouTube right from the URL bar (no API key)
-- **Videos, Playlists & Channels** - Smart URL detection treats `watch?v=…&list=…` as a single video and `playlist?list=…` as a playlist; full or partial playlist selection
+- **Videos, Playlists & Channels** - Smart URL detection: a `watch?v=…&list=…` link prompts you to grab just the video or the whole list, while `playlist?list=…`, channels, and Mixes resolve as collections; full or partial selection with "load more" paging past the fetch limit
 - **Video Formats** - "Best quality (auto)" with automatic video + best-audio merge, or hand-pick a specific resolution / fps / codec from the enumerated format list (up to 4K when available)
 - **Containers** - Output to **MP4** or **MKV**
 - **Audio Extraction** - Pull audio-only as **MP3**, **M4A**, **Opus**, **FLAC**, or **WAV** with selectable bitrate (320K / 256K / 192K / 128K / 96K)
