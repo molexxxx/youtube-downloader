@@ -87,3 +87,17 @@ jobs:
         # The matrix uploads to a shared draft so all platform assets land
         # without racing. Flip it to a published, latest release once done.
         run: gh release edit "${{ github.ref_name }}" --repo "${{ github.repository }}" --draft=false --latest
+
+  notify-badges:
+    name: Refresh profile badges
+    needs: [publish]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch refresh-badges
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          gh api -X POST repos/tonywied17/tonywied17/dispatches \
+            -f event_type=refresh-badges \
+            -f "client_payload[repo]=${{ github.repository }}"
