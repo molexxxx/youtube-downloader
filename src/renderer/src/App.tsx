@@ -32,12 +32,22 @@ function App(): React.JSX.Element {
 
   useEffect(() => {
     void (async () => {
-      setConfig(await window.api.config.get())
-      setBinaries(await window.api.binaries.status())
-      setJobs(await window.api.download.list())
-      setHistory(await window.api.history.list())
-      setLogs(await window.api.logs.list())
-      setAppUpdate(await window.api.appUpdate.status())
+      // Fire all reads in parallel so the nav (gated on binaries) unlocks as
+      // soon as possible instead of waiting behind config/jobs/history/logs.
+      const [config, binaries, jobs, history, logs, appUpdate] = await Promise.all([
+        window.api.config.get(),
+        window.api.binaries.status(),
+        window.api.download.list(),
+        window.api.history.list(),
+        window.api.logs.list(),
+        window.api.appUpdate.status()
+      ])
+      setConfig(config)
+      setBinaries(binaries)
+      setJobs(jobs)
+      setHistory(history)
+      setLogs(logs)
+      setAppUpdate(appUpdate)
     })()
 
     const offProgress = window.api.binaries.onProgress((p) => {

@@ -27,10 +27,12 @@ async function runBootstrap() {
 }
 
 export function registerBinariesIPC(): void {
-  ipcMain.handle(IPC.binaries.status, async () => ({
-    ytdlp: await ytdlpStatus(),
-    ffmpeg: await ffmpegStatus()
-  }))
+  ipcMain.handle(IPC.binaries.status, async () => {
+    // Run both version probes concurrently — each spawns the binary and can
+    // take a moment, so serial awaits noticeably delayed the UI unlock.
+    const [ytdlp, ffmpeg] = await Promise.all([ytdlpStatus(), ffmpegStatus()])
+    return { ytdlp, ffmpeg }
+  })
 
   ipcMain.handle(IPC.binaries.bootstrap, async () => {
     if (!bootstrapInFlight) {

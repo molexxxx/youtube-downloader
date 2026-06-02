@@ -5,6 +5,8 @@ export function TitleBar(): React.JSX.Element {
   const view = useAppStore((s) => s.view)
   const setView = useAppStore((s) => s.setView)
   const binariesReady = useAppStore((s) => s.binariesReady)
+  const updateState = useAppStore((s) => s.appUpdate?.state)
+  const updateReady = updateState === 'available' || updateState === 'downloaded'
 
   return (
     <header className="drag-region flex h-10 items-center justify-between border-b border-white/5 bg-[#0e1016] px-4">
@@ -38,6 +40,7 @@ export function TitleBar(): React.JSX.Element {
               onClick={() => setView('settings')}
               icon={<Settings size={13} />}
               label="Settings"
+              badge={updateReady}
             />
           </nav>
         )}
@@ -73,22 +76,30 @@ function NavTab({
   active,
   onClick,
   icon,
-  label
+  label,
+  badge
 }: {
   active: boolean
   onClick: () => void
   icon: React.ReactNode
   label: string
+  badge?: boolean
 }): React.JSX.Element {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium ${
+      className={`relative flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium ${
         active ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white'
       }`}
     >
       {icon}
       {label}
+      {badge && (
+        <span
+          aria-label="Update available"
+          className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-[#0e1016]"
+        />
+      )}
     </button>
   )
 }
