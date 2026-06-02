@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { binariesAreReady, useAppStore } from '@renderer/stores/appStore'
-import type { BinariesStatus, DownloadJob, LogEntry } from '@shared/types'
+import type { BinariesStatus, DownloadJob, LogEntry, MediaInfo, PlaylistEntry } from '@shared/types'
 
 function status(ytInstalled: boolean, ffInstalled: boolean): BinariesStatus {
   return {
@@ -72,5 +72,49 @@ describe('appStore', () => {
     expect(useAppStore.getState().cookieHint).toBe(true)
     useAppStore.getState().setCookieHint(false)
     expect(useAppStore.getState().cookieHint).toBe(false)
+  })
+})
+
+describe('appendEntries', () => {
+  function playlistInfo(entries: PlaylistEntry[]): MediaInfo {
+    return {
+      id: 'PL1',
+      title: 'List',
+      uploader: null,
+      duration: null,
+      thumbnail: null,
+      webpageUrl: 'https://x',
+      isPlaylist: true,
+      playlistCount: 10,
+      formats: [],
+      entries
+    }
+  }
+  const entry = (id: string): PlaylistEntry => ({
+    id,
+    title: id,
+    url: `https://${id}`,
+    duration: null,
+    thumbnail: null
+  })
+
+  it('is a no-op when there is no resolved info', () => {
+    useAppStore.setState({ info: null })
+    useAppStore.getState().appendEntries([entry('a')])
+    expect(useAppStore.getState().info).toBeNull()
+  })
+
+  it('appends new entries to the existing playlist', () => {
+    useAppStore.setState({ info: playlistInfo([entry('a'), entry('b')]) })
+    useAppStore.getState().appendEntries([entry('c'), entry('d')])
+    const ids = useAppStore.getState().info!.entries.map((e) => e.id)
+    expect(ids).toEqual(['a', 'b', 'c', 'd'])
+  })
+
+  it('de-dupes entries that overlap an already-loaded range', () => {
+    useAppStore.setState({ info: playlistInfo([entry('a'), entry('b')]) })
+    useAppStore.getState().appendEntries([entry('b'), entry('c')])
+    const ids = useAppStore.getState().info!.entries.map((e) => e.id)
+    expect(ids).toEqual(['a', 'b', 'c'])
   })
 })
