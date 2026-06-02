@@ -32,19 +32,10 @@ export function looksLikeUrl(input: string): boolean {
 }
 
 /**
- * Auto-generated YouTube list ids (Mixes/radios) that aren't real, downloadable
- * playlists. A `RD`-prefixed list is an endless personalized mix, so offering to
- * "download the entire playlist" makes no sense for it.
- */
-function isMixList(listId: string): boolean {
-  return /^RD/i.test(listId)
-}
-
-/**
- * When a `watch?v=...` link also carries a real `list=...` (i.e. it was opened
- * from within a playlist), return that list id so the UI can ask whether the
- * user wants just the single video or the whole playlist. Returns null for bare
- * playlist links, links without a list, and auto-generated mixes/radios.
+ * When a `watch?v=...` link also carries a `list=...` (i.e. it was opened from
+ * within a playlist or a Mix/radio), return that list id so the UI can ask
+ * whether the user wants just the single video or the whole list. Returns null
+ * for bare playlist links and links without a list.
  */
 export function playlistChoiceId(url: string): string | null {
   let parsed: URL
@@ -55,7 +46,7 @@ export function playlistChoiceId(url: string): string | null {
   }
   if (!parsed.searchParams.has('v')) return null
   const list = parsed.searchParams.get('list')
-  if (!list || isMixList(list)) return null
+  if (!list) return null
   return list
 }
 

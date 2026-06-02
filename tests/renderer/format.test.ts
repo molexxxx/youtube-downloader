@@ -80,10 +80,15 @@ describe('playlistChoiceId', () => {
   it('ignores bare playlist links (no video id)', () => {
     expect(playlistChoiceId('https://www.youtube.com/playlist?list=PL456')).toBeNull()
   })
-  it('ignores auto-generated mixes/radios', () => {
+  it('prompts for auto-generated mixes/radios', () => {
     expect(
       playlistChoiceId('https://www.youtube.com/watch?v=abc123&list=RD456')
-    ).toBeNull()
+    ).toBe('RD456')
+    expect(
+      playlistChoiceId(
+        'https://www.youtube.com/watch?v=nxg4C365LbQ&list=RDnxg4C365LbQ&start_radio=1'
+      )
+    ).toBe('RDnxg4C365LbQ')
   })
   it('returns null for non-URLs', () => {
     expect(playlistChoiceId('not a url')).toBeNull()
