@@ -182,6 +182,22 @@ export function SettingsScreen(): React.JSX.Element | null {
             className="w-full rounded-lg border border-white/10 bg-[#12151c] px-3 py-2 text-sm outline-none"
           />
         </Field>
+
+        <Field
+          label="Playlist fetch limit"
+          description="Max items to load when resolving a playlist or mix. Large Mix/radio lists resolve slowly — keep this modest. Set 0 for no limit."
+        >
+          <input
+            type="number"
+            min={0}
+            max={5000}
+            value={config.playlistFetchLimit}
+            onChange={(e) =>
+              update({ playlistFetchLimit: Math.max(0, Math.floor(Number(e.target.value) || 0)) })
+            }
+            className="w-full rounded-lg border border-white/10 bg-[#12151c] px-3 py-2 text-sm outline-none"
+          />
+        </Field>
       </Section>
 
       <Section title="Post-processing">
@@ -268,7 +284,7 @@ export function SettingsScreen(): React.JSX.Element | null {
             <CookieNote tone="info">
               Tip: close
               {cookies?.effectiveLabel ? ` ${cookies.effectiveLabel}` : ' your browser'}{' '}
-              completely before refreshing — a running browser locks its cookie database
+              completely before refreshing - a running browser locks its cookie database
               and the import will fail.
             </CookieNote>
 
@@ -645,7 +661,7 @@ function CookieStatus({
         <CheckCircle2 size={14} className="text-emerald-400" />
       )
       text = stale
-        ? `Cookies ready — refreshing soon (imported ${formatAge(cookies.ageMs)})`
+        ? `Cookies ready - refreshing soon (imported ${formatAge(cookies.ageMs)})`
         : `Cookies ready (imported ${formatAge(cookies.ageMs)})`
       tone = stale ? 'text-amber-300' : 'text-emerald-300'
     }

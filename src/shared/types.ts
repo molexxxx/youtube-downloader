@@ -25,6 +25,9 @@ export interface AppConfig {
   useDownloadArchive: boolean
   cookiesFromBrowser: string | null
   outputTemplate: string
+  // Max number of items fetched when resolving a playlist/mix. Large Mix/radio
+  // lists can run into the hundreds and paginate slowly; 0 means no limit.
+  playlistFetchLimit: number
   autoUpdateApp: boolean
   autoUpdateBinaries: boolean
   notifications: boolean
@@ -46,6 +49,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   useDownloadArchive: false,
   cookiesFromBrowser: null,
   outputTemplate: '%(title)s [%(id)s].%(ext)s',
+  playlistFetchLimit: 200,
   autoUpdateApp: true,
   autoUpdateBinaries: true,
   notifications: true,
@@ -218,7 +222,7 @@ export interface CookieInfo {
   detected: DetectedBrowser[]
 }
 
-/** IPC channel names — single source of truth shared by preload + main. */
+/** IPC channel names - single source of truth shared by preload + main. */
 export const IPC = {
   config: {
     get: 'config:get',

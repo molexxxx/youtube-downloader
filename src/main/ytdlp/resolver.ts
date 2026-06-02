@@ -163,7 +163,15 @@ export async function getInfo(url: string, forcePlaylist = false): Promise<Media
     }
     // A watch?v=... URL is a single video even if it carries a list=; never let
     // yt-dlp expand it into the whole playlist.
-    if (!playlist) opts.noPlaylist = true
+    if (!playlist) {
+      opts.noPlaylist = true
+    } else {
+      // Cap how many items we paginate through. Large Mix/radio lists can run
+      // into the hundreds and each page is a sequential network round-trip, so
+      // a limit keeps resolve times reasonable. 0 disables the cap.
+      const limit = getConfig().playlistFetchLimit
+      if (limit > 0) opts.playlistItems = `1:${limit}`
+    }
     return ytdlp()(url, opts) as unknown as Promise<RawInfo>
   }
 
