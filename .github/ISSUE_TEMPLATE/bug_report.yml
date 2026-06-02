@@ -1,0 +1,95 @@
+name: Bug report
+description: Report something that is broken or not working as expected.
+title: '[Bug]: '
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Please fill out the sections below so we can reproduce and fix it quickly.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before you start
+      options:
+        - label: I'm on the latest version of YouTube Downloader.
+          required: true
+        - label: I searched existing issues and didn't find a duplicate.
+          required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear and concise description of the bug.
+      placeholder: When I click Download, the app...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the exact steps so we can reproduce the problem.
+      placeholder: |
+        1. Paste this URL: ...
+        2. Choose preset ...
+        3. Click Download
+        4. See error
+    validations:
+      required: true
+
+  - type: input
+    id: url
+    attributes:
+      label: Source URL (optional)
+      description: The video/playlist URL that triggered the issue, if shareable.
+      placeholder: https://www.youtube.com/watch?v=...
+    validations:
+      required: false
+
+  - type: input
+    id: app-version
+    attributes:
+      label: App version
+      description: Find this under Settings → About.
+      placeholder: v0.1.2
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Copy relevant lines from the in-app Logs screen. This is automatically formatted as code.
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Screenshots, recordings, or anything else that helps.
+    validations:
+      required: false

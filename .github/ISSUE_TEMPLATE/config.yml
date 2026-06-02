@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Discussions
+    url: https://github.com/tonywied17/youtube-downloader/discussions
+    about: Ask questions, share ideas, and talk with the community.
+  - name: Security report
+    url: https://github.com/tonywied17/youtube-downloader/security/advisories/new
+    about: Privately report a security vulnerability instead of opening a public issue.
