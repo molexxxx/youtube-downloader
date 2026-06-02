@@ -190,11 +190,11 @@ export function MediaCard(): React.JSX.Element | null {
               <X size={16} />
             </button>
           </div>
-          <h3 className="mt-2 line-clamp-2 text-base font-semibold leading-snug">
+          <h3 className="selectable mt-2 line-clamp-2 text-base font-semibold leading-snug">
             {info.title}
           </h3>
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/45">
-            <span className="truncate">{info.uploader ?? 'Unknown channel'}</span>
+            <span className="selectable truncate">{info.uploader ?? 'Unknown channel'}</span>
             {info.isPlaylist && (
               <span className="flex items-center gap-1">
                 <Clock size={11} />

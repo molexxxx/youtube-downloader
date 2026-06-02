@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { Check, ChevronDown } from 'lucide-react'
 
 export interface SelectOption {
@@ -6,6 +6,11 @@ export interface SelectOption {
   label: string
   hint?: string
 }
+
+/** Largest height the menu is ever allowed to take (matches `max-h-64`). */
+const MAX_MENU_HEIGHT = 256
+/** Breathing room kept between the menu and the viewport edge. */
+const VIEWPORT_MARGIN = 8
 
 /**
  * Custom dropdown that replaces the native <select>. Styled to match the app,
@@ -26,6 +31,10 @@ export function Select({
 }): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(0)
+  const [placement, setPlacement] = useState<{ dir: 'down' | 'up'; maxHeight: number }>({
+    dir: 'down',
+    maxHeight: MAX_MENU_HEIGHT
+  })
   const rootRef = useRef<HTMLDivElement>(null)
   const listId = useId()
 
@@ -38,6 +47,36 @@ export function Select({
     }
     document.addEventListener('mousedown', onPointer)
     return () => document.removeEventListener('mousedown', onPointer)
+  }, [open])
+
+  /*
+   * Decide whether the menu opens downward or upward based on the space left
+   * around the trigger. Opens up only when the space below is too tight AND
+   * there is more room above; the menu height is then clamped to whatever the
+   * chosen side can fit so it never spills past the window edge.
+   */
+  useLayoutEffect(() => {
+    if (!open) return
+    function reposition(): void {
+      const el = rootRef.current
+      if (!el) return
+      const rect = el.getBoundingClientRect()
+      const spaceBelow = window.innerHeight - rect.bottom - VIEWPORT_MARGIN
+      const spaceAbove = rect.top - VIEWPORT_MARGIN
+      const openUp = spaceBelow < MAX_MENU_HEIGHT && spaceAbove > spaceBelow
+      const available = openUp ? spaceAbove : spaceBelow
+      setPlacement({
+        dir: openUp ? 'up' : 'down',
+        maxHeight: Math.max(96, Math.min(MAX_MENU_HEIGHT, available))
+      })
+    }
+    reposition()
+    window.addEventListener('resize', reposition)
+    window.addEventListener('scroll', reposition, true)
+    return () => {
+      window.removeEventListener('resize', reposition)
+      window.removeEventListener('scroll', reposition, true)
+    }
   }, [open])
 
   useEffect(() => {
@@ -100,7 +139,10 @@ export function Select({
         <ul
           id={listId}
           role="listbox"
-          className="absolute z-50 mt-1 max-h-64 w-full overflow-auto rounded-lg border border-white/10 bg-[#161a22] p-1 shadow-xl shadow-black/40"
+          style={{ maxHeight: placement.maxHeight }}
+          className={`absolute z-50 w-full overflow-auto rounded-lg border border-white/10 bg-[#161a22] p-1 shadow-xl shadow-black/40 ${
+            placement.dir === 'up' ? 'bottom-full mb-1' : 'top-full mt-1'
+          }`}
         >
           {options.map((o, i) => {
             const isSelected = o.value === value

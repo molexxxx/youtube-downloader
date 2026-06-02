@@ -75,7 +75,7 @@ function HistoryRow({
         {entry.kind === 'audio' ? <Music size={15} /> : <Video size={15} />}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm" title={entry.title}>
+        <p className="selectable truncate text-sm" title={entry.title}>
           {entry.title}
         </p>
         <p className="truncate text-xs text-white/40">

@@ -99,7 +99,7 @@ export function LogsScreen(): React.JSX.Element {
 
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto rounded-xl border border-white/5 bg-black/20 p-3 font-mono text-xs leading-relaxed"
+        className="selectable flex-1 overflow-y-auto rounded-xl border border-white/5 bg-black/20 p-3 font-mono text-xs leading-relaxed"
       >
         {visible.length === 0 ? (
           <p className="text-white/30">No log entries.</p>

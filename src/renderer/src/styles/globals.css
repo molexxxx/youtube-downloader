@@ -32,6 +32,50 @@ body {
 }
 
 /*
+ * Native-app text selection model. The chrome is non-selectable by default
+ * (you can't rubber-band-select buttons, labels or nav like in a webpage), and
+ * genuinely copyable content opts back in with `.selectable`. Form fields keep
+ * their native selection unconditionally.
+ */
+html,
+body {
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: default;
+}
+
+input,
+textarea,
+[contenteditable='true'],
+.selectable,
+.selectable * {
+  -webkit-user-select: text;
+  user-select: text;
+  cursor: text;
+}
+
+button,
+a,
+[role='button'],
+[role='option'],
+[role='tab'],
+label {
+  cursor: pointer;
+}
+
+/* Native-feeling, theme-tinted selection highlight. */
+::selection {
+  background: rgba(239, 68, 68, 0.35);
+  color: #fff;
+  text-shadow: none;
+}
+
+html.light ::selection {
+  background: rgba(239, 68, 68, 0.25);
+  color: #1a1d23;
+}
+
+/*
  * The interface is authored dark-first with literal neutral utilities. In light
  * mode we remap those neutrals (and the structural background tokens) so the
  * single class toggle on <html> produces a coherent light palette.
