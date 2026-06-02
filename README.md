@@ -8,7 +8,7 @@
 
 <br/>
 
-**Fast, modern desktop downloader for YouTube and 1000+ sites - powered by yt-dlp & FFmpeg**
+**Fast, modern desktop downloader for YouTube - powered by yt-dlp & FFmpeg**
 
 <a href="https://github.com/tonywied17/youtube-downloader/actions/workflows/ci.yml"><img src="https://raw.githubusercontent.com/tonywied17/tonywied17/main/.github/badges/youtube-downloader-ci-ytdl.svg" alt="CI" /></a>
 <a href="https://github.com/tonywied17/youtube-downloader/actions/workflows/build.yml"><img src="https://raw.githubusercontent.com/tonywied17/tonywied17/main/.github/badges/youtube-downloader-build-ytdl.svg" alt="build" /></a>
@@ -80,7 +80,7 @@
 
 ### Download & Resolve
 
-- **1000+ Sites** - Download from YouTube and any site supported by yt-dlp; paste a link or search YouTube right from the URL bar (no API key)
+- **YouTube Downloads** - Paste a link or search YouTube right from the URL bar (no API key)
 - **Videos, Playlists & Channels** - Smart URL detection: a `watch?v=…&list=…` link prompts you to grab just the video or the whole list, while `playlist?list=…`, channels, and Mixes resolve as collections; full or partial selection with "load more" paging past the fetch limit
 - **Video Formats** - "Best quality (auto)" with automatic video + best-audio merge, or hand-pick a specific resolution / fps / codec from the enumerated format list (up to 4K when available)
 - **Containers** - Output to **MP4** or **MKV**

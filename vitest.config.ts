@@ -24,10 +24,10 @@ export default defineConfig({
         '**/types.ts'
       ],
       thresholds: {
-        lines: 40,
-        functions: 27,
-        statements: 38,
-        branches: 34
+        lines: 90,
+        functions: 88,
+        statements: 90,
+        branches: 83
       }
     },
     projects: [

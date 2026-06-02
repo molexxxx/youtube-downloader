@@ -37,6 +37,7 @@ nsis:
   createDesktopShortcut: always
   createStartMenuShortcut: true
   shortcutName: YouTube Downloader
+  differentialPackage: false
 
 mac:
   category: public.app-category.utilities
@@ -50,11 +51,15 @@ mac:
       arch:
         - universal
     # Squirrel.Mac applies updates from a zipped .app, so electron-updater
-    # requires a zip in latest-mac.yml. The .pkg is the user-facing installer;
-    # this zip is only consumed by the in-app auto-updater.
+    # requires a zip in latest-mac.yml. The .pkg is the user-facing installer
+    # (-Installer); this zip is only consumed by the in-app auto-updater
+    # (-Updater).
     - target: zip
       arch:
         - universal
+  artifactName: YouTube-Downloader-${version}-macOS-Updater.${ext}
+
+pkg:
   artifactName: YouTube-Downloader-${version}-macOS-Installer.${ext}
 
 linux:

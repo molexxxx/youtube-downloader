@@ -55,7 +55,6 @@ jobs:
             dist/*.zip
             dist/*.deb
             dist/*.rpm
-            dist/*.blockmap
 
   notify-badges:
     name: Refresh profile badges
