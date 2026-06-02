@@ -189,6 +189,16 @@ describe('ensureFfmpeg', () => {
     expect(chmodMock).not.toHaveBeenCalled()
   })
 
+  it('fetches ffmpeg and ffprobe separately on macOS', async () => {
+    state.exists = false
+    state.platform = 'darwin'
+    await ensureFfmpeg()
+    // evermeet.cx publishes ffmpeg and ffprobe as two separate archives
+    expect(downloadFileMock).toHaveBeenCalledTimes(2)
+    expect(extractZipMock).toHaveBeenCalledTimes(2)
+    expect(chmodMock).toHaveBeenCalledWith(BIN, 0o755)
+  })
+
   it('throws and emits error when verification yields no version', async () => {
     state.exists = false
     state.execFails = true

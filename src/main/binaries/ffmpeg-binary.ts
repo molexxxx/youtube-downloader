@@ -13,19 +13,28 @@ import { binDir, currentPlatform, downloadFile, ensureBinDir } from './net'
 
 const execFileAsync = promisify(execFile)
 
-const SOURCES = {
-  win32: {
-    url: 'https://github.com/BtbN/FFmpeg-Builds/releases/latest/download/ffmpeg-master-latest-win64-gpl.zip',
-    archive: 'zip' as const
-  },
-  linux: {
-    url: 'https://github.com/BtbN/FFmpeg-Builds/releases/latest/download/ffmpeg-master-latest-linux64-gpl.tar.xz',
-    archive: 'tar' as const
-  },
-  darwin: {
-    url: 'https://evermeet.cx/ffmpeg/getrelease/ffmpeg/zip',
-    archive: 'zip' as const
-  }
+type ArchiveKind = 'zip' | 'tar'
+type FfmpegSource = { url: string; archive: ArchiveKind }
+
+// The Windows and Linux builds ship ffmpeg and ffprobe together in one archive.
+// macOS (evermeet.cx) publishes them separately, so darwin fetches both.
+const SOURCES: Record<'win32' | 'linux' | 'darwin', FfmpegSource[]> = {
+  win32: [
+    {
+      url: 'https://github.com/BtbN/FFmpeg-Builds/releases/latest/download/ffmpeg-master-latest-win64-gpl.zip',
+      archive: 'zip'
+    }
+  ],
+  linux: [
+    {
+      url: 'https://github.com/BtbN/FFmpeg-Builds/releases/latest/download/ffmpeg-master-latest-linux64-gpl.tar.xz',
+      archive: 'tar'
+    }
+  ],
+  darwin: [
+    { url: 'https://evermeet.cx/ffmpeg/getrelease/ffmpeg/zip', archive: 'zip' },
+    { url: 'https://evermeet.cx/ffmpeg/getrelease/ffprobe/zip', archive: 'zip' }
+  ]
 }
 
 function exe(name: string): string {
@@ -88,7 +97,7 @@ async function findBinary(root: string, name: string): Promise<string | null> {
 
 async function extractArchive(
   archivePath: string,
-  kind: 'zip' | 'tar',
+  kind: ArchiveKind,
   dest: string
 ): Promise<void> {
   if (kind === 'zip') {
@@ -117,20 +126,25 @@ export async function ensureFfmpeg(
   }
 
   const dir = await ensureBinDir()
-  const source = SOURCES[currentPlatform()]
-  const ext = source.archive === 'zip' ? 'zip' : archiveExt(source.url)
-  const archivePath = join(dir, `ffmpeg-download.${ext}`)
+  const downloads = SOURCES[currentPlatform()]
   const extractDir = join(dir, 'ffmpeg-extract')
-
-  logger.info('Downloading ffmpeg from', source.url)
-  await downloadFile(source.url, archivePath, (downloaded, total) => {
-    const percent = total ? Math.round((downloaded / total) * 100) : null
-    onProgress?.({ binary: 'ffmpeg', stage: 'downloading', percent })
-  })
-
-  onProgress?.({ binary: 'ffmpeg', stage: 'extracting', percent: null })
   await rm(extractDir, { recursive: true, force: true })
-  await extractArchive(archivePath, source.archive, extractDir)
+
+  for (let i = 0; i < downloads.length; i++) {
+    const source = downloads[i]
+    const ext = source.archive === 'zip' ? 'zip' : archiveExt(source.url)
+    const archivePath = join(dir, `ffmpeg-download-${i}.${ext}`)
+
+    logger.info('Downloading ffmpeg component from', source.url)
+    await downloadFile(source.url, archivePath, (downloaded, total) => {
+      const percent = total ? Math.round((downloaded / total) * 100) : null
+      onProgress?.({ binary: 'ffmpeg', stage: 'downloading', percent })
+    })
+
+    onProgress?.({ binary: 'ffmpeg', stage: 'extracting', percent: null })
+    await extractArchive(archivePath, source.archive, extractDir)
+    await rm(archivePath, { force: true })
+  }
 
   for (const name of [exe('ffmpeg'), exe('ffprobe')]) {
     const found = await findBinary(extractDir, name)
@@ -142,7 +156,6 @@ export async function ensureFfmpeg(
     }
   }
 
-  await rm(archivePath, { force: true })
   await rm(extractDir, { recursive: true, force: true })
 
   onProgress?.({ binary: 'ffmpeg', stage: 'verifying', percent: null })

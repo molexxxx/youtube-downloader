@@ -28,7 +28,7 @@ win:
       arch:
         - x64
   icon: build/icon.png
-  artifactName: YouTube-Downloader-${version}-Setup.${ext}
+  artifactName: YouTube-Downloader-${version}-Windows-Setup.${ext}
 
 nsis:
   oneClick: false
@@ -46,23 +46,29 @@ mac:
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
   target:
-    - target: dmg
+    - target: pkg
       arch:
         - universal
+    # Squirrel.Mac applies updates from a zipped .app, so electron-updater
+    # requires a zip in latest-mac.yml. The .pkg is the user-facing installer;
+    # this zip is only consumed by the in-app auto-updater.
     - target: zip
       arch:
         - universal
-  artifactName: YouTube-Downloader-${version}.${ext}
+  artifactName: YouTube-Downloader-${version}-macOS-Installer.${ext}
 
 linux:
   target:
-    - target: AppImage
+    - target: deb
+      arch:
+        - x64
+    - target: rpm
       arch:
         - x64
   icon: build/icon.png
   category: AudioVideo
   maintainer: molex
-  artifactName: YouTube-Downloader-${version}.${ext}
+  artifactName: YouTube-Downloader-${version}-Linux-Installer.${ext}
 
 publish:
   provider: github

@@ -56,6 +56,10 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
+      - name: Install rpm tooling
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y rpm
+
       - name: Build and package
         run: npm run ${{ matrix.script }}
         env:
@@ -71,9 +75,11 @@ jobs:
           generate_release_notes: true
           files: |
             dist/*.exe
-            dist/*.dmg
+            dist/*.pkg
             dist/*.zip
-            dist/*.AppImage
+            dist/*.deb
+            dist/*.rpm
+            dist/*.blockmap
             dist/latest*.yml
 
   publish:
