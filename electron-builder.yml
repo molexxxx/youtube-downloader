@@ -28,7 +28,7 @@ win:
       arch:
         - x64
   icon: build/icon.png
-  artifactName: ${productName}-${version}-Setup.${ext}
+  artifactName: YouTube-Downloader-${version}-Setup.${ext}
 
 nsis:
   oneClick: false
@@ -52,7 +52,7 @@ mac:
     - target: zip
       arch:
         - universal
-  artifactName: ${productName}-${version}.${ext}
+  artifactName: YouTube-Downloader-${version}.${ext}
 
 linux:
   target:
@@ -62,7 +62,7 @@ linux:
   icon: build/icon.png
   category: AudioVideo
   maintainer: molex
-  artifactName: ${productName}-${version}.${ext}
+  artifactName: YouTube-Downloader-${version}.${ext}
 
 publish:
   provider: github

@@ -1,6 +1,6 @@
 {
   "name": "youtube-downloader",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Modern, lightweight YouTube (and 1000+ site) extractor powered by yt-dlp and ffmpeg",
   "main": "./out/main/index.js",
   "author": "molex",
