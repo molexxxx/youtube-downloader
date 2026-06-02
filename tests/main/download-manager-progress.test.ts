@@ -241,7 +241,7 @@ describe('DownloadManager concurrent correctness', () => {
     const childA = children[0]
     const childB = children[1]
 
-    // Job B progresses, then finishes first — job A must stay downloading.
+    // Job B progresses, then finishes first - job A must stay downloading.
     childB.stdout.emit(
       'data',
       Buffer.from('progress:{"percent":"50%","speed":"1MiB/s","eta":"00:10"}\n')
@@ -255,7 +255,7 @@ describe('DownloadManager concurrent correctness', () => {
     expect(jobA.state).toBe('downloading')
     expect(jobA.percent).toBe(0)
 
-    // Job A progresses and finishes afterwards — B stays completed, unaffected.
+    // Job A progresses and finishes afterwards - B stays completed, unaffected.
     childA.stdout.emit(
       'data',
       Buffer.from('progress:{"percent":"75%","speed":"2MiB/s","eta":"00:05"}\n')

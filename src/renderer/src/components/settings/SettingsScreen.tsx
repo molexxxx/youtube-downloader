@@ -185,7 +185,7 @@ export function SettingsScreen(): React.JSX.Element | null {
 
         <Field
           label="Playlist fetch limit"
-          description="Max items to load when resolving a playlist or mix. Large Mix/radio lists resolve slowly — keep this modest. Set 0 for no limit."
+          description="Max items to load when resolving a playlist or mix. Large Mix/radio lists resolve slowly - keep this modest. Set 0 for no limit."
         >
           <input
             type="number"

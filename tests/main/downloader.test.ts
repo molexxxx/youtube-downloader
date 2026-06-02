@@ -74,6 +74,18 @@ describe('buildArgs', () => {
     expect(args[qIdx + 1]).toBe('320K')
   })
 
+  it('embeds the thumbnail for supported audio formats', () => {
+    const args = buildArgs({ url: 'https://x', kind: 'audio', audioFormat: 'mp3' })
+    expect(args).toContain('--embed-thumbnail')
+  })
+
+  it('skips thumbnail embedding for WAV audio (yt-dlp cannot embed into WAV)', () => {
+    const args = buildArgs({ url: 'https://x', kind: 'audio', audioFormat: 'wav' })
+    expect(args).not.toContain('--embed-thumbnail')
+    // Metadata embedding is unaffected.
+    expect(args).toContain('--embed-metadata')
+  })
+
   it('includes subtitle and sponsorblock flags from config', () => {
     const args = buildArgs({ url: 'https://x', kind: 'video' })
     expect(args).toContain('--write-subs')

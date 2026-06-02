@@ -96,11 +96,15 @@ export function buildArgs(req: DownloadRequest, cfg = getConfig(), includeCookie
   const writeSubtitles = req.writeSubtitles ?? cfg.writeSubtitles
   const sponsorBlock = req.sponsorBlock ?? cfg.sponsorBlock
 
-  // Thumbnail/metadata/chapter embedding only works on supported containers.
-  // Audio extraction and video downloads (mp4/mkv selected above) all qualify.
-  const canEmbed = req.kind === 'audio' || req.kind === 'video'
-  if (canEmbed && embedThumbnail) args.push('--embed-thumbnail')
-  if (canEmbed && embedMetadata) args.push('--embed-metadata')
+  // Thumbnail embedding only works on yt-dlp's supported containers. For audio
+  // that means mp3/m4a/opus/flac - WAV has no tag container, so embedding into
+  // it fails postprocessing. Skip it there instead of erroring the download.
+  const audioSupportsThumbnail = req.audioFormat !== 'wav'
+  const canEmbedThumbnail =
+    req.kind === 'video' || (req.kind === 'audio' && audioSupportsThumbnail)
+  const canEmbedMetadata = req.kind === 'audio' || req.kind === 'video'
+  if (canEmbedThumbnail && embedThumbnail) args.push('--embed-thumbnail')
+  if (canEmbedMetadata && embedMetadata) args.push('--embed-metadata')
   if (req.kind === 'video' && embedChapters) args.push('--embed-chapters')
   if (writeSubtitles && cfg.subtitleLangs.length) {
     args.push('--write-subs', '--sub-langs', cfg.subtitleLangs.join(','))
