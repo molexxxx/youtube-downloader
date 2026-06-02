@@ -5,9 +5,9 @@ import { cleanErrorMessage } from '../errors'
 import { logger } from '../logger'
 
 export function registerExtractIPC(): void {
-  ipcMain.handle(IPC.extract.info, async (_e, url: string) => {
+  ipcMain.handle(IPC.extract.info, async (_e, url: string, forcePlaylist?: boolean) => {
     try {
-      return await getInfo(url)
+      return await getInfo(url, forcePlaylist)
     } catch (err) {
       const message = cleanErrorMessage(err)
       logger.error('extract.info failed:', message)

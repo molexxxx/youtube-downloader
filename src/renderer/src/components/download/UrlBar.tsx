@@ -5,8 +5,7 @@ import {
   looksLikeUrl,
   formatDuration,
   looksLikeAuthError,
-  playlistChoiceId,
-  playlistUrl
+  playlistChoiceId
 } from '../../lib/format'
 
 export function UrlBar(): React.JSX.Element {
@@ -31,14 +30,14 @@ export function UrlBar(): React.JSX.Element {
     if (!cookiesEnabled && looksLikeAuthError(message)) setCookieHint(true)
   }
 
-  async function resolveUrl(target: string): Promise<void> {
+  async function resolveUrl(target: string, forcePlaylist = false): Promise<void> {
     setResolving(true)
     setError(null)
     setCookieHint(false)
     setInfo(null)
     setResults([])
     try {
-      const info = await window.api.extract.info(target)
+      const info = await window.api.extract.info(target, forcePlaylist)
       setInfo(info)
     } catch (err) {
       reportError(err, 'Failed to resolve URL')
@@ -66,7 +65,7 @@ export function UrlBar(): React.JSX.Element {
     const trimmed = url.trim()
     if (!trimmed) return
     if (looksLikeUrl(trimmed)) {
-      // A watch link that also carries a playlist is ambiguous — ask which one
+      // A watch link that also carries a playlist is ambiguous - ask which one
       // the user wants instead of silently grabbing only the single video.
       const listId = playlistChoiceId(trimmed)
       if (listId) {
@@ -90,9 +89,12 @@ export function UrlBar(): React.JSX.Element {
 
   function choosePlaylist(): void {
     if (!choice) return
-    const target = playlistUrl(choice.listId)
+    // Resolve the original watch URL in playlist mode rather than a bare
+    // playlist?list=... URL: that works for both real playlists and Mix/radio
+    // lists, which YouTube refuses to serve from a standalone playlist URL.
+    const target = choice.url
     setChoice(null)
-    void resolveUrl(target)
+    void resolveUrl(target, true)
   }
 
   const busy = resolving || searching

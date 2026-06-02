@@ -128,7 +128,7 @@ export function mapInfo(raw: RawInfo): MediaInfo {
  * Whether a URL should be treated as a playlist rather than a single video.
  *
  * A `watch?v=...` link is always a single video, even when it carries a
- * `&list=...` (e.g. opened from within a playlist) — pasting such a link should
+ * `&list=...` (e.g. opened from within a playlist) - pasting such a link should
  * grab just that video. A bare `/playlist?list=...`, a `list=` URL without a
  * video id, or a channel page is a true playlist/collection.
  */
@@ -146,14 +146,18 @@ export function isPlaylistUrl(url: string): boolean {
 }
 
 /** Probe a URL for metadata and available formats. */
-export async function getInfo(url: string): Promise<MediaInfo> {
-  const playlist = isPlaylistUrl(url)
+export async function getInfo(url: string, forcePlaylist = false): Promise<MediaInfo> {
+  // `forcePlaylist` is set when the user explicitly chose "entire playlist" for a
+  // watch?v=...&list=... link. Resolving the original watch URL with playlist
+  // mode works for both real playlists and Mix/radio lists, whereas a bare
+  // playlist?list=RD... URL is rejected by YouTube as "unviewable".
+  const playlist = forcePlaylist || isPlaylistUrl(url)
   const probe = (includeCookies: boolean): Promise<RawInfo> => {
     const opts: Record<string, unknown> = {
       ...baseFlags(includeCookies),
       dumpSingleJson: true,
       // Playlists/channels: extract a flat entry list only. A full per-video
-      // probe of a large playlist is painfully slow and unnecessary — formats
+      // probe of a large playlist is painfully slow and unnecessary - formats
       // are resolved later when an individual item is downloaded.
       flatPlaylist: playlist
     }

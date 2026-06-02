@@ -1,5 +1,5 @@
 export function formatBytes(bytes: number | null): string {
-  if (!bytes || bytes <= 0) return '—'
+  if (!bytes || bytes <= 0) return '-'
   const units = ['B', 'KB', 'MB', 'GB']
   let value = bytes
   let unit = 0
@@ -11,7 +11,7 @@ export function formatBytes(bytes: number | null): string {
 }
 
 export function formatDuration(seconds: number | null): string {
-  if (!seconds || seconds <= 0) return '—'
+  if (!seconds || seconds <= 0) return '-'
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
   const s = Math.floor(seconds % 60)
@@ -50,15 +50,10 @@ export function playlistChoiceId(url: string): string | null {
   return list
 }
 
-/** Canonical playlist URL for a given YouTube list id. */
-export function playlistUrl(listId: string): string {
-  return `https://www.youtube.com/playlist?list=${listId}`
-}
-
 /**
  * True when an error message indicates the content needs an authenticated
  * session (private, age-restricted, members-only) or YouTube is bot-flagging
- * this client — the cases where supplying browser cookies can help. Mirrors the
+ * this client - the cases where supplying browser cookies can help. Mirrors the
  * main-process `isAuthRequiredError` so the UI can recommend setting up cookies.
  */
 export function looksLikeAuthError(message: string): boolean {

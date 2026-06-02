@@ -36,7 +36,8 @@ const api = {
     onProgress: (cb: (p: BootstrapProgress) => void) => on(IPC.binaries.onProgress, cb)
   },
   extract: {
-    info: (url: string): Promise<MediaInfo> => ipcRenderer.invoke(IPC.extract.info, url),
+    info: (url: string, forcePlaylist?: boolean): Promise<MediaInfo> =>
+      ipcRenderer.invoke(IPC.extract.info, url, forcePlaylist),
     search: (query: string, limit?: number): Promise<PlaylistEntry[]> =>
       ipcRenderer.invoke(IPC.extract.search, query, limit)
   },

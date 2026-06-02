@@ -4,14 +4,13 @@ import {
   formatDuration,
   looksLikeAuthError,
   looksLikeUrl,
-  playlistChoiceId,
-  playlistUrl
+  playlistChoiceId
 } from '@renderer/lib/format'
 
 describe('formatBytes', () => {
   it('handles empty values', () => {
-    expect(formatBytes(null)).toBe('—')
-    expect(formatBytes(0)).toBe('—')
+    expect(formatBytes(null)).toBe('-')
+    expect(formatBytes(0)).toBe('-')
   })
   it('formats across units', () => {
     expect(formatBytes(512)).toBe('512 B')
@@ -23,7 +22,7 @@ describe('formatBytes', () => {
 
 describe('formatDuration', () => {
   it('handles empty values', () => {
-    expect(formatDuration(null)).toBe('—')
+    expect(formatDuration(null)).toBe('-')
   })
   it('formats minutes and seconds', () => {
     expect(formatDuration(75)).toBe('1:15')
@@ -92,11 +91,5 @@ describe('playlistChoiceId', () => {
   })
   it('returns null for non-URLs', () => {
     expect(playlistChoiceId('not a url')).toBeNull()
-  })
-})
-
-describe('playlistUrl', () => {
-  it('builds a canonical playlist URL', () => {
-    expect(playlistUrl('PL456')).toBe('https://www.youtube.com/playlist?list=PL456')
   })
 })

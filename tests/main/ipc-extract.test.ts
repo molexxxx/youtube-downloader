@@ -40,8 +40,14 @@ describe('registerExtractIPC', () => {
   it('info returns resolver metadata', async () => {
     getInfoMock.mockResolvedValue({ id: 'abc', title: 'Clip' })
     const result = await handlers.get(IPC.extract.info)!({}, 'https://x')
-    expect(getInfoMock).toHaveBeenCalledWith('https://x')
+    expect(getInfoMock).toHaveBeenCalledWith('https://x', undefined)
     expect(result).toEqual({ id: 'abc', title: 'Clip' })
+  })
+
+  it('info forwards the forcePlaylist flag', async () => {
+    getInfoMock.mockResolvedValue({ id: 'abc', title: 'Playlist' })
+    await handlers.get(IPC.extract.info)!({}, 'https://x', true)
+    expect(getInfoMock).toHaveBeenCalledWith('https://x', true)
   })
 
   it('info logs and rethrows a cleaned error', async () => {
