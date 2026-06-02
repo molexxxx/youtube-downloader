@@ -30,3 +30,21 @@ export function looksLikeUrl(input: string): boolean {
   // bare domains like youtube.com/watch?v=...
   return /^[\w-]+(\.[\w-]+)+(\/|$)/.test(trimmed)
 }
+
+/**
+ * True when an error message indicates the content needs an authenticated
+ * session (private, age-restricted, members-only) or YouTube is bot-flagging
+ * this client — the cases where supplying browser cookies can help. Mirrors the
+ * main-process `isAuthRequiredError` so the UI can recommend setting up cookies.
+ */
+export function looksLikeAuthError(message: string): boolean {
+  return (
+    /sign in to confirm/i.test(message) ||
+    /confirm your age|age[- ]restricted|inappropriate for some users/i.test(message) ||
+    /private video/i.test(message) ||
+    /members[- ]only|available to (this channel's |)members|join this channel/i.test(message) ||
+    /requires payment|purchase/i.test(message) ||
+    /not a bot/i.test(message) ||
+    /login required|account/i.test(message)
+  )
+}

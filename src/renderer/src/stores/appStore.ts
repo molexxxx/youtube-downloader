@@ -29,6 +29,8 @@ interface AppState {
   logs: LogEntry[]
   appUpdate: AppUpdateStatus | null
   error: string | null
+  /** Set when a resolve/search fails on auth-gated content while cookies are off. */
+  cookieHint: boolean
 
   setConfig: (config: AppConfig) => void
   patchConfig: (partial: Partial<AppConfig>) => void
@@ -46,6 +48,7 @@ interface AppState {
   appendLog: (entry: LogEntry) => void
   setAppUpdate: (status: AppUpdateStatus) => void
   setError: (error: string | null) => void
+  setCookieHint: (hint: boolean) => void
 }
 
 export function binariesAreReady(binaries: BinariesStatus | null): boolean {
@@ -66,6 +69,7 @@ export const useAppStore = create<AppState>((set) => ({
   logs: [],
   appUpdate: null,
   error: null,
+  cookieHint: false,
 
   setConfig: (config) => set({ config }),
   patchConfig: (partial) =>
@@ -102,5 +106,6 @@ export const useAppStore = create<AppState>((set) => ({
   appendLog: (entry) =>
     set((state) => ({ logs: [...state.logs, entry].slice(-MAX_LOGS) })),
   setAppUpdate: (appUpdate) => set({ appUpdate }),
-  setError: (error) => set({ error })
+  setError: (error) => set({ error }),
+  setCookieHint: (cookieHint) => set({ cookieHint })
 }))

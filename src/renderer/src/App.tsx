@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { KeyRound, X } from 'lucide-react'
 import { useAppStore } from './stores/appStore'
 import { applyTheme } from './lib/theme'
 import { TitleBar } from './components/layout/TitleBar'
@@ -110,6 +111,7 @@ function App(): React.JSX.Element {
                 {error}
               </div>
             )}
+            <CookieHint />
             {resolving ? (
               <ResolveSkeleton />
             ) : info ? (
@@ -124,6 +126,42 @@ function App(): React.JSX.Element {
           </aside>
         </main>
       )}
+    </div>
+  )
+}
+
+function CookieHint(): React.JSX.Element | null {
+  const cookieHint = useAppStore((s) => s.cookieHint)
+  const setCookieHint = useAppStore((s) => s.setCookieHint)
+  const setView = useAppStore((s) => s.setView)
+
+  if (!cookieHint) return null
+
+  return (
+    <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm">
+      <KeyRound size={16} className="mt-0.5 shrink-0 text-amber-300" />
+      <div className="flex-1 space-y-2">
+        <p className="text-amber-200/90">
+          This looks like private, age-restricted, or members-only content. Sign in by
+          importing your browser cookies, then try again.
+        </p>
+        <button
+          onClick={() => {
+            setView('settings')
+            setCookieHint(false)
+          }}
+          className="rounded-md bg-amber-500/90 px-3 py-1 text-xs font-medium text-black hover:bg-amber-400"
+        >
+          Set up cookies
+        </button>
+      </div>
+      <button
+        onClick={() => setCookieHint(false)}
+        aria-label="Dismiss"
+        className="shrink-0 rounded p-0.5 text-white/30 hover:bg-white/10 hover:text-white/70"
+      >
+        <X size={14} />
+      </button>
     </div>
   )
 }

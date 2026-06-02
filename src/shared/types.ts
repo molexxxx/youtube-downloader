@@ -206,6 +206,10 @@ export interface DetectedBrowser {
 export interface CookieInfo {
   /** Selected browser ('auto', a browser name, or '' when disabled). */
   browser: string
+  /** Concrete browser cookies resolve to (auto picks the first installed). */
+  effectiveBrowser: string | null
+  /** Human-friendly label for {@link effectiveBrowser}, e.g. 'Google Chrome'. */
+  effectiveLabel: string | null
   /** True when a non-empty cookies cache file exists. */
   cached: boolean
   /** Age of the cache in milliseconds, or null when absent. */

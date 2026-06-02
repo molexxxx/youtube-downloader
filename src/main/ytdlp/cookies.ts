@@ -102,6 +102,12 @@ function effectiveBrowser(cfg: AppConfig): string | null {
   return raw
 }
 
+/** Human-friendly label for a yt-dlp browser id, e.g. 'chrome' → 'Google Chrome'. */
+export function browserLabel(name: string | null): string | null {
+  if (!name) return null
+  return LABELS[name] ?? name
+}
+
 function cacheAgeMs(): number | null {
   try {
     const stat = statSync(cookiesFilePath())
@@ -220,8 +226,11 @@ export function cookieFlags(cfg = getConfig()): Record<string, string> {
 /** Current cookie cache state for the Settings UI. */
 export function getCookieInfo(cfg = getConfig()): CookieInfo {
   const age = cacheAgeMs()
+  const resolved = effectiveBrowser(cfg)
   return {
     browser: cfg.cookiesFromBrowser ?? '',
+    effectiveBrowser: resolved,
+    effectiveLabel: browserLabel(resolved),
     cached: age != null,
     ageMs: age,
     detected: getInstalledBrowsers()

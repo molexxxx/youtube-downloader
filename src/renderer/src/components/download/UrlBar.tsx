@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Search, Loader2, X, Play } from 'lucide-react'
 import { useAppStore } from '../../stores/appStore'
-import { looksLikeUrl, formatDuration } from '../../lib/format'
+import { looksLikeUrl, formatDuration, looksLikeAuthError } from '../../lib/format'
 
 export function UrlBar(): React.JSX.Element {
   const [url, setUrl] = useState('')
@@ -10,19 +10,29 @@ export function UrlBar(): React.JSX.Element {
   const setResolving = useAppStore((s) => s.setResolving)
   const setInfo = useAppStore((s) => s.setInfo)
   const setError = useAppStore((s) => s.setError)
+  const setCookieHint = useAppStore((s) => s.setCookieHint)
+  const cookiesEnabled = useAppStore((s) => Boolean(s.config?.cookiesFromBrowser))
   const results = useAppStore((s) => s.searchResults)
   const setResults = useAppStore((s) => s.setSearchResults)
+
+  function reportError(err: unknown, fallback: string): void {
+    const message = err instanceof Error ? err.message : fallback
+    setError(message)
+    // Auth-gated content with cookies off: nudge the user to set them up.
+    if (!cookiesEnabled && looksLikeAuthError(message)) setCookieHint(true)
+  }
 
   async function resolveUrl(target: string): Promise<void> {
     setResolving(true)
     setError(null)
+    setCookieHint(false)
     setInfo(null)
     setResults([])
     try {
       const info = await window.api.extract.info(target)
       setInfo(info)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to resolve URL')
+      reportError(err, 'Failed to resolve URL')
     } finally {
       setResolving(false)
     }
@@ -31,12 +41,13 @@ export function UrlBar(): React.JSX.Element {
   async function runSearch(query: string): Promise<void> {
     setSearching(true)
     setError(null)
+    setCookieHint(false)
     setInfo(null)
     setResults([])
     try {
       setResults(await window.api.extract.search(query))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Search failed')
+      reportError(err, 'Search failed')
     } finally {
       setSearching(false)
     }

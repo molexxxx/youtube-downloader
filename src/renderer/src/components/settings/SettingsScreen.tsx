@@ -1,5 +1,18 @@
 import { useEffect, useState } from 'react'
-import { Code2, Download, ExternalLink, FolderOpen, Heart, RefreshCw, RotateCcw, Trash2 } from 'lucide-react'
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Code2,
+  Download,
+  ExternalLink,
+  FolderOpen,
+  Heart,
+  Info,
+  Loader2,
+  RefreshCw,
+  RotateCcw,
+  Trash2
+} from 'lucide-react'
 import { useAppStore } from '../../stores/appStore'
 import { PRESETS } from '@shared/presets'
 import type { AppConfig, AppUpdateStatus, CookieInfo, Theme, VideoContainer } from '@shared/types'
@@ -27,6 +40,7 @@ export function SettingsScreen(): React.JSX.Element | null {
   const [updating, setUpdating] = useState<'yt-dlp' | 'ffmpeg' | 'all' | null>(null)
   const [cookies, setCookies] = useState<CookieInfo | null>(null)
   const [cookieBusy, setCookieBusy] = useState(false)
+  const [cookieFailed, setCookieFailed] = useState(false)
   const [checking, setChecking] = useState(false)
   const [appVersion, setAppVersion] = useState<string | null>(null)
 
@@ -66,9 +80,14 @@ export function SettingsScreen(): React.JSX.Element | null {
 
   async function setCookieBrowser(browser: string): Promise<void> {
     setCookieBusy(true)
+    setCookieFailed(false)
     try {
-      setCookies(await window.api.cookies.set(browser))
+      const info = await window.api.cookies.set(browser)
+      setCookies(info)
       setConfig(await window.api.config.get())
+      // Selecting a browser triggers an export. If nothing got cached but a
+      // browser was resolvable, it was almost certainly locked/running.
+      setCookieFailed(Boolean(info.effectiveBrowser) && !info.cached)
     } finally {
       setCookieBusy(false)
     }
@@ -76,8 +95,11 @@ export function SettingsScreen(): React.JSX.Element | null {
 
   async function refreshCookies(): Promise<void> {
     setCookieBusy(true)
+    setCookieFailed(false)
     try {
-      setCookies(await window.api.cookies.refresh())
+      const info = await window.api.cookies.refresh()
+      setCookies(info)
+      setCookieFailed(Boolean(info.effectiveBrowser) && !info.cached)
     } finally {
       setCookieBusy(false)
     }
@@ -85,6 +107,7 @@ export function SettingsScreen(): React.JSX.Element | null {
 
   async function clearCookies(): Promise<void> {
     setCookieBusy(true)
+    setCookieFailed(false)
     try {
       setCookies(await window.api.cookies.clear())
       setConfig(await window.api.config.get())
@@ -218,7 +241,10 @@ export function SettingsScreen(): React.JSX.Element | null {
       </Section>
 
       <Section title="Cookies">
-        <Field label="Import cookies from browser">
+        <Field
+          label="Import cookies from browser"
+          description="Lets the app download private, age-restricted, and members-only videos by reusing your signed-in browser session."
+        >
           <Select
             value={config.cookiesFromBrowser ?? ''}
             onChange={setCookieBrowser}
@@ -229,18 +255,36 @@ export function SettingsScreen(): React.JSX.Element | null {
             ]}
           />
         </Field>
-        {config.cookiesFromBrowser && (
-          <div className="flex items-center justify-between text-xs text-white/50">
-            <span>
-              {cookies?.cached
-                ? `Cached ${formatAge(cookies.ageMs)}`
-                : 'No cookies cached yet'}
-            </span>
-            <div className="flex gap-2">
+
+        {cookies && cookies.detected.length === 0 ? (
+          <CookieNote tone="warn">
+            No supported browsers detected on this machine, so cookies can&apos;t be
+            imported.
+          </CookieNote>
+        ) : config.cookiesFromBrowser ? (
+          <>
+            <CookieStatus cookies={cookies} busy={cookieBusy} failed={cookieFailed} />
+
+            <CookieNote tone="info">
+              Tip: close
+              {cookies?.effectiveLabel ? ` ${cookies.effectiveLabel}` : ' your browser'}{' '}
+              completely before refreshing — a running browser locks its cookie database
+              and the import will fail.
+            </CookieNote>
+
+            {cookieFailed && (
+              <CookieNote tone="warn">
+                Couldn&apos;t read cookies. Make sure
+                {cookies?.effectiveLabel ? ` ${cookies.effectiveLabel}` : ' your browser'}{' '}
+                is fully closed (check the system tray), then press Refresh.
+              </CookieNote>
+            )}
+
+            <div className="flex items-center justify-end gap-2">
               <button
                 onClick={refreshCookies}
                 disabled={cookieBusy}
-                className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-white/70 hover:border-white/20 disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs text-white/70 hover:border-white/20 disabled:opacity-50"
               >
                 <RefreshCw size={13} className={cookieBusy ? 'animate-spin' : ''} />
                 Refresh
@@ -248,17 +292,14 @@ export function SettingsScreen(): React.JSX.Element | null {
               <button
                 onClick={clearCookies}
                 disabled={cookieBusy}
-                className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-white/70 hover:border-red-500/40 hover:text-red-300 disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs text-white/70 hover:border-red-500/40 hover:text-red-300 disabled:opacity-50"
               >
                 <Trash2 size={13} />
                 Clear
               </button>
             </div>
-          </div>
-        )}
-        {cookies && cookies.detected.length === 0 && (
-          <p className="text-xs text-white/40">No supported browsers detected.</p>
-        )}
+          </>
+        ) : null}
       </Section>
 
       <Section title="Appearance & updates">
@@ -572,6 +613,74 @@ function AppUpdatePanel({
 
 const REPO_URL = 'https://github.com/tonywied17/youtube-downloader'
 const AUTHOR_URL = 'https://github.com/tonywied17'
+
+/** Cookies are refreshed in the background once older than 7 days. */
+const COOKIE_STALE_MS = 7 * 24 * 60 * 60 * 1000
+
+function CookieStatus({
+  cookies,
+  busy,
+  failed
+}: {
+  cookies: CookieInfo | null
+  busy: boolean
+  failed: boolean
+}): React.JSX.Element {
+  const using = cookies?.effectiveLabel
+  const stale = cookies?.ageMs != null && cookies.ageMs > COOKIE_STALE_MS
+
+  let icon = <Loader2 size={14} className="animate-spin text-white/50" />
+  let text = 'Importing cookies…'
+  let tone = 'text-white/60'
+
+  if (!busy) {
+    if (failed || (!cookies?.cached && cookies?.effectiveBrowser)) {
+      icon = <AlertTriangle size={14} className="text-amber-400" />
+      text = 'No cookies imported yet'
+      tone = 'text-amber-300'
+    } else if (cookies?.cached) {
+      icon = stale ? (
+        <RefreshCw size={14} className="text-amber-400" />
+      ) : (
+        <CheckCircle2 size={14} className="text-emerald-400" />
+      )
+      text = stale
+        ? `Cookies ready — refreshing soon (imported ${formatAge(cookies.ageMs)})`
+        : `Cookies ready (imported ${formatAge(cookies.ageMs)})`
+      tone = stale ? 'text-amber-300' : 'text-emerald-300'
+    }
+  }
+
+  return (
+    <div className="space-y-1">
+      <div className={`flex items-center gap-2 text-xs ${tone}`}>
+        {icon}
+        <span>{text}</span>
+      </div>
+      {using && !busy && <p className="pl-6 text-xs text-white/35">Using {using}.</p>}
+    </div>
+  )
+}
+
+function CookieNote({
+  tone,
+  children
+}: {
+  tone: 'info' | 'warn'
+  children: React.ReactNode
+}): React.JSX.Element {
+  const styles =
+    tone === 'warn'
+      ? 'border-amber-500/30 bg-amber-500/5 text-amber-200/90'
+      : 'border-white/10 bg-white/[0.02] text-white/45'
+  const Icon = tone === 'warn' ? AlertTriangle : Info
+  return (
+    <div className={`flex items-start gap-2 rounded-lg border px-3 py-2 text-xs ${styles}`}>
+      <Icon size={13} className="mt-0.5 shrink-0" />
+      <span>{children}</span>
+    </div>
+  )
+}
 
 function AboutPanel({ version }: { version: string | null }): React.JSX.Element {
   const open = (url: string) => () => void window.api.system.openExternal(url)
