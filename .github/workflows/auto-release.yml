@@ -1,0 +1,57 @@
+name: Auto-release on dependency update
+
+# When a dependency update lands on main (e.g. a merged Dependabot PR touches
+# package.json / package-lock.json), bump the patch version and push a tag.
+# The tag triggers release.yml, which builds and publishes the new version.
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: auto-release
+  cancel-in-progress: false
+
+jobs:
+  patch-and-tag:
+    # Skip the bot's own release-bump commit so it never re-triggers itself.
+    if: >-
+      github.actor != 'github-actions[bot]' &&
+      !startsWith(github.event.head_commit.message, 'chore(release):') &&
+      !contains(github.event.head_commit.message, '[skip ci]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # A PAT is required so the tag push triggers release.yml — pushes made
+          # with the default GITHUB_TOKEN do not start new workflow runs.
+          token: ${{ secrets.GH_TOKEN }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Configure git identity
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Bump patch version
+        id: bump
+        run: |
+          new_version=$(npm version patch --no-git-tag-version)
+          echo "version=$new_version" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and push tag
+        run: |
+          git add package.json package-lock.json
+          git commit -m "chore(release): ${{ steps.bump.outputs.version }} [skip ci]"
+          git tag "${{ steps.bump.outputs.version }}"
+          git push origin HEAD:${{ github.ref_name }} --follow-tags
