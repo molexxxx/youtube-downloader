@@ -180,6 +180,7 @@ html.light .text-emerald-400\/70  { color: rgba(5, 150, 105, 0.80); }
 
 /* --- Range input track: visible unfilled portion in light mode --- */
 html.light input[type='range']::-webkit-slider-runnable-track {
+  height: 6px;
   background: rgba(20, 22, 28, 0.14);
   border-radius: 9999px;
 }
