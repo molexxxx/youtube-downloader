@@ -83,17 +83,3 @@ jobs:
             dist/*.zip
             dist/*.deb
             dist/*.rpm
-
-  notify-badges:
-    name: Refresh profile badges
-    needs: [package]
-    if: github.event_name != 'pull_request' && always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Dispatch refresh-badges
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: |
-          gh api -X POST repos/tonywied17/tonywied17/dispatches \
-            -f event_type=refresh-badges \
-            -f "client_payload[repo]=${{ github.repository }}"
