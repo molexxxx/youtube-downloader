@@ -125,7 +125,7 @@ Grab the latest release for your platform:
 | Platform | Download | Format |
 |----------|----------|--------|
 | **Windows** | [Latest Release](https://github.com/tonywied17/youtube-downloader/releases/latest) | `.exe` (NSIS installer) |
-| **macOS** | [Latest Release](https://github.com/tonywied17/youtube-downloader/releases/latest) | `.pkg` installer (Intel & Apple Silicon) |
+| **macOS** | [Latest Release](https://github.com/tonywied17/youtube-downloader/releases/latest) | `.dmg` installer (Intel & Apple Silicon) |
 | **Linux** | [Latest Release](https://github.com/tonywied17/youtube-downloader/releases/latest) | `.deb` / `.rpm` installer |
 
 > yt-dlp and FFmpeg are downloaded automatically on first launch - no manual setup required.
