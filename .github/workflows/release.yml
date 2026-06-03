@@ -69,9 +69,9 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get update && sudo apt-get install -y rpm
 
-      # macOS signed: the afterSign hook (build/notarize.js) submits to Apple
-      # notarization without waiting and writes notarization-submission.json.
-      # The notarize-macos job below polls for approval and staples the .pkg.
+      # macOS signed: builds a signed (not-yet-notarized) .pkg/.zip. The next
+      # step submits the .pkg to Apple without waiting; the notarize-macos job
+      # polls for approval and staples it.
       - name: Build and package (macOS, signed)
         if: matrix.os == 'macos-latest' && env.MAC_CSC_LINK != ''
         run: npm run ${{ matrix.script }}
@@ -81,6 +81,26 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      # Submit the signed .pkg to Apple notarization without waiting. notarytool
+      # accepts .pkg/.zip/.dmg (not a raw .app). Notarizing the .pkg also
+      # registers the inner app's signature with Apple, so the updater .zip is
+      # covered for online Gatekeeper checks even though only the .pkg is stapled.
+      - name: Submit macOS .pkg for notarization (no-wait)
+        if: matrix.os == 'macos-latest' && env.MAC_CSC_LINK != ''
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          pkg=$(ls dist/YouTube-Downloader-*-macOS-Installer.pkg | head -1)
+          echo "Submitting $pkg for notarization (no-wait)..."
+          xcrun notarytool submit "$pkg" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --no-wait --output-format json | tee notarization-submission.json
+          echo "Submission id: $(jq -r '.id' notarization-submission.json)"
 
       - name: Build and package (macOS, unsigned)
         if: matrix.os == 'macos-latest' && env.MAC_CSC_LINK == ''

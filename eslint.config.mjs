@@ -14,8 +14,7 @@ export default tseslint.config(
       'scripts',
       '**/*.d.ts',
       '*.config.{js,cjs,mjs,ts}',
-      'postcss.config.cjs',
-      'build/notarize.js'
+      'postcss.config.cjs'
     ]
   },
   js.configs.recommended,
