@@ -178,11 +178,19 @@ html.light .hover\:text-red-300:hover { color: #dc2626; }
 html.light .text-emerald-300      { color: #059669; }
 html.light .text-emerald-400\/70  { color: rgba(5, 150, 105, 0.80); }
 
-/* --- Range input track: visible unfilled portion in light mode --- */
+/* --- Range input track + thumb: light mode fixes ---
+ * Setting an explicit track height breaks Chromium's auto-centering of the
+ * thumb, so we compensate with a negative margin-top = (6px - 16px) / 2.
+ * The white thumb also needs a visible ring against the light surface.
+ */
 html.light input[type='range']::-webkit-slider-runnable-track {
   height: 6px;
   background: rgba(20, 22, 28, 0.14);
   border-radius: 9999px;
+}
+html.light input[type='range']::-webkit-slider-thumb {
+  margin-top: -5px;
+  box-shadow: 0 0 0 1.5px rgba(20, 22, 28, 0.2), 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 /* --- Scrollbar: adapt to light surface --- */
