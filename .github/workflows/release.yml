@@ -245,7 +245,20 @@ jobs:
 
       - name: Staple notarization ticket to installer
         if: steps.download.outcome == 'success'
-        run: xcrun stapler staple dist/YouTube-Downloader-*-macOS-Installer.pkg
+        run: |
+          pkg=$(ls dist/YouTube-Downloader-*-macOS-Installer.pkg | head -1)
+          # Apple's ticket can lag behind notarytool "Accepted"; stapler then
+          # fails with exit 66 (ticket not found). Retry until the CDN has it.
+          for attempt in $(seq 1 10); do
+            if xcrun stapler staple -v "$pkg"; then
+              echo "Stapled on attempt $attempt"
+              exit 0
+            fi
+            echo "Staple attempt $attempt/10 failed (ticket not propagated yet); retrying in 30 s..."
+            sleep 30
+          done
+          echo "Stapling failed after all retries"
+          exit 1
 
       # Replace the unstapled .pkg in the draft release with the stapled one.
       - name: Upload stapled macOS installer to draft release

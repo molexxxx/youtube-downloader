@@ -95,7 +95,18 @@ jobs:
             --repo "${{ github.repository }}"
 
       - name: Staple notarization ticket
-        run: xcrun stapler staple dist/YouTube-Downloader-*-macOS-Installer.pkg
+        run: |
+          pkg=$(ls dist/YouTube-Downloader-*-macOS-Installer.pkg | head -1)
+          for attempt in $(seq 1 10); do
+            if xcrun stapler staple -v "$pkg"; then
+              echo "Stapled on attempt $attempt"
+              exit 0
+            fi
+            echo "Staple attempt $attempt/10 failed (ticket not propagated yet); retrying in 30 s..."
+            sleep 30
+          done
+          echo "Stapling failed after all retries"
+          exit 1
 
       - name: Upload stapled installer to release
         env:
