@@ -52,6 +52,10 @@ mac:
   gatekeeperAssess: false
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
+  # Disable electron-builder's built-in notarize step — it auto-detects Apple
+  # credentials and runs a blocking poll even without notarize:true. Our
+  # afterSign hook (build/notarize.js) handles submission without waiting.
+  notarize: false
   target:
     - target: pkg
       arch:
