@@ -13,9 +13,9 @@
 #
 # What it does:
 #   - Waits for Apple to accept the submission (up to 6 h from trigger time)
-#   - Downloads the signed-but-unstapled .pkg from the draft release
+#   - Downloads the signed-but-unstapled .dmg from the draft release
 #   - Staples the notarization ticket
-#   - Replaces the draft release asset with the stapled .pkg
+#   - Replaces the draft release asset with the stapled .dmg
 #   - Publishes the release
 # -----------------------------------------------------
 name: Complete macOS Notarization
@@ -90,15 +90,15 @@ jobs:
         run: |
           mkdir -p dist
           gh release download "${{ inputs.tag }}" \
-            --pattern "*-macOS-Installer.pkg" \
+            --pattern "*-macOS-Installer.dmg" \
             --dir dist/ \
             --repo "${{ github.repository }}"
 
       - name: Staple notarization ticket
         run: |
-          pkg=$(ls dist/YouTube-Downloader-*-macOS-Installer.pkg | head -1)
+          dmg=$(ls dist/YouTube-Downloader-*-macOS-Installer.dmg | head -1)
           for attempt in $(seq 1 10); do
-            if xcrun stapler staple -v "$pkg"; then
+            if xcrun stapler staple -v "$dmg"; then
               echo "Stapled on attempt $attempt"
               exit 0
             fi
@@ -113,7 +113,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload "${{ inputs.tag }}" \
-            dist/YouTube-Downloader-*-macOS-Installer.pkg \
+            dist/YouTube-Downloader-*-macOS-Installer.dmg \
             --repo "${{ github.repository }}" \
             --clobber
 

@@ -48,16 +48,19 @@ mac:
   entitlementsInherit: build/entitlements.mac.plist
   # Disable electron-builder's built-in notarize step — it auto-detects Apple
   # credentials and runs a blocking poll even without notarize:true. The
-  # release workflow submits the .pkg to notarytool (no-wait) in a dedicated
+  # release workflow submits the .dmg to notarytool (no-wait) in a dedicated
   # step and staples it in the notarize-macos job, so the build never blocks
   # on Apple's queue (up to 24 h on new Developer accounts).
   notarize: false
   target:
-    - target: pkg
+    # .dmg is signed with the Developer ID Application cert (same one that
+    # signs the .app) — unlike .pkg, which needs a separate Developer ID
+    # Installer cert. This keeps signing/notarization/stapling to one cert.
+    - target: dmg
       arch:
         - universal
     # Squirrel.Mac applies updates from a zipped .app, so electron-updater
-    # requires a zip in latest-mac.yml. The .pkg is the user-facing installer
+    # requires a zip in latest-mac.yml. The .dmg is the user-facing installer
     # (-Installer); this zip is only consumed by the in-app auto-updater
     # (-Updater).
     - target: zip
@@ -65,7 +68,7 @@ mac:
         - universal
   artifactName: YouTube-Downloader-${version}-macOS-Updater.${ext}
 
-pkg:
+dmg:
   artifactName: YouTube-Downloader-${version}-macOS-Installer.${ext}
 
 linux:

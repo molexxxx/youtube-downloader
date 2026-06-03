@@ -69,8 +69,8 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get update && sudo apt-get install -y rpm
 
-      # macOS signed: builds a signed (not-yet-notarized) .pkg/.zip. The next
-      # step submits the .pkg to Apple without waiting; the notarize-macos job
+      # macOS signed: builds a signed (not-yet-notarized) .dmg/.zip. The next
+      # step submits the .dmg to Apple without waiting; the notarize-macos job
       # polls for approval and staples it.
       - name: Build and package (macOS, signed)
         if: matrix.os == 'macos-latest' && env.MAC_CSC_LINK != ''
@@ -82,20 +82,20 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
-      # Submit the signed .pkg to Apple notarization without waiting. notarytool
-      # accepts .pkg/.zip/.dmg (not a raw .app). Notarizing the .pkg also
+      # Submit the signed .dmg to Apple notarization without waiting. notarytool
+      # accepts .dmg/.zip/.pkg (not a raw .app). Notarizing the .dmg also
       # registers the inner app's signature with Apple, so the updater .zip is
-      # covered for online Gatekeeper checks even though only the .pkg is stapled.
-      - name: Submit macOS .pkg for notarization (no-wait)
+      # covered for online Gatekeeper checks even though only the .dmg is stapled.
+      - name: Submit macOS .dmg for notarization (no-wait)
         if: matrix.os == 'macos-latest' && env.MAC_CSC_LINK != ''
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          pkg=$(ls dist/YouTube-Downloader-*-macOS-Installer.pkg | head -1)
-          echo "Submitting $pkg for notarization (no-wait)..."
-          xcrun notarytool submit "$pkg" \
+          dmg=$(ls dist/YouTube-Downloader-*-macOS-Installer.dmg | head -1)
+          echo "Submitting $dmg for notarization (no-wait)..."
+          xcrun notarytool submit "$dmg" \
             --apple-id "$APPLE_ID" \
             --password "$APPLE_APP_SPECIFIC_PASSWORD" \
             --team-id "$APPLE_TEAM_ID" \
@@ -128,7 +128,7 @@ jobs:
             dist/latest*.yml
 
       # macOS signed: stash artifacts for the notarize-macos job instead of
-      # uploading to the draft release. The signed-but-unstapled .pkg is also
+      # uploading to the draft release. The signed-but-unstapled .dmg is also
       # uploaded to the draft so notarize-complete.yml can find it by tag if
       # the notarize-macos job times out (>6 h initial notarization).
       - name: Save macOS artifacts for notarization job
@@ -137,7 +137,7 @@ jobs:
         with:
           name: macos-notarize
           path: |
-            dist/YouTube-Downloader-*-macOS-Installer.pkg
+            dist/YouTube-Downloader-*-macOS-Installer.dmg
             dist/YouTube-Downloader-*-macOS-Updater.zip
             dist/latest-mac.yml
             notarization-submission.json
@@ -150,7 +150,7 @@ jobs:
           draft: true
           generate_release_notes: true
           files: |
-            dist/YouTube-Downloader-*-macOS-Installer.pkg
+            dist/YouTube-Downloader-*-macOS-Installer.dmg
             dist/YouTube-Downloader-*-macOS-Updater.zip
             dist/latest-mac.yml
 
@@ -162,12 +162,12 @@ jobs:
           draft: true
           generate_release_notes: true
           files: |
-            dist/YouTube-Downloader-*-macOS-Installer.pkg
+            dist/YouTube-Downloader-*-macOS-Installer.dmg
             dist/YouTube-Downloader-*-macOS-Updater.zip
             dist/latest-mac.yml
 
   # Waits for Apple to approve the notarization submission, then staples the
-  # ticket to the .pkg and replaces the unstapled asset in the draft release.
+  # ticket to the .dmg and replaces the unstapled asset in the draft release.
   # Timeout: 6 hours. If Apple hasn't responded by then (common for the very
   # first submission on a new Developer account), let this job fail and use
   # the notarize-complete workflow (workflow_dispatch) to finish manually.
@@ -246,11 +246,11 @@ jobs:
       - name: Staple notarization ticket to installer
         if: steps.download.outcome == 'success'
         run: |
-          pkg=$(ls dist/YouTube-Downloader-*-macOS-Installer.pkg | head -1)
+          dmg=$(ls dist/YouTube-Downloader-*-macOS-Installer.dmg | head -1)
           # Apple's ticket can lag behind notarytool "Accepted"; stapler then
           # fails with exit 66 (ticket not found). Retry until the CDN has it.
           for attempt in $(seq 1 10); do
-            if xcrun stapler staple -v "$pkg"; then
+            if xcrun stapler staple -v "$dmg"; then
               echo "Stapled on attempt $attempt"
               exit 0
             fi
@@ -260,14 +260,14 @@ jobs:
           echo "Stapling failed after all retries"
           exit 1
 
-      # Replace the unstapled .pkg in the draft release with the stapled one.
+      # Replace the unstapled .dmg in the draft release with the stapled one.
       - name: Upload stapled macOS installer to draft release
         if: steps.download.outcome == 'success'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload "${{ github.ref_name }}" \
-            dist/YouTube-Downloader-*-macOS-Installer.pkg \
+            dist/YouTube-Downloader-*-macOS-Installer.dmg \
             --repo "${{ github.repository }}" \
             --clobber
 
