@@ -157,13 +157,15 @@ describe('MediaCard', () => {
     expect(screen.getByText('2 of 3 selected')).toBeInTheDocument()
   })
 
-  it('downloads a subset of a playlist with an explicit item list', async () => {
+  it('enqueues each selected playlist item as a separate job', async () => {
     useAppStore.setState({ info: playlist(3) })
     render(<MediaCard />)
+    // Deselect item 2; items 1 and 3 remain selected.
     fireEvent.click(screen.getAllByRole('checkbox')[1])
     fireEvent.click(screen.getByText('Download 2 items'))
-    await waitFor(() => expect(api.download.start).toHaveBeenCalled())
-    expect(api.download.start.mock.calls[0][0]).toMatchObject({ playlistItems: '1,3' })
+    await waitFor(() => expect(api.download.start).toHaveBeenCalledTimes(2))
+    expect(api.download.start.mock.calls[0][0]).toMatchObject({ url: 'https://y/1', noPlaylist: true })
+    expect(api.download.start.mock.calls[1][0]).toMatchObject({ url: 'https://y/3', noPlaylist: true })
   })
 
   it('disables download when nothing is selected', () => {
