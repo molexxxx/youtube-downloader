@@ -20,6 +20,10 @@ export default defineConfig({
       exclude: [
         'src/main/index.ts',
         'src/renderer/src/main.tsx',
+        // React components are exercised by the smoke test and manual testing,
+        // not by unit tests. Excluding them keeps thresholds meaningful for
+        // the logic that is actually unit-tested (main process + stores/utils).
+        'src/renderer/src/components/**',
         '**/*.d.ts',
         '**/types.ts'
       ],
