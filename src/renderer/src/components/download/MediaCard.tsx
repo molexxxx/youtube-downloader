@@ -162,31 +162,41 @@ export function MediaCard(): React.JSX.Element | null {
 
   async function startDownload(): Promise<void> {
     if (!info) return
-    const total = info.entries.length
-    // Only send an explicit item list when it's a real subset; an empty list
-    // (or "all selected") downloads the whole playlist.
-    const playlistItems =
-      info.isPlaylist && selectedItems.size > 0 && selectedItems.size < total
-        ? [...selectedItems].sort((a, b) => a - b).join(',')
-        : undefined
-    await window.api.download.start({
-      url: info.webpageUrl,
+    const sharedOpts = {
       kind,
-      title: info.title,
       formatId: kind === 'video' ? formatId || undefined : undefined,
       container: kind === 'video' ? container : undefined,
       audioFormat: kind === 'audio' ? audioFormat : undefined,
       audioBitrate: kind === 'audio' ? audioBitrate : undefined,
-      // A single-video URL must never expand into a playlist it happens to
-      // belong to; playlists download normally (optionally filtered above).
-      noPlaylist: !info.isPlaylist,
-      playlistItems,
       embedThumbnail,
       embedMetadata,
       embedChapters: kind === 'video' ? embedChapters : undefined,
       writeSubtitles,
       sponsorBlock
-    })
+    }
+    if (info.isPlaylist) {
+      // Enqueue each selected item as an independent job so the download
+      // manager runs them in parallel up to maxConcurrentDownloads.
+      const indices = [...selectedItems].sort((a, b) => a - b)
+      for (const index of indices) {
+        const entry = info.entries[index - 1]
+        if (!entry) continue
+        await window.api.download.start({
+          url: entry.url,
+          title: entry.title,
+          noPlaylist: true,
+          ...sharedOpts
+        })
+      }
+    } else {
+      await window.api.download.start({
+        url: info.webpageUrl,
+        title: info.title,
+        // Prevent a watch URL that belongs to a playlist from expanding.
+        noPlaylist: true,
+        ...sharedOpts
+      })
+    }
   }
 
   return (

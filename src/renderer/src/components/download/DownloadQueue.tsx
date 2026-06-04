@@ -1,6 +1,15 @@
 import { FolderOpen, X, CheckCircle2, AlertCircle, Loader2, Trash2 } from 'lucide-react'
 import { useAppStore } from '../../stores/appStore'
-import type { DownloadJob } from '@shared/types'
+import type { DownloadJob, DownloadState } from '@shared/types'
+
+// Lower number = shown first. Active jobs float to the top, queued next,
+// terminal (completed/error/cancelled) at the bottom.
+const STATE_PRIORITY: Partial<Record<DownloadState, number>> = {
+  downloading: 0,
+  processing: 0,
+  extracting: 0,
+  queued: 1,
+}
 
 export function DownloadQueue(): React.JSX.Element {
   const jobs = useAppStore((s) => s.jobs)
@@ -18,6 +27,13 @@ export function DownloadQueue(): React.JSX.Element {
     (j) => j.state === 'completed' || j.state === 'error' || j.state === 'cancelled'
   )
 
+  const sorted = jobs.slice().sort((a, b) => {
+    const pa = STATE_PRIORITY[a.state] ?? 2
+    const pb = STATE_PRIORITY[b.state] ?? 2
+    if (pa !== pb) return pa - pb
+    return a.createdAt - b.createdAt
+  })
+
   return (
     <div className="space-y-2">
       {hasFinished && (
@@ -29,22 +45,31 @@ export function DownloadQueue(): React.JSX.Element {
           Clear finished
         </button>
       )}
-      {jobs
-        .slice()
-        .reverse()
-        .map((job) => (
-          <JobRow key={job.id} job={job} />
-        ))}
+      {sorted.map((job) => (
+        <JobRow key={job.id} job={job} />
+      ))}
     </div>
   )
 }
 
 function JobRow({ job }: { job: DownloadJob }): React.JSX.Element {
-  const active = job.state === 'downloading' || job.state === 'processing'
+  const isActive =
+    job.state === 'downloading' || job.state === 'processing' || job.state === 'extracting'
+
   return (
-    <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3">
+    <div
+      className={`rounded-xl border p-3 transition-colors ${
+        isActive
+          ? 'border-red-500/25 bg-red-500/5'
+          : 'border-white/5 bg-white/2'
+      }`}
+    >
       <div className="flex items-center justify-between gap-3">
-        <span className="min-w-0 flex-1 truncate text-sm">{job.title}</span>
+        <span
+          className={`min-w-0 flex-1 truncate text-sm ${isActive ? 'text-white/90' : ''}`}
+        >
+          {job.title}
+        </span>
         <StateIcon job={job} />
         {job.state === 'completed' && (
           <button
@@ -55,7 +80,7 @@ function JobRow({ job }: { job: DownloadJob }): React.JSX.Element {
             <FolderOpen size={15} />
           </button>
         )}
-        {active && (
+        {isActive && (
           <button
             onClick={() => window.api.download.cancel(job.id)}
             className="rounded p-1 text-white/40 hover:text-red-400"
@@ -66,16 +91,26 @@ function JobRow({ job }: { job: DownloadJob }): React.JSX.Element {
         )}
       </div>
 
-      {active && (
+      {isActive && (
         <div className="mt-2">
           <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
-            <div
-              className="h-full bg-red-500 transition-all"
-              style={{ width: `${job.percent}%` }}
-            />
+            {job.percent > 0 ? (
+              <div
+                className="h-full bg-red-500 transition-all"
+                style={{ width: `${job.percent}%` }}
+              />
+            ) : (
+              <div className="progress-indeterminate h-full rounded-full bg-red-500" />
+            )}
           </div>
           <div className="mt-1 flex justify-between text-[11px] text-white/40">
-            <span>{job.percent.toFixed(0)}%</span>
+            <span>
+              {job.percent > 0
+                ? `${job.percent.toFixed(0)}%`
+                : job.state === 'processing'
+                  ? 'Processing…'
+                  : 'Downloading…'}
+            </span>
             <span>
               {job.speed ?? ''} {job.eta ? `· ETA ${job.eta}` : ''}
             </span>
@@ -95,12 +130,14 @@ function JobRow({ job }: { job: DownloadJob }): React.JSX.Element {
 function StateIcon({ job }: { job: DownloadJob }): React.JSX.Element {
   switch (job.state) {
     case 'completed':
-      return <CheckCircle2 size={16} className="text-emerald-400" />
+      return <CheckCircle2 size={16} className="shrink-0 text-emerald-400" />
     case 'error':
-      return <AlertCircle size={16} className="text-red-400" />
+      return <AlertCircle size={16} className="shrink-0 text-red-400" />
     case 'cancelled':
-      return <X size={16} className="text-white/30" />
+      return <X size={16} className="shrink-0 text-white/30" />
+    case 'queued':
+      return <Loader2 size={16} className="shrink-0 animate-spin text-white/30" />
     default:
-      return <Loader2 size={16} className="animate-spin text-red-400" />
+      return <Loader2 size={16} className="shrink-0 animate-spin text-red-400" />
   }
 }

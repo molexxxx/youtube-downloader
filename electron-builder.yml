@@ -46,7 +46,7 @@ mac:
   gatekeeperAssess: false
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
-  # Disable electron-builder's built-in notarize step — it auto-detects Apple
+  # Disable electron-builder's built-in notarize step - it auto-detects Apple
   # credentials and runs a blocking poll even without notarize:true. The
   # release workflow submits the .dmg to notarytool (no-wait) in a dedicated
   # step and staples it in the notarize-macos job, so the build never blocks
@@ -54,7 +54,7 @@ mac:
   notarize: false
   target:
     # .dmg is signed with the Developer ID Application cert (same one that
-    # signs the .app) — unlike .pkg, which needs a separate Developer ID
+    # signs the .app) - unlike .pkg, which needs a separate Developer ID
     # Installer cert. This keeps signing/notarization/stapling to one cert.
     - target: dmg
       arch:

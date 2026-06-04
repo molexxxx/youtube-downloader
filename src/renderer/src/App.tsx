@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { KeyRound, X } from 'lucide-react'
+import { Bell, BellOff, KeyRound, X } from 'lucide-react'
 import { useAppStore } from './stores/appStore'
 import { applyTheme } from './lib/theme'
 import { TitleBar } from './components/layout/TitleBar'
@@ -120,8 +120,11 @@ function App(): React.JSX.Element {
               <EmptyState />
             ) : null}
           </section>
-          <aside className="scroll-thin flex w-80 flex-col gap-3 overflow-y-auto border-l border-white/5 pl-5">
-            <h2 className="text-sm font-semibold text-white/70">Downloads</h2>
+          <aside className="scroll-thin flex w-80 flex-col gap-3 overflow-y-auto border-l border-white/5 pl-5 pr-2">
+            <div className="flex shrink-0 items-center justify-between">
+              <h2 className="text-sm font-semibold text-white/70">Downloads</h2>
+              <NotificationToggle />
+            </div>
             <DownloadQueue />
           </aside>
         </main>
@@ -163,6 +166,27 @@ function CookieHint(): React.JSX.Element | null {
         <X size={14} />
       </button>
     </div>
+  )
+}
+
+function NotificationToggle(): React.JSX.Element {
+  const notifications = useAppStore((s) => s.config?.notifications ?? true)
+  const patchConfig = useAppStore((s) => s.patchConfig)
+
+  function toggle(): void {
+    const next = !notifications
+    patchConfig({ notifications: next })
+    void window.api.config.set({ notifications: next })
+  }
+
+  return (
+    <button
+      onClick={toggle}
+      title={notifications ? 'Mute notifications' : 'Unmute notifications'}
+      className="rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white/70"
+    >
+      {notifications ? <Bell size={14} /> : <BellOff size={14} className="text-red-400" />}
+    </button>
   )
 }
 

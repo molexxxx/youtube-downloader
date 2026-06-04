@@ -9,7 +9,7 @@
 #   1. Go to Actions → "Complete macOS Notarization" → Run workflow
 #   2. Enter the release tag (e.g. v0.1.11)
 #   3. Enter the Apple submission UUID printed in the macOS build log:
-#        "Notarization submitted — id: <UUID>"
+#        "Notarization submitted - id: <UUID>"
 #
 # What it does:
 #   - Waits for Apple to accept the submission (up to 6 h from trigger time)

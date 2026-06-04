@@ -186,7 +186,7 @@ jobs:
 
       - name: Skip if no notarization artifact (unsigned build)
         if: steps.download.outcome == 'failure'
-        run: echo "No macos-notarize artifact — unsigned build or credentials not set, skipping."
+        run: echo "No macos-notarize artifact - unsigned build or credentials not set, skipping."
 
       - name: Wait for Apple notarization
         if: steps.download.outcome == 'success'
@@ -208,7 +208,7 @@ jobs:
               exit 0
             fi
 
-            # notarytool wait exited non-zero — could be network drop or rejection.
+            # notarytool wait exited non-zero - could be network drop or rejection.
             status=$(xcrun notarytool info "$submission_id" \
               --apple-id "$APPLE_ID" \
               --password "$APPLE_APP_SPECIFIC_PASSWORD" \
@@ -235,7 +235,7 @@ jobs:
                   echo "Retrying in 60 s (likely a network blip)..."
                   sleep 60
                 else
-                  echo "All retry attempts exhausted — job timed out or network is broken."
+                  echo "All retry attempts exhausted - job timed out or network is broken."
                   echo "Use the 'Complete macOS Notarization' workflow to finish manually."
                   exit 1
                 fi

@@ -125,6 +125,7 @@ html.light .border-white\/20 {
   border-color: rgba(20, 22, 28, 0.26);
 }
 
+html.light .bg-white\/2,
 html.light .bg-white\/\[0\.02\],
 html.light .bg-white\/\[0\.03\] {
   background-color: rgba(20, 22, 28, 0.03);
@@ -361,6 +362,16 @@ html.light .placeholder\:text-white\/30::placeholder { color: rgba(26, 29, 35, 0
   50% {
     transform: translateY(-6px);
   }
+}
+
+@keyframes progress-slide {
+  0% { transform: translateX(-250%); }
+  100% { transform: translateX(500%); }
+}
+
+.progress-indeterminate {
+  width: 30%;
+  animation: progress-slide 1.4s ease-in-out infinite;
 }
 
 .anim-blob-a {
