@@ -1,0 +1,106 @@
+name: Check binary updates
+
+# Runs daily and on-demand. Compares the latest upstream yt-dlp and ffmpeg
+# releases against the versions last recorded in .github/binary-versions.json.
+# When either has a new release, it bumps the app patch version and pushes a
+# tag that triggers release.yml to build and publish the new version.
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: check-binary-updates
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Configure git identity
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Fetch latest upstream versions
+        id: versions
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # yt-dlp: single versioned release tag covers all platforms.
+          YTDLP=$(gh api repos/yt-dlp/yt-dlp/releases/latest --jq '.tag_name')
+
+          # ffmpeg macOS: evermeet.cx publishes stable semantic version numbers.
+          FFMPEG_MAC=$(curl -fsSL https://evermeet.cx/ffmpeg/info/ffmpeg/zip | jq -r '.version')
+
+          # ffmpeg Windows/Linux: BtbN does continuous autobuild releases tagged
+          # autobuild-YYYY-MM-DD-HH-MM. Truncate to the date portion so at most
+          # one release per day fires even when BtbN pushes multiple builds.
+          FFMPEG_BTBN=$(gh api repos/BtbN/FFmpeg-Builds/releases/latest --jq '.tag_name' \
+            | grep -oP 'autobuild-\d{4}-\d{2}-\d{2}')
+
+          echo "yt-dlp latest:         $YTDLP"
+          echo "ffmpeg macOS latest:   $FFMPEG_MAC"
+          echo "ffmpeg win/linux date: $FFMPEG_BTBN"
+
+          echo "ytdlp=$YTDLP"             >> "$GITHUB_OUTPUT"
+          echo "ffmpeg_mac=$FFMPEG_MAC"   >> "$GITHUB_OUTPUT"
+          echo "ffmpeg_btbn=$FFMPEG_BTBN" >> "$GITHUB_OUTPUT"
+
+      - name: Compare versions and release if updated
+        run: |
+          FILE=".github/binary-versions.json"
+          YTDLP_NEW="${{ steps.versions.outputs.ytdlp }}"
+          FFMPEG_MAC_NEW="${{ steps.versions.outputs.ffmpeg_mac }}"
+          FFMPEG_BTBN_NEW="${{ steps.versions.outputs.ffmpeg_btbn }}"
+
+          write_versions() {
+            printf '{\n  "ytdlp": "%s",\n  "ffmpeg_mac": "%s",\n  "ffmpeg_btbn": "%s"\n}\n' \
+              "$YTDLP_NEW" "$FFMPEG_MAC_NEW" "$FFMPEG_BTBN_NEW" > "$FILE"
+          }
+
+          # First run: create the tracking file without bumping the app version.
+          if [[ ! -f "$FILE" ]]; then
+            echo "No tracking file found — initializing with current versions (no release bump)."
+            write_versions
+            git add "$FILE"
+            git commit -m "chore(ci): initialize binary version tracking [skip ci]"
+            git push origin HEAD:main
+            exit 0
+          fi
+
+          YTDLP_OLD=$(jq -r '.ytdlp' "$FILE")
+          FFMPEG_MAC_OLD=$(jq -r '.ffmpeg_mac' "$FILE")
+          FFMPEG_BTBN_OLD=$(jq -r '.ffmpeg_btbn' "$FILE")
+
+          if [[ "$YTDLP_NEW" == "$YTDLP_OLD" && \
+                "$FFMPEG_MAC_NEW" == "$FFMPEG_MAC_OLD" && \
+                "$FFMPEG_BTBN_NEW" == "$FFMPEG_BTBN_OLD" ]]; then
+            echo "All binaries are up to date — no release needed."
+            exit 0
+          fi
+
+          [[ "$YTDLP_NEW"      != "$YTDLP_OLD"      ]] && echo "yt-dlp:         $YTDLP_OLD → $YTDLP_NEW"
+          [[ "$FFMPEG_MAC_NEW" != "$FFMPEG_MAC_OLD"  ]] && echo "ffmpeg macOS:   $FFMPEG_MAC_OLD → $FFMPEG_MAC_NEW"
+          [[ "$FFMPEG_BTBN_NEW" != "$FFMPEG_BTBN_OLD" ]] && echo "ffmpeg win/linux: $FFMPEG_BTBN_OLD → $FFMPEG_BTBN_NEW"
+
+          write_versions
+          new_version=$(npm version patch --no-git-tag-version)
+
+          git add "$FILE" package.json package-lock.json
+          git commit -m "chore(release): $new_version [skip ci]"
+          git tag "$new_version"
+          git push origin HEAD:main --follow-tags
