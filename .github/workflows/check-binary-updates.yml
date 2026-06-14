@@ -46,11 +46,12 @@ jobs:
           # ffmpeg macOS: evermeet.cx publishes stable semantic version numbers.
           FFMPEG_MAC=$(curl -fsSL https://evermeet.cx/ffmpeg/info/ffmpeg/release | jq -r '.version')
 
-          # ffmpeg Windows/Linux: BtbN does continuous autobuild releases tagged
-          # autobuild-YYYY-MM-DD-HH-MM. Truncate to the date portion so at most
-          # one release per day fires even when BtbN pushes multiple builds.
-          FFMPEG_BTBN=$(gh api repos/BtbN/FFmpeg-Builds/releases/latest --jq '.tag_name' \
-            | grep -oP 'autobuild-\d{4}-\d{2}-\d{2}')
+          # ffmpeg Windows/Linux: BtbN publishes a rolling "latest" release whose
+          # published_at timestamp moves with each autobuild. Truncate to the date
+          # portion so at most one release per day fires even when BtbN pushes
+          # multiple builds.
+          FFMPEG_BTBN=$(gh api repos/BtbN/FFmpeg-Builds/releases/latest --jq '.published_at' \
+            | cut -dT -f1)
 
           echo "yt-dlp latest:         $YTDLP"
           echo "ffmpeg macOS latest:   $FFMPEG_MAC"
