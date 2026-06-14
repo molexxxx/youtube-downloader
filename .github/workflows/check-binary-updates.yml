@@ -44,7 +44,7 @@ jobs:
           YTDLP=$(gh api repos/yt-dlp/yt-dlp/releases/latest --jq '.tag_name')
 
           # ffmpeg macOS: evermeet.cx publishes stable semantic version numbers.
-          FFMPEG_MAC=$(curl -fsSL https://evermeet.cx/ffmpeg/info/ffmpeg/zip | jq -r '.version')
+          FFMPEG_MAC=$(curl -fsSL https://evermeet.cx/ffmpeg/info/ffmpeg/release | jq -r '.version')
 
           # ffmpeg Windows/Linux: BtbN does continuous autobuild releases tagged
           # autobuild-YYYY-MM-DD-HH-MM. Truncate to the date portion so at most
