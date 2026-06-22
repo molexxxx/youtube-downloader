@@ -22,7 +22,7 @@ jobs:
       # is not allowed inside `if` expressions, but `env` is.
       MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v6
         with:
