@@ -10,15 +10,15 @@
 
 **Fast, modern desktop downloader for YouTube - powered by yt-dlp & FFmpeg**
 
-<a href="https://github.com/tonywied17/youtube-downloader/actions/workflows/ci.yml"><img src="https://raw.githubusercontent.com/tonywied17/tonywied17/main/.github/badges/youtube-downloader-ci-ytdl.svg" alt="CI" /></a>
-<a href="https://github.com/tonywied17/youtube-downloader/actions/workflows/build.yml"><img src="https://raw.githubusercontent.com/tonywied17/tonywied17/main/.github/badges/youtube-downloader-build-ytdl.svg" alt="build" /></a>
-<a href="https://github.com/tonywied17/youtube-downloader/releases"><img src="https://raw.githubusercontent.com/tonywied17/tonywied17/main/.github/badges/youtube-downloader-release-ytdl.svg" alt="release" /></a>
-<a href="LICENSE"><img src="https://raw.githubusercontent.com/tonywied17/tonywied17/main/.github/badges/youtube-downloader-license-ytdl.svg" alt="license" /></a>
-<a href="https://github.com/tonywied17/youtube-downloader/releases"><img src="https://raw.githubusercontent.com/tonywied17/tonywied17/main/.github/badges/youtube-downloader-downloads-ytdl.svg" alt="downloads" /></a>
+<a href="https://github.com/molexxxx/youtube-downloader/actions/workflows/ci.yml"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-ci-ytdl.svg" alt="CI" /></a>
+<a href="https://github.com/molexxxx/youtube-downloader/actions/workflows/build.yml"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-build-ytdl.svg" alt="build" /></a>
+<a href="https://github.com/molexxxx/youtube-downloader/releases"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-release-ytdl.svg" alt="release" /></a>
+<a href="LICENSE"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-license-ytdl.svg" alt="license" /></a>
+<a href="https://github.com/molexxxx/youtube-downloader/releases"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-downloads-ytdl.svg" alt="downloads" /></a>
 
 <br/>
 
-[Download](#install) · [Features](#features) · [Quick Start](#quick-start) · [Contributing](#contributing) · [Report a Bug](https://github.com/tonywied17/youtube-downloader/issues/new?template=bug_report.yml) · [Request a Feature](https://github.com/tonywied17/youtube-downloader/issues/new?template=feature_request.yml)
+[Download](#install) · [Features](#features) · [Quick Start](#quick-start) · [Contributing](#contributing) · [Report a Bug](https://github.com/molexxxx/youtube-downloader/issues/new?template=bug_report.yml) · [Request a Feature](https://github.com/molexxxx/youtube-downloader/issues/new?template=feature_request.yml)
 
 </div>
 
@@ -124,9 +124,9 @@ Grab the latest release for your platform:
 
 | Platform | Download | Format |
 |----------|----------|--------|
-| **Windows** | [Latest Release](https://github.com/tonywied17/youtube-downloader/releases/latest) | `.exe` (NSIS installer) |
-| **macOS** | [Latest Release](https://github.com/tonywied17/youtube-downloader/releases/latest) | `.dmg` installer (Intel & Apple Silicon) |
-| **Linux** | [Latest Release](https://github.com/tonywied17/youtube-downloader/releases/latest) | `.deb` / `.rpm` installer |
+| **Windows** | [Latest Release](https://github.com/molexxxx/youtube-downloader/releases/latest) | `.exe` (NSIS installer) |
+| **macOS** | [Latest Release](https://github.com/molexxxx/youtube-downloader/releases/latest) | `.dmg` installer (Intel & Apple Silicon) |
+| **Linux** | [Latest Release](https://github.com/molexxxx/youtube-downloader/releases/latest) | `.deb` / `.rpm` installer |
 
 > yt-dlp and FFmpeg are downloaded automatically on first launch - no manual setup required.
 
@@ -136,7 +136,7 @@ Grab the latest release for your platform:
 
 ```bash
 # Clone & install
-git clone https://github.com/tonywied17/youtube-downloader.git
+git clone https://github.com/molexxxx/youtube-downloader.git
 cd youtube-downloader
 npm install
 
@@ -180,9 +180,9 @@ npm run package:linux    # Linux
 
 Found a bug or have an idea?
 
-- [**Report a Bug**](https://github.com/tonywied17/youtube-downloader/issues/new) - Something isn't working as expected
-- [**Request a Feature**](https://github.com/tonywied17/youtube-downloader/issues/new) - Suggest a new feature or enhancement
-- [**Browse Open Issues**](https://github.com/tonywied17/youtube-downloader/issues) - See what's already been reported
+- [**Report a Bug**](https://github.com/molexxxx/youtube-downloader/issues/new) - Something isn't working as expected
+- [**Request a Feature**](https://github.com/molexxxx/youtube-downloader/issues/new) - Suggest a new feature or enhancement
+- [**Browse Open Issues**](https://github.com/molexxxx/youtube-downloader/issues) - See what's already been reported
 
 Please search existing issues before opening a new one to avoid duplicates.
 

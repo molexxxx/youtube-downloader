@@ -5,10 +5,10 @@
   "main": "./out/main/index.js",
   "author": "molex",
   "license": "MIT",
-  "homepage": "https://github.com/tonywied17/youtube-downloader",
+  "homepage": "https://github.com/molexxxx/youtube-downloader",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tonywied17/youtube-downloader.git"
+    "url": "https://github.com/molexxxx/youtube-downloader.git"
   },
   "scripts": {
     "dev": "electron-vite dev",

@@ -628,8 +628,8 @@ function AppUpdatePanel({
   )
 }
 
-const REPO_URL = 'https://github.com/tonywied17/youtube-downloader'
-const AUTHOR_URL = 'https://github.com/tonywied17'
+const REPO_URL = 'https://github.com/molexxxx/youtube-downloader'
+const AUTHOR_URL = 'https://github.com/molexxxx'
 const BUG_REPORT_URL = `${REPO_URL}/issues/new?template=bug_report.yml`
 const FEATURE_REQUEST_URL = `${REPO_URL}/issues/new?template=feature_request.yml`
 

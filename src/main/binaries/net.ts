@@ -5,7 +5,7 @@ import { join } from 'path'
 import { get } from 'https'
 import type { IncomingMessage } from 'http'
 
-const USER_AGENT = 'YouTube-Downloader (https://github.com/tonywied17/youtube-downloader)'
+const USER_AGENT = 'YouTube-Downloader (https://github.com/molexxxx/youtube-downloader)'
 const REQUEST_TIMEOUT = 300_000
 const MAX_REDIRECTS = 6
 
