@@ -2,10 +2,15 @@ import { vi } from 'vitest'
 import type {
   AppConfig,
   AppUpdateStatus,
+  AuditEntry,
   BinariesStatus,
   CookieInfo,
+  DiscordGuild,
+  DiscordStatus,
   DownloadJob,
   DownloadRequest,
+  GuildPlayerState,
+  GuildSettings,
   HistoryEntry,
   LogEntry,
   MediaInfo,
@@ -95,10 +100,53 @@ export function installMockApi() {
     logs: {
       list: vi.fn(async (): Promise<LogEntry[]> => []),
       onEntry: vi.fn(() => unsub)
+    },
+    discord: {
+      status: vi.fn(async (): Promise<DiscordStatus> => baseDiscordStatus()),
+      guilds: vi.fn(async (): Promise<DiscordGuild[]> => []),
+      setToken: vi.fn(async (_token: string): Promise<DiscordStatus> => baseDiscordStatus()),
+      clearToken: vi.fn(async (): Promise<DiscordStatus> => baseDiscordStatus()),
+      connect: vi.fn(async (): Promise<DiscordStatus> => baseDiscordStatus()),
+      disconnect: vi.fn(async (): Promise<DiscordStatus> => baseDiscordStatus()),
+      player: vi.fn(async (_guildId: string): Promise<GuildPlayerState | null> => null),
+      join: vi.fn(async (_guildId: string, _channelId: string): Promise<void> => {}),
+      leave: vi.fn(async (_guildId: string): Promise<void> => {}),
+      enqueue: vi.fn(async (_guildId: string): Promise<boolean> => true),
+      control: vi.fn(async (): Promise<void> => {}),
+      setLoop: vi.fn(async (): Promise<void> => {}),
+      setVolume: vi.fn(async (): Promise<void> => {}),
+      removeTrack: vi.fn(async (): Promise<void> => {}),
+      getSettings: vi.fn(async (_guildId: string): Promise<GuildSettings> => baseGuildSettings()),
+      setSettings: vi.fn(async (): Promise<GuildSettings> => baseGuildSettings()),
+      auditList: vi.fn(async (_guildId?: string): Promise<AuditEntry[]> => []),
+      onStatus: vi.fn(() => unsub),
+      onGuilds: vi.fn(() => unsub),
+      onPlayer: vi.fn(() => unsub),
+      onAudit: vi.fn(() => unsub)
     }
   }
   ;(window as unknown as { api: unknown }).api = api
   return api
+}
+
+function baseDiscordStatus(): DiscordStatus {
+  return {
+    state: 'disconnected',
+    botUser: null,
+    applicationId: null,
+    hasToken: false,
+    inviteUrl: null,
+    error: null
+  }
+}
+
+function baseGuildSettings(): GuildSettings {
+  return {
+    allowedRoleId: null,
+    defaultVolume: 100,
+    autoLeaveOnEmpty: true,
+    lastVoiceChannelId: null
+  }
 }
 
 function baseConfig(): AppConfig {

@@ -47,16 +47,22 @@
       <a href=".github/assets/thumbs/3-playlist-download-details.png"><img src=".github/assets/thumbs/3-playlist-download-details.png" alt="Playlist Download Details" width="200"></a>
       <br/><sub><b>Playlist Download Details</b></sub>
     </td>
+  </tr>
+  <tr>
     <td align="center" width="215">
       <a href=".github/assets/thumbs/4-download-history.png"><img src=".github/assets/thumbs/4-download-history.png" alt="Download History" width="200"></a>
       <br/><sub><b>Download History</b></sub>
     </td>
-  </tr>
-  <tr>
+    <td align="center" width="215">
+      <a href=".github/assets/thumbs/4.5-discord-dash.png"><img src=".github/assets/thumbs/4.5-discord-dash.png" alt="Discord Dashboard" width="200"></a>
+      <br/><sub><b>Discord Dashboard</b></sub>
+    </td>
     <td align="center" width="215">
       <a href=".github/assets/thumbs/5-view-logs.png"><img src=".github/assets/thumbs/5-view-logs.png" alt="View Logs" width="200"></a>
       <br/><sub><b>View Logs</b></sub>
     </td>
+  </tr>
+  <tr>
     <td align="center" width="215">
       <a href=".github/assets/thumbs/6-settings-top.png"><img src=".github/assets/thumbs/6-settings-top.png" alt="Settings - Top" width="200"></a>
       <br/><sub><b>Settings - Top</b></sub>
@@ -106,11 +112,23 @@
 - **History** - Persistent record of every download (title, kind, URL, status, output path, timestamp) with one-click "Show in folder" and clear controls
 - **Logs** - Filterable real-time log viewer (debug / info / warn / error) with tail-follow and copy-all
 
+### Discord Music Bot
+
+- **Self-Hosted Bot** - Connect your own bot token (stored locally and encrypted via the OS keychain) and the app becomes a personal Discord music bot; a one-click OAuth invite link adds it to your servers
+- **Voice Playback** - Stream YouTube audio - single videos or whole playlists - into voice channels through the same yt-dlp + FFmpeg pipeline, including the automatic cookie fallback for age-gated content
+- **In-App Control** - Search or paste links, manage the queue, and drive playback: play / pause / skip / stop, shuffle, loop (off / track / queue), a live volume slider, and per-track removal
+- **Slash Commands** - `/play`, `/search`, `/queue`, `/skip`, `/volume`, `/loop`, and more, registered per-server for instant use; slash commands and the desktop UI drive the **same** player and stay in sync live
+- **Multiple Servers** - Manage several servers at once with a server switcher and an independent queue per server
+- **Role Gating** - Optionally restrict slash-command playback to a chosen role (the host app always stays in control)
+- **Audit Log** - Persistent, per-server activity feed of who did what - from the app or from Discord - stored locally on your machine
+
 ### App & UI
 
 - **Zero Setup** - yt-dlp and FFmpeg are downloaded automatically on first launch, with a guided bootstrap (checking → downloading → extracting → verifying)
 - **Binary Manager** - View yt-dlp / FFmpeg versions and update them on demand, or let them auto-update on launch
 - **Auto-Updater** - Check / download / install app updates straight from GitHub Releases with live progress
+- **Launch on Startup** - Optionally start the app at login on Windows, macOS, or Linux to keep the bot online, with a "start minimized to tray" option
+- **Single Instance** - Only one copy runs per machine; launching it again focuses the existing window
 - **System Tray** - Live download count and average progress in the tooltip; optional close-to-tray
 - **Frameless UI** - Custom titlebar, native right-click context menu, and a polished animated empty state
 - **Themes** - System, Dark, or Light
@@ -172,6 +190,8 @@ npm run package:linux    # Linux
 - **electron-updater** - App auto-update from GitHub Releases
 - **electron-builder** - Packaging & distribution
 - **youtube-dl-exec** - yt-dlp wrapper for resolving and downloading
+- **discord.js / @discordjs/voice** - Discord gateway client and voice playback for the music bot
+- **libsodium-wrappers / opusscript** - Pure-JS voice encryption and Opus encoding (no native build step)
 - **Vitest** - Unit and integration testing
 
 ---

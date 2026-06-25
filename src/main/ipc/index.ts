@@ -6,6 +6,7 @@ import { registerSystemIPC } from './system'
 import { registerLogsIPC } from './logs'
 import { registerCookiesIPC } from './cookies'
 import { registerHistoryIPC } from './history'
+import { registerDiscordIPC } from './discord'
 
 export function registerIPC(): void {
   registerConfigIPC()
@@ -16,4 +17,5 @@ export function registerIPC(): void {
   registerLogsIPC()
   registerCookiesIPC()
   registerHistoryIPC()
+  registerDiscordIPC()
 }

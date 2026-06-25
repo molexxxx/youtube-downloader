@@ -32,6 +32,10 @@ export interface AppConfig {
   autoUpdateBinaries: boolean
   notifications: boolean
   closeToTray: boolean
+  /** Start the app automatically when the user logs in (keeps the bot online). */
+  launchOnStartup: boolean
+  /** When launched at login, start hidden in the tray instead of showing a window. */
+  startMinimized: boolean
 }
 
 export const DEFAULT_CONFIG: AppConfig = {
@@ -53,7 +57,9 @@ export const DEFAULT_CONFIG: AppConfig = {
   autoUpdateApp: true,
   autoUpdateBinaries: true,
   notifications: true,
-  closeToTray: false
+  closeToTray: false,
+  launchOnStartup: false,
+  startMinimized: false
 }
 
 /** Stages reported while acquiring a managed binary. */
@@ -224,6 +230,130 @@ export interface CookieInfo {
   detected: DetectedBrowser[]
 }
 
+/** Gateway connection state of the Discord bot. */
+export type DiscordConnectionState = 'disconnected' | 'connecting' | 'ready' | 'error'
+
+/** Public status of the Discord bot - never carries the secret token. */
+export interface DiscordStatus {
+  state: DiscordConnectionState
+  botUser: { id: string; username: string; avatar: string | null } | null
+  applicationId: string | null
+  /** Whether a token is stored locally (so the UI can show "connect" vs "set up"). */
+  hasToken: boolean
+  /** OAuth2 invite URL with the right scopes/permissions, once the app id is known. */
+  inviteUrl: string | null
+  error: string | null
+}
+
+export interface DiscordRole {
+  id: string
+  name: string
+  /** Hex color string, e.g. '#5865f2', or null for the default role color. */
+  color: string | null
+}
+
+export interface DiscordVoiceChannel {
+  id: string
+  name: string
+}
+
+export interface DiscordGuild {
+  id: string
+  name: string
+  icon: string | null
+  voiceChannels: DiscordVoiceChannel[]
+  roles: DiscordRole[]
+}
+
+/** Who requested a track or triggered an action. */
+export interface TrackRequester {
+  source: 'ui' | 'discord'
+  userId: string | null
+  username: string
+}
+
+export interface Track {
+  id: string
+  title: string
+  url: string
+  duration: number | null
+  thumbnail: string | null
+  requestedBy: TrackRequester
+  addedAt: number
+}
+
+/** A track before it is stamped with a requester/id (the enqueue payload). */
+export interface TrackInput {
+  title: string
+  url: string
+  duration: number | null
+  thumbnail: string | null
+}
+
+export type LoopMode = 'off' | 'track' | 'queue'
+
+export type PlayerStatus = 'idle' | 'buffering' | 'playing' | 'paused'
+
+/** Live state of one guild's music player. */
+export interface GuildPlayerState {
+  guildId: string
+  voiceChannelId: string | null
+  status: PlayerStatus
+  nowPlaying: Track | null
+  queue: Track[]
+  loop: LoopMode
+  /** 0-100. */
+  volume: number
+}
+
+/** Per-guild settings persisted locally on this machine. */
+export interface GuildSettings {
+  /** When set, only members with this role can drive playback via slash commands. */
+  allowedRoleId: string | null
+  /** 0-100, applied to new players for this guild. */
+  defaultVolume: number
+  /** Leave the voice channel when it empties or the queue ends. */
+  autoLeaveOnEmpty: boolean
+  /** Remember the last channel the bot played in, for quick re-join. */
+  lastVoiceChannelId: string | null
+}
+
+export const DEFAULT_GUILD_SETTINGS: GuildSettings = {
+  allowedRoleId: null,
+  defaultVolume: 100,
+  autoLeaveOnEmpty: true,
+  lastVoiceChannelId: null
+}
+
+export type AuditAction =
+  | 'connect'
+  | 'disconnect'
+  | 'join'
+  | 'leave'
+  | 'play'
+  | 'enqueue'
+  | 'skip'
+  | 'pause'
+  | 'resume'
+  | 'stop'
+  | 'clear'
+  | 'shuffle'
+  | 'loop'
+  | 'volume'
+  | 'remove'
+  | 'permission-denied'
+  | 'error'
+
+/** A recorded action in a guild, from either the UI or a Discord user. */
+export interface AuditEntry {
+  id: string
+  guildId: string
+  ts: number
+  actor: TrackRequester
+  action: AuditAction
+  detail: string
+}
+
 /** IPC channel names - single source of truth shared by preload + main. */
 export const IPC = {
   config: {
@@ -280,5 +410,31 @@ export const IPC = {
   logs: {
     list: 'logs:list',
     onEntry: 'logs:entry'
+  },
+  discord: {
+    status: 'discord:status',
+    setToken: 'discord:setToken',
+    clearToken: 'discord:clearToken',
+    connect: 'discord:connect',
+    disconnect: 'discord:disconnect',
+    guilds: 'discord:guilds',
+    player: 'discord:player',
+    join: 'discord:join',
+    leave: 'discord:leave',
+    enqueue: 'discord:enqueue',
+    control: 'discord:control',
+    setLoop: 'discord:setLoop',
+    setVolume: 'discord:setVolume',
+    removeTrack: 'discord:removeTrack',
+    getSettings: 'discord:getSettings',
+    setSettings: 'discord:setSettings',
+    auditList: 'discord:auditList',
+    onStatus: 'discord:onStatus',
+    onPlayer: 'discord:onPlayer',
+    onAudit: 'discord:onAudit',
+    onGuilds: 'discord:onGuilds'
   }
 } as const
+
+/** Player control verbs that take no extra payload. */
+export type PlayerControl = 'skip' | 'pause' | 'resume' | 'stop' | 'shuffle' | 'clear'

@@ -8,7 +8,8 @@ const mocks = vi.hoisted(() => ({
   registerSystemIPC: vi.fn(),
   registerLogsIPC: vi.fn(),
   registerCookiesIPC: vi.fn(),
-  registerHistoryIPC: vi.fn()
+  registerHistoryIPC: vi.fn(),
+  registerDiscordIPC: vi.fn()
 }))
 
 vi.mock('@main/ipc/config', () => ({ registerConfigIPC: mocks.registerConfigIPC }))
@@ -19,6 +20,7 @@ vi.mock('@main/ipc/system', () => ({ registerSystemIPC: mocks.registerSystemIPC 
 vi.mock('@main/ipc/logs', () => ({ registerLogsIPC: mocks.registerLogsIPC }))
 vi.mock('@main/ipc/cookies', () => ({ registerCookiesIPC: mocks.registerCookiesIPC }))
 vi.mock('@main/ipc/history', () => ({ registerHistoryIPC: mocks.registerHistoryIPC }))
+vi.mock('@main/ipc/discord', () => ({ registerDiscordIPC: mocks.registerDiscordIPC }))
 
 import { registerIPC } from '@main/ipc'
 

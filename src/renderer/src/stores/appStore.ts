@@ -2,16 +2,20 @@ import { create } from 'zustand'
 import type {
   AppConfig,
   AppUpdateStatus,
+  AuditEntry,
   BinariesStatus,
   BootstrapProgress,
+  DiscordGuild,
+  DiscordStatus,
   DownloadJob,
+  GuildPlayerState,
   HistoryEntry,
   LogEntry,
   MediaInfo,
   PlaylistEntry
 } from '@shared/types'
 
-export type AppView = 'downloads' | 'history' | 'logs' | 'settings'
+export type AppView = 'downloads' | 'history' | 'logs' | 'settings' | 'discord'
 
 const MAX_LOGS = 1000
 
@@ -32,6 +36,19 @@ interface AppState {
   /** Set when a resolve/search fails on auth-gated content while cookies are off. */
   cookieHint: boolean
 
+  // Discord bot section.
+  discordStatus: DiscordStatus | null
+  discordGuilds: DiscordGuild[]
+  activeGuildId: string | null
+  playerStates: Record<string, GuildPlayerState>
+  audit: AuditEntry[]
+  /**
+   * True once a live status/guilds event (or the initial snapshot) has been
+   * applied. Guards against a slow startup snapshot overwriting a newer live
+   * event - the bot can reach 'ready' before the batched initial read resolves.
+   */
+  discordSeeded: boolean
+
   setConfig: (config: AppConfig) => void
   patchConfig: (partial: Partial<AppConfig>) => void
   setBinaries: (binaries: BinariesStatus) => void
@@ -50,6 +67,20 @@ interface AppState {
   setAppUpdate: (status: AppUpdateStatus) => void
   setError: (error: string | null) => void
   setCookieHint: (hint: boolean) => void
+
+  setDiscordStatus: (status: DiscordStatus) => void
+  setDiscordGuilds: (guilds: DiscordGuild[]) => void
+  /** Apply the initial status/guilds snapshot, unless a live event beat it. */
+  seedDiscord: (status: DiscordStatus, guilds: DiscordGuild[]) => void
+  setActiveGuildId: (guildId: string | null) => void
+  upsertPlayerState: (state: GuildPlayerState) => void
+  setAudit: (entries: AuditEntry[]) => void
+}
+
+/** Pick a sensible active guild: keep the current one if still present, else first. */
+function resolveActiveGuild(guilds: DiscordGuild[], current: string | null): string | null {
+  if (current && guilds.some((g) => g.id === current)) return current
+  return guilds[0]?.id ?? null
 }
 
 export function binariesAreReady(binaries: BinariesStatus | null): boolean {
@@ -71,6 +102,13 @@ export const useAppStore = create<AppState>((set) => ({
   appUpdate: null,
   error: null,
   cookieHint: false,
+
+  discordStatus: null,
+  discordGuilds: [],
+  activeGuildId: null,
+  playerStates: {},
+  audit: [],
+  discordSeeded: false,
 
   setConfig: (config) => set({ config }),
   patchConfig: (partial) =>
@@ -116,5 +154,31 @@ export const useAppStore = create<AppState>((set) => ({
     set((state) => ({ logs: [...state.logs, entry].slice(-MAX_LOGS) })),
   setAppUpdate: (appUpdate) => set({ appUpdate }),
   setError: (error) => set({ error }),
-  setCookieHint: (cookieHint) => set({ cookieHint })
+  setCookieHint: (cookieHint) => set({ cookieHint }),
+
+  setDiscordStatus: (discordStatus) => set({ discordStatus, discordSeeded: true }),
+  setDiscordGuilds: (discordGuilds) =>
+    set((state) => ({
+      discordGuilds,
+      activeGuildId: resolveActiveGuild(discordGuilds, state.activeGuildId),
+      discordSeeded: true
+    })),
+  seedDiscord: (status, guilds) =>
+    set((state) => {
+      // A live status/guilds event already updated the store - never let the
+      // slower batched startup snapshot overwrite it with stale data.
+      if (state.discordSeeded) return state
+      return {
+        discordStatus: status,
+        discordGuilds: guilds,
+        activeGuildId: resolveActiveGuild(guilds, state.activeGuildId),
+        discordSeeded: true
+      }
+    }),
+  setActiveGuildId: (activeGuildId) => set({ activeGuildId }),
+  upsertPlayerState: (playerState) =>
+    set((state) => ({
+      playerStates: { ...state.playerStates, [playerState.guildId]: playerState }
+    })),
+  setAudit: (audit) => set({ audit })
 }))

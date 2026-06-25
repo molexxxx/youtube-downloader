@@ -347,6 +347,20 @@ export function SettingsScreen(): React.JSX.Element | null {
           checked={config.closeToTray}
           onChange={(v) => update({ closeToTray: v })}
         />
+        <Check
+          label="Launch on system startup"
+          description="Start the app automatically when you log in - handy for keeping the Discord bot online."
+          checked={config.launchOnStartup}
+          onChange={(v) => update({ launchOnStartup: v })}
+        />
+        {config.launchOnStartup && (
+          <Check
+            label="Start minimized to the tray"
+            description="When launched at login, start hidden in the tray instead of opening the window."
+            checked={config.startMinimized}
+            onChange={(v) => update({ startMinimized: v })}
+          />
+        )}
       </Section>
 
       <Section title="Binaries">

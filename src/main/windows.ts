@@ -2,6 +2,7 @@ import { BrowserWindow, Menu, shell, type MenuItemConstructorOptions } from 'ele
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
 import { getConfig } from './config'
+import { launchedHidden } from './startup'
 
 let mainWindow: BrowserWindow | null = null
 let quitting = false
@@ -49,7 +50,12 @@ export function createMainWindow(): BrowserWindow {
     }
   })
 
-  window.on('ready-to-show', () => window.show())
+  // Launched at login with "start minimized": stay hidden in the tray instead of
+  // popping the window. The tray icon (always created) brings it back.
+  const startHidden = launchedHidden() && getConfig().startMinimized
+  window.on('ready-to-show', () => {
+    if (!startHidden) window.show()
+  })
 
   window.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)

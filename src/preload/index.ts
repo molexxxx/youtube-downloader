@@ -4,15 +4,23 @@ import {
   IPC,
   type AppConfig,
   type AppUpdateStatus,
+  type AuditEntry,
   type BinariesStatus,
   type BootstrapProgress,
   type CookieInfo,
+  type DiscordGuild,
+  type DiscordStatus,
   type DownloadJob,
   type DownloadRequest,
+  type GuildPlayerState,
+  type GuildSettings,
   type HistoryEntry,
   type LogEntry,
+  type LoopMode,
   type MediaInfo,
-  type PlaylistEntry
+  type PlayerControl,
+  type PlaylistEntry,
+  type TrackInput
 } from '@shared/types'
 
 function on<T>(channel: string, callback: (payload: T) => void): () => void {
@@ -86,6 +94,40 @@ const api = {
   logs: {
     list: (): Promise<LogEntry[]> => ipcRenderer.invoke(IPC.logs.list),
     onEntry: (cb: (entry: LogEntry) => void) => on(IPC.logs.onEntry, cb)
+  },
+  discord: {
+    status: (): Promise<DiscordStatus> => ipcRenderer.invoke(IPC.discord.status),
+    guilds: (): Promise<DiscordGuild[]> => ipcRenderer.invoke(IPC.discord.guilds),
+    setToken: (token: string): Promise<DiscordStatus> =>
+      ipcRenderer.invoke(IPC.discord.setToken, token),
+    clearToken: (): Promise<DiscordStatus> => ipcRenderer.invoke(IPC.discord.clearToken),
+    connect: (): Promise<DiscordStatus> => ipcRenderer.invoke(IPC.discord.connect),
+    disconnect: (): Promise<DiscordStatus> => ipcRenderer.invoke(IPC.discord.disconnect),
+    player: (guildId: string): Promise<GuildPlayerState | null> =>
+      ipcRenderer.invoke(IPC.discord.player, guildId),
+    join: (guildId: string, channelId: string): Promise<void> =>
+      ipcRenderer.invoke(IPC.discord.join, guildId, channelId),
+    leave: (guildId: string): Promise<void> => ipcRenderer.invoke(IPC.discord.leave, guildId),
+    enqueue: (guildId: string, inputs: TrackInput[]): Promise<boolean> =>
+      ipcRenderer.invoke(IPC.discord.enqueue, guildId, inputs),
+    control: (guildId: string, action: PlayerControl): Promise<void> =>
+      ipcRenderer.invoke(IPC.discord.control, guildId, action),
+    setLoop: (guildId: string, mode: LoopMode): Promise<void> =>
+      ipcRenderer.invoke(IPC.discord.setLoop, guildId, mode),
+    setVolume: (guildId: string, volume: number): Promise<void> =>
+      ipcRenderer.invoke(IPC.discord.setVolume, guildId, volume),
+    removeTrack: (guildId: string, index: number): Promise<void> =>
+      ipcRenderer.invoke(IPC.discord.removeTrack, guildId, index),
+    getSettings: (guildId: string): Promise<GuildSettings> =>
+      ipcRenderer.invoke(IPC.discord.getSettings, guildId),
+    setSettings: (guildId: string, partial: Partial<GuildSettings>): Promise<GuildSettings> =>
+      ipcRenderer.invoke(IPC.discord.setSettings, guildId, partial),
+    auditList: (guildId?: string): Promise<AuditEntry[]> =>
+      ipcRenderer.invoke(IPC.discord.auditList, guildId),
+    onStatus: (cb: (status: DiscordStatus) => void) => on(IPC.discord.onStatus, cb),
+    onGuilds: (cb: (guilds: DiscordGuild[]) => void) => on(IPC.discord.onGuilds, cb),
+    onPlayer: (cb: (state: GuildPlayerState) => void) => on(IPC.discord.onPlayer, cb),
+    onAudit: (cb: (entries: AuditEntry[]) => void) => on(IPC.discord.onAudit, cb)
   }
 }
 

@@ -1,4 +1,4 @@
-import { Download, History, Minus, ScrollText, Settings, Square, X } from 'lucide-react'
+import { Bot, Download, History, Minus, ScrollText, Settings, Square, X } from 'lucide-react'
 import { useAppStore } from '../../stores/appStore'
 
 export function TitleBar(): React.JSX.Element {
@@ -7,6 +7,7 @@ export function TitleBar(): React.JSX.Element {
   const binariesReady = useAppStore((s) => s.binariesReady)
   const updateState = useAppStore((s) => s.appUpdate?.state)
   const updateReady = updateState === 'available' || updateState === 'downloaded'
+  const discordReady = useAppStore((s) => s.discordStatus?.state === 'ready')
 
   return (
     <header className="drag-region flex h-10 items-center justify-between border-b border-white/5 bg-[#0e1016] px-4">
@@ -28,6 +29,13 @@ export function TitleBar(): React.JSX.Element {
               onClick={() => setView('history')}
               icon={<History size={13} />}
               label="History"
+            />
+            <NavTab
+              active={view === 'discord'}
+              onClick={() => setView('discord')}
+              icon={<Bot size={13} />}
+              label="Discord"
+              dot={discordReady}
             />
             <NavTab
               active={view === 'logs'}
@@ -77,13 +85,15 @@ function NavTab({
   onClick,
   icon,
   label,
-  badge
+  badge,
+  dot
 }: {
   active: boolean
   onClick: () => void
   icon: React.ReactNode
   label: string
   badge?: boolean
+  dot?: boolean
 }): React.JSX.Element {
   return (
     <button
@@ -98,6 +108,12 @@ function NavTab({
         <span
           aria-label="Update available"
           className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-[#0e1016]"
+        />
+      )}
+      {dot && (
+        <span
+          aria-label="Bot connected"
+          className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-[#0e1016]"
         />
       )}
     </button>

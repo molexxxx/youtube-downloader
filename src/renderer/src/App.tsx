@@ -11,6 +11,7 @@ import { DownloadQueue } from './components/download/DownloadQueue'
 import { HistoryScreen } from './components/history/HistoryScreen'
 import { LogsScreen } from './components/logs/LogsScreen'
 import { SettingsScreen } from './components/settings/SettingsScreen'
+import { DiscordScreen } from './components/discord/DiscordScreen'
 
 function App(): React.JSX.Element {
   const binariesReady = useAppStore((s) => s.binariesReady)
@@ -30,25 +31,37 @@ function App(): React.JSX.Element {
   const setLogs = useAppStore((s) => s.setLogs)
   const appendLog = useAppStore((s) => s.appendLog)
   const setAppUpdate = useAppStore((s) => s.setAppUpdate)
+  const setDiscordStatus = useAppStore((s) => s.setDiscordStatus)
+  const setDiscordGuilds = useAppStore((s) => s.setDiscordGuilds)
+  const seedDiscord = useAppStore((s) => s.seedDiscord)
+  const upsertPlayerState = useAppStore((s) => s.upsertPlayerState)
+  const setAudit = useAppStore((s) => s.setAudit)
 
   useEffect(() => {
     void (async () => {
       // Fire all reads in parallel so the nav (gated on binaries) unlocks as
       // soon as possible instead of waiting behind config/jobs/history/logs.
-      const [config, binaries, jobs, history, logs, appUpdate] = await Promise.all([
-        window.api.config.get(),
-        window.api.binaries.status(),
-        window.api.download.list(),
-        window.api.history.list(),
-        window.api.logs.list(),
-        window.api.appUpdate.status()
-      ])
+      const [config, binaries, jobs, history, logs, appUpdate, discordStatus, discordGuilds] =
+        await Promise.all([
+          window.api.config.get(),
+          window.api.binaries.status(),
+          window.api.download.list(),
+          window.api.history.list(),
+          window.api.logs.list(),
+          window.api.appUpdate.status(),
+          window.api.discord.status(),
+          window.api.discord.guilds()
+        ])
       setConfig(config)
       setBinaries(binaries)
       setJobs(jobs)
       setHistory(history)
       setLogs(logs)
       setAppUpdate(appUpdate)
+      // Seed only if no live Discord event arrived first - the bot can reach
+      // 'ready' before this batched read (gated on slow binary version probes)
+      // resolves, and a stale snapshot must not revert it.
+      seedDiscord(discordStatus, discordGuilds)
     })()
 
     const offProgress = window.api.binaries.onProgress((p) => {
@@ -61,6 +74,10 @@ function App(): React.JSX.Element {
     const offHistory = window.api.history.onChange(setHistory)
     const offLog = window.api.logs.onEntry(appendLog)
     const offUpdate = window.api.appUpdate.onStatus(setAppUpdate)
+    const offDiscordStatus = window.api.discord.onStatus(setDiscordStatus)
+    const offDiscordGuilds = window.api.discord.onGuilds(setDiscordGuilds)
+    const offPlayer = window.api.discord.onPlayer(upsertPlayerState)
+    const offAudit = window.api.discord.onAudit(setAudit)
 
     return () => {
       offProgress()
@@ -68,6 +85,10 @@ function App(): React.JSX.Element {
       offHistory()
       offLog()
       offUpdate()
+      offDiscordStatus()
+      offDiscordGuilds()
+      offPlayer()
+      offAudit()
     }
   }, [
     setConfig,
@@ -78,7 +99,12 @@ function App(): React.JSX.Element {
     setHistory,
     setLogs,
     appendLog,
-    setAppUpdate
+    setAppUpdate,
+    setDiscordStatus,
+    setDiscordGuilds,
+    seedDiscord,
+    upsertPlayerState,
+    setAudit
   ])
 
   useEffect(() => {
@@ -101,6 +127,10 @@ function App(): React.JSX.Element {
       ) : view === 'logs' ? (
         <main className="flex flex-1 flex-col overflow-hidden p-5">
           <LogsScreen />
+        </main>
+      ) : view === 'discord' ? (
+        <main className="flex flex-1 flex-col overflow-hidden p-5">
+          <DiscordScreen />
         </main>
       ) : (
         <main className="flex flex-1 gap-5 overflow-hidden p-5">
