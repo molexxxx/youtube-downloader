@@ -1,5 +1,5 @@
 import { execFile } from 'child_process'
-import { chmod, readdir, rename, rm, stat } from 'fs/promises'
+import { chmod, mkdir, readdir, rename, rm, stat } from 'fs/promises'
 import { createReadStream } from 'fs'
 import { join } from 'path'
 import { promisify } from 'util'
@@ -100,17 +100,37 @@ async function extractArchive(
   kind: ArchiveKind,
   dest: string
 ): Promise<void> {
-  if (kind === 'zip') {
-    await extractZip(archivePath, { dir: dest })
-    return
+  await mkdir(dest, { recursive: true })
+  logger.info(`Extracting ${kind} archive to ${dest}`)
+
+  try {
+    if (kind === 'zip') {
+      // On Windows, use PowerShell's Expand-Archive for better reliability
+      if (currentPlatform() === 'win32') {
+        const psCommand = `Expand-Archive -Path '${archivePath}' -DestinationPath '${dest}' -Force`
+        await execFileAsync('powershell.exe', ['-NoProfile', '-Command', psCommand], {
+          timeout: 120_000
+        })
+      } else {
+        // On macOS/Linux, fall back to extract-zip
+        await extractZip(archivePath, { dir: dest })
+      }
+      logger.info('Zip extraction complete')
+      return
+    }
+    // tar.xz - decompress xz is not built-in; BtbN linux uses .tar.xz which `tar`
+    // handles when the xz binary is present. Fall back to gzip-safe handling.
+    if (archivePath.endsWith('.xz')) {
+      await tar.x({ file: archivePath, cwd: dest })
+      logger.info('Tar.xz extraction complete')
+      return
+    }
+    await pipeline(createReadStream(archivePath), createGunzip(), tar.x({ cwd: dest }))
+    logger.info('Tar.gz extraction complete')
+  } catch (err) {
+    logger.error('Extraction failed:', err)
+    throw err
   }
-  // tar.xz - decompress xz is not built-in; BtbN linux uses .tar.xz which `tar`
-  // handles when the xz binary is present. Fall back to gzip-safe handling.
-  if (archivePath.endsWith('.xz')) {
-    await tar.x({ file: archivePath, cwd: dest })
-    return
-  }
-  await pipeline(createReadStream(archivePath), createGunzip(), tar.x({ cwd: dest }))
 }
 
 export async function ensureFfmpeg(
@@ -128,51 +148,54 @@ export async function ensureFfmpeg(
   const dir = await ensureBinDir()
   const downloads = SOURCES[currentPlatform()]
   const extractDir = join(dir, 'ffmpeg-extract')
-  await rm(extractDir, { recursive: true, force: true })
 
-  for (let i = 0; i < downloads.length; i++) {
-    const source = downloads[i]
-    const ext = source.archive === 'zip' ? 'zip' : archiveExt(source.url)
-    const archivePath = join(dir, `ffmpeg-download-${i}.${ext}`)
+  try {
+    await rm(extractDir, { recursive: true, force: true })
 
-    logger.info('Downloading ffmpeg component from', source.url)
-    await downloadFile(source.url, archivePath, (downloaded, total) => {
-      const percent = total ? Math.round((downloaded / total) * 100) : null
-      onProgress?.({ binary: 'ffmpeg', stage: 'downloading', percent })
-    })
+    for (let i = 0; i < downloads.length; i++) {
+      const source = downloads[i]
+      const ext = source.archive === 'zip' ? 'zip' : archiveExt(source.url)
+      const archivePath = join(dir, `ffmpeg-download-${i}.${ext}`)
 
-    onProgress?.({ binary: 'ffmpeg', stage: 'extracting', percent: null })
-    await extractArchive(archivePath, source.archive, extractDir)
-    await rm(archivePath, { force: true })
-  }
+      logger.info('Downloading ffmpeg component from', source.url)
+      await downloadFile(source.url, archivePath, (downloaded, total) => {
+        const percent = total ? Math.round((downloaded / total) * 100) : null
+        onProgress?.({ binary: 'ffmpeg', stage: 'downloading', percent })
+      })
 
-  for (const name of [exe('ffmpeg'), exe('ffprobe')]) {
-    const found = await findBinary(extractDir, name)
-    if (found) {
-      const out = join(dir, name)
-      await rm(out, { force: true })
-      await rename(found, out)
-      if (currentPlatform() !== 'win32') await chmod(out, 0o755)
+      onProgress?.({ binary: 'ffmpeg', stage: 'extracting', percent: null })
+      await extractArchive(archivePath, source.archive, extractDir)
+      await rm(archivePath, { force: true })
     }
+
+    for (const name of [exe('ffmpeg'), exe('ffprobe')]) {
+      const found = await findBinary(extractDir, name)
+      if (found) {
+        const out = join(dir, name)
+        await rm(out, { force: true })
+        await rename(found, out)
+        if (currentPlatform() !== 'win32') await chmod(out, 0o755)
+      }
+    }
+
+    onProgress?.({ binary: 'ffmpeg', stage: 'verifying', percent: null })
+    const version = await ffmpegVersion(target)
+    if (!version) {
+      onProgress?.({
+        binary: 'ffmpeg',
+        stage: 'error',
+        percent: null,
+        message: 'ffmpeg failed verification'
+      })
+      throw new Error('ffmpeg downloaded but failed to report a version')
+    }
+
+    onProgress?.({ binary: 'ffmpeg', stage: 'complete', percent: 100 })
+    logger.info('ffmpeg ready, version', version)
+    return { name: 'ffmpeg', installed: true, path: target, version }
+  } finally {
+    await rm(extractDir, { recursive: true, force: true })
   }
-
-  await rm(extractDir, { recursive: true, force: true })
-
-  onProgress?.({ binary: 'ffmpeg', stage: 'verifying', percent: null })
-  const version = await ffmpegVersion(target)
-  if (!version) {
-    onProgress?.({
-      binary: 'ffmpeg',
-      stage: 'error',
-      percent: null,
-      message: 'ffmpeg failed verification'
-    })
-    throw new Error('ffmpeg downloaded but failed to report a version')
-  }
-
-  onProgress?.({ binary: 'ffmpeg', stage: 'complete', percent: 100 })
-  logger.info('ffmpeg ready, version', version)
-  return { name: 'ffmpeg', installed: true, path: target, version }
 }
 
 function archiveExt(url: string): string {

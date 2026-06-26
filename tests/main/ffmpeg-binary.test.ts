@@ -7,6 +7,7 @@ const {
   downloadFileMock,
   ensureBinDirMock,
   chmodMock,
+  mkdirMock,
   renameMock,
   rmMock,
   statMock,
@@ -28,6 +29,7 @@ const {
   ),
   ensureBinDirMock: vi.fn(() => Promise.resolve('/userdata/bin')),
   chmodMock: vi.fn(() => Promise.resolve()),
+  mkdirMock: vi.fn(() => Promise.resolve()),
   renameMock: vi.fn(() => Promise.resolve()),
   rmMock: vi.fn(() => Promise.resolve()),
   statMock: vi.fn(),
@@ -44,6 +46,7 @@ vi.mock('@main/binaries/net', () => ({
 }))
 vi.mock('fs/promises', () => ({
   chmod: chmodMock,
+  mkdir: mkdirMock,
   readdir: (...args: unknown[]) => readdirMock(...args),
   rename: renameMock,
   rm: rmMock,
@@ -179,12 +182,12 @@ describe('ensureFfmpeg', () => {
     expect(stages).toEqual(['checking', 'downloading', 'extracting', 'verifying', 'complete'])
   })
 
-  it('uses extract-zip and skips chmod on Windows', async () => {
+  it('uses PowerShell Expand-Archive on Windows and skips chmod', async () => {
     state.exists = false
     state.platform = 'win32'
     readdirMock.mockResolvedValue([fileEntry('ffmpeg.exe'), fileEntry('ffprobe.exe')])
     await ensureFfmpeg()
-    expect(extractZipMock).toHaveBeenCalled()
+    expect(extractZipMock).not.toHaveBeenCalled()
     expect(tarXMock).not.toHaveBeenCalled()
     expect(chmodMock).not.toHaveBeenCalled()
   })
