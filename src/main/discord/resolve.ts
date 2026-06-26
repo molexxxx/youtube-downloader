@@ -25,7 +25,8 @@ export async function resolveQueryToTracks(query: string): Promise<TrackInput[]>
           title: e.title,
           url: e.url,
           duration: e.duration,
-          thumbnail: e.thumbnail
+          thumbnail: e.thumbnail,
+          uploader: e.uploader
         }))
     }
     return [
@@ -33,12 +34,24 @@ export async function resolveQueryToTracks(query: string): Promise<TrackInput[]>
         title: info.title,
         url: info.webpageUrl || q,
         duration: info.duration,
-        thumbnail: info.thumbnail
+        thumbnail: info.thumbnail,
+        uploader: info.uploader
       }
     ]
   }
-  const results = await search(q, 1)
+  return searchTracks(q, 1)
+}
+
+/** Top YouTube search hits as enqueue-ready tracks (used by interactive /search). */
+export async function searchTracks(query: string, limit = 5): Promise<TrackInput[]> {
+  const results = await search(query.trim(), limit)
   return results
     .filter((e) => e.url)
-    .map((e) => ({ title: e.title, url: e.url, duration: e.duration, thumbnail: e.thumbnail }))
+    .map((e) => ({
+      title: e.title,
+      url: e.url,
+      duration: e.duration,
+      thumbnail: e.thumbnail,
+      uploader: e.uploader
+    }))
 }

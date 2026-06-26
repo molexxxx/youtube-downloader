@@ -95,7 +95,8 @@ describe('appendEntries', () => {
     title: id,
     url: `https://${id}`,
     duration: null,
-    thumbnail: null
+    thumbnail: null,
+    uploader: null
   })
 
   it('is a no-op when there is no resolved info', () => {

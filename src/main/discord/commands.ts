@@ -1,8 +1,11 @@
 import {
+  ActionRowBuilder,
+  ComponentType,
   GuildMember,
   MessageFlags,
   PermissionFlagsBits,
   SlashCommandBuilder,
+  StringSelectMenuBuilder,
   type ChatInputCommandInteraction,
   type Client,
   type Interaction
@@ -11,8 +14,9 @@ import type { LoopMode, PlayerControl, TrackRequester } from '@shared/types'
 import { logger } from '../logger'
 import { addAudit } from './audit'
 import type { DiscordService } from './client'
+import { addedEmbed, fmtDuration, nowPlayingEmbed, queueEmbed, searchEmbed } from './embeds'
 import { canControl, type MemberContext } from './permissions'
-import { resolveQueryToTracks } from './resolve'
+import { resolveQueryToTracks, searchTracks } from './resolve'
 
 /** Commands anyone may run regardless of the allowed-role gate. */
 const READ_ONLY = new Set(['queue', 'nowplaying'])
@@ -149,8 +153,7 @@ export async function handleInteraction(
 
   try {
     switch (command) {
-      case 'play':
-      case 'search': {
+      case 'play': {
         await interaction.deferReply()
         const query = interaction.options.getString('query', true)
         const channelId = memberVoiceChannelId(interaction)
@@ -165,9 +168,57 @@ export async function handleInteraction(
           return
         }
         service.enqueue(guildId, inputs, requester)
-        await interaction.editReply(
-          inputs.length === 1 ? `Added **${inputs[0].title}**` : `Added **${inputs.length}** tracks`
-        )
+        await interaction.editReply({ embeds: [addedEmbed(inputs)] })
+        return
+      }
+      case 'search': {
+        // Interactive: show the top hits and let the caller pick from a menu.
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral })
+        const query = interaction.options.getString('query', true)
+        const results = await searchTracks(query, 5)
+        if (results.length === 0) {
+          await interaction.editReply('No results found.')
+          return
+        }
+        const menu = new StringSelectMenuBuilder()
+          .setCustomId('search_pick')
+          .setPlaceholder('Choose a track to queue')
+          .addOptions(
+            results.map((t, i) => ({
+              label: t.title.slice(0, 100),
+              description: (t.uploader ?? fmtDuration(t.duration)).slice(0, 100),
+              value: String(i)
+            }))
+          )
+        const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(menu)
+        const msg = await interaction.editReply({
+          embeds: [searchEmbed(query, results)],
+          components: [row]
+        })
+        try {
+          const pick = await msg.awaitMessageComponent({
+            componentType: ComponentType.StringSelect,
+            time: 60_000,
+            filter: (i) => i.user.id === interaction.user.id
+          })
+          const chosen = results[Number(pick.values[0])]
+          const channelId = memberVoiceChannelId(interaction)
+          if (!player.connected && !channelId) {
+            await pick.update({
+              content: 'Join a voice channel first.',
+              embeds: [],
+              components: []
+            })
+            return
+          }
+          if (channelId && !player.connected) await player.join(channelId, requester)
+          service.enqueue(guildId, [chosen], requester)
+          await pick.update({ embeds: [addedEmbed([chosen])], components: [] })
+        } catch {
+          await interaction
+            .editReply({ content: 'Search timed out.', embeds: [], components: [] })
+            .catch(() => {})
+        }
         return
       }
       case 'join': {
@@ -188,59 +239,55 @@ export async function handleInteraction(
       }
       case 'leave':
         player.leave(requester)
-        await interaction.reply({ content: 'Left the voice channel.', flags: MessageFlags.Ephemeral })
+        await interaction.reply({ content: '👋 Left the voice channel.', flags: MessageFlags.Ephemeral })
         return
       case 'skip':
       case 'pause':
       case 'resume':
       case 'stop':
-      case 'shuffle':
+      case 'shuffle': {
         player.control(command as PlayerControl, requester)
-        await interaction.reply({ content: `Done: ${command}.`, flags: MessageFlags.Ephemeral })
+        const verb = {
+          skip: '⏭️ Skipped.',
+          pause: '⏸️ Paused.',
+          resume: '▶️ Resumed.',
+          stop: '⏹️ Stopped and cleared the queue.',
+          shuffle: '🔀 Shuffled the queue.'
+        }[command]
+        await interaction.reply({ content: verb, flags: MessageFlags.Ephemeral })
         return
+      }
       case 'clear':
         player.clearQueue(requester)
-        await interaction.reply({ content: 'Cleared the queue.', flags: MessageFlags.Ephemeral })
+        await interaction.reply({ content: '🗑️ Cleared the queue.', flags: MessageFlags.Ephemeral })
         return
       case 'loop': {
         const mode = interaction.options.getString('mode', true) as LoopMode
         player.setLoop(mode, requester)
-        await interaction.reply({ content: `Loop set to ${mode}.`, flags: MessageFlags.Ephemeral })
+        await interaction.reply({ content: `🔁 Loop set to **${mode}**.`, flags: MessageFlags.Ephemeral })
         return
       }
       case 'volume': {
         const percent = interaction.options.getInteger('percent', true)
         player.setVolume(percent, requester)
-        await interaction.reply({ content: `Volume set to ${percent}%.`, flags: MessageFlags.Ephemeral })
+        await interaction.reply({ content: `🔊 Volume set to **${percent}%**.`, flags: MessageFlags.Ephemeral })
         return
       }
       case 'remove': {
         const position = interaction.options.getInteger('position', true)
         player.removeTrack(position - 1, requester)
         await interaction.reply({
-          content: `Removed track ${position}.`,
+          content: `✖️ Removed track ${position}.`,
           flags: MessageFlags.Ephemeral
         })
         return
       }
-      case 'queue': {
-        const state = player.getState()
-        const lines = state.queue.slice(0, 10).map((t, i) => `${i + 1}. ${t.title}`)
-        const parts = [
-          state.nowPlaying ? `**Now playing:** ${state.nowPlaying.title}` : 'Nothing is playing.',
-          lines.length ? `\n**Up next:**\n${lines.join('\n')}` : '',
-          state.queue.length > 10 ? `\n…and ${state.queue.length - 10} more` : ''
-        ]
-        await interaction.reply({ content: parts.join('') })
+      case 'queue':
+        await interaction.reply({ embeds: [queueEmbed(player.getState())] })
         return
-      }
-      case 'nowplaying': {
-        const np = player.getState().nowPlaying
-        await interaction.reply({
-          content: np ? `**Now playing:** ${np.title}` : 'Nothing is playing.'
-        })
+      case 'nowplaying':
+        await interaction.reply({ embeds: [nowPlayingEmbed(player.getState().nowPlaying)] })
         return
-      }
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)

@@ -122,6 +122,8 @@ export interface PlaylistEntry {
   url: string
   duration: number | null
   thumbnail: string | null
+  /** Channel / artist name, when the extractor provides it. */
+  uploader: string | null
 }
 
 export type DownloadKind = 'video' | 'audio'
@@ -278,6 +280,8 @@ export interface Track {
   url: string
   duration: number | null
   thumbnail: string | null
+  /** Channel / artist name, when known. */
+  uploader: string | null
   requestedBy: TrackRequester
   addedAt: number
 }
@@ -288,6 +292,8 @@ export interface TrackInput {
   url: string
   duration: number | null
   thumbnail: string | null
+  /** Channel / artist name, when known. */
+  uploader: string | null
 }
 
 export type LoopMode = 'off' | 'track' | 'queue'

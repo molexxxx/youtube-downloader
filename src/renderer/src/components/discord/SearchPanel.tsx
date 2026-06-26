@@ -43,7 +43,8 @@ export function SearchPanel(): React.JSX.Element | null {
               title: e.title,
               url: e.url,
               duration: e.duration,
-              thumbnail: e.thumbnail
+              thumbnail: e.thumbnail,
+              uploader: e.uploader
             }))
           await enqueue(inputs, `Added ${inputs.length} tracks from playlist`)
         } else {
@@ -53,7 +54,8 @@ export function SearchPanel(): React.JSX.Element | null {
                 title: info.title,
                 url: info.webpageUrl || q,
                 duration: info.duration,
-                thumbnail: info.thumbnail
+                thumbnail: info.thumbnail,
+                uploader: info.uploader
               }
             ],
             `Added “${info.title}”`
@@ -77,7 +79,8 @@ export function SearchPanel(): React.JSX.Element | null {
           title: entry.title,
           url: entry.url,
           duration: entry.duration,
-          thumbnail: entry.thumbnail
+          thumbnail: entry.thumbnail,
+          uploader: entry.uploader
         }
       ],
       `Added “${entry.title}”`
@@ -132,7 +135,8 @@ export function SearchPanel(): React.JSX.Element | null {
                       title: e.title,
                       url: e.url,
                       duration: e.duration,
-                      thumbnail: e.thumbnail
+                      thumbnail: e.thumbnail,
+                      uploader: e.uploader
                     })),
                   `Added ${results.length} tracks`
                 )

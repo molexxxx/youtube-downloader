@@ -52,20 +52,24 @@ mac:
   # step and staples it in the notarize-macos job, so the build never blocks
   # on Apple's queue (up to 24 h on new Developer accounts).
   notarize: false
+  # arm64-only: @discordjs/voice pulls in the native @snazzah/davey module
+  # (DAVE voice E2EE), whose per-arch .node binary cannot be lipo-merged into a
+  # universal app (electron-builder's makeUniversalApp fails). The CI runner is
+  # Apple Silicon, so we ship an arm64 build that bundles the correct binary.
   target:
     # .dmg is signed with the Developer ID Application cert (same one that
     # signs the .app) - unlike .pkg, which needs a separate Developer ID
     # Installer cert. This keeps signing/notarization/stapling to one cert.
     - target: dmg
       arch:
-        - universal
+        - arm64
     # Squirrel.Mac applies updates from a zipped .app, so electron-updater
     # requires a zip in latest-mac.yml. The .dmg is the user-facing installer
     # (-Installer); this zip is only consumed by the in-app auto-updater
     # (-Updater).
     - target: zip
       arch:
-        - universal
+        - arm64
   artifactName: YouTube-Downloader-${version}-macOS-Updater.${ext}
 
 dmg:

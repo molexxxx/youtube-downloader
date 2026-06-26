@@ -11,6 +11,7 @@ function track(id: string): Track {
     url: `https://x/${id}`,
     duration: null,
     thumbnail: null,
+    uploader: null,
     requestedBy: REQUESTER,
     addedAt: 0
   }

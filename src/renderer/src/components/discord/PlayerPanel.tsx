@@ -56,6 +56,9 @@ export function PlayerPanel(): React.JSX.Element | null {
           <p className="truncate text-sm font-medium text-white/90">
             {np?.title ?? 'Nothing playing'}
           </p>
+          {np?.uploader && (
+            <p className="truncate text-xs text-white/55">{np.uploader}</p>
+          )}
           <p className="mt-0.5 text-xs text-white/40">
             {np ? (
               <>

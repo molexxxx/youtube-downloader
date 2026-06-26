@@ -92,6 +92,7 @@ export class DiscordService extends EventEmitter {
       url: input.url,
       duration: input.duration,
       thumbnail: input.thumbnail,
+      uploader: input.uploader,
       requestedBy: requester,
       addedAt: now
     }))

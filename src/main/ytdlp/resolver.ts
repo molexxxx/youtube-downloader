@@ -104,7 +104,8 @@ function mapEntry(raw: RawInfo): PlaylistEntry {
     // carries a real URL.
     url: raw.webpage_url || raw.url || raw.original_url || '',
     duration: raw.duration ?? null,
-    thumbnail: pickThumbnail(raw)
+    thumbnail: pickThumbnail(raw),
+    uploader: raw.uploader ?? raw.channel ?? null
   }
 }
 
