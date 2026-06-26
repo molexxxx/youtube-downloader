@@ -52,7 +52,7 @@ export function VoiceChannelPicker(): React.JSX.Element | null {
       {guild.voiceChannels.length === 0 ? (
         <p className="py-2 text-center text-xs text-white/30">No voice channels.</p>
       ) : (
-        <ul className="flex flex-col gap-0.5">
+        <ul className="scroll-thin flex max-h-96 flex-col gap-0.5 overflow-y-auto">
           {guild.voiceChannels.map((channel) => {
             const connected = channel.id === connectedChannelId
             return (

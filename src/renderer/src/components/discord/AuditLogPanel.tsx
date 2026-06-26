@@ -41,7 +41,7 @@ export function AuditLogPanel(): React.JSX.Element | null {
   const guildEntries = entries.filter((e) => e.guildId === activeGuildId).slice(0, 50)
 
   return (
-    <section className="flex flex-col overflow-hidden rounded-xl border border-white/10 bg-white/[0.02]">
+    <section className="flex min-h-56 flex-col overflow-hidden rounded-xl border border-white/10 bg-white/[0.02]">
       <h3 className="flex shrink-0 items-center gap-2 border-b border-white/5 px-3.5 py-2 text-xs font-semibold uppercase tracking-wide text-white/40">
         <ScrollText size={14} />
         Activity
