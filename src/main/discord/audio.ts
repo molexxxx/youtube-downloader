@@ -54,6 +54,34 @@ interface Pipeline {
   destroy: () => void
 }
 
+const PCM_FRAME_SIZE_BYTES = 48_000 * 2 * 2 * 20 / 1000
+
+export function createSteadyPcmChunker(
+  onChunk: (chunk: Buffer) => void,
+  onEnd?: () => void
+): PassThrough {
+  const output = new PassThrough()
+  let pending = Buffer.alloc(0)
+
+  output.on('data', (chunk: Buffer) => {
+    pending = Buffer.concat([pending, chunk])
+    while (pending.length >= PCM_FRAME_SIZE_BYTES) {
+      const frame = pending.subarray(0, PCM_FRAME_SIZE_BYTES)
+      onChunk(Buffer.from(frame))
+      pending = pending.subarray(PCM_FRAME_SIZE_BYTES)
+    }
+  })
+
+  output.on('end', () => {
+    if (pending.length > 0) {
+      onChunk(Buffer.from(pending))
+    }
+    onEnd?.()
+  })
+
+  return output
+}
+
 /**
  * Build a playable audio resource for a track. The yt-dlp -> ffmpeg pipeline feeds
  * a single PassThrough that backs the resource, so a transparent cookie retry
@@ -65,6 +93,10 @@ export function createTrackResource(track: Track): ManagedAudioResource {
   let bytesSeen = 0
   let retried = false
   let active: Pipeline | null = null
+  const steadyOutput = createSteadyPcmChunker(
+    (chunk) => output.write(chunk),
+    () => output.end()
+  )
 
   const start = (withCookies: boolean): void => {
     let alive = true
@@ -93,10 +125,10 @@ export function createTrackResource(track: Track): ManagedAudioResource {
     ffmpeg.stdout.on('data', (chunk: Buffer) => {
       if (!alive) return
       bytesSeen += chunk.length
-      output.write(chunk)
+      steadyOutput.write(chunk)
     })
     ffmpeg.stdout.on('end', () => {
-      if (alive) output.end()
+      if (alive) steadyOutput.end()
     })
 
     ytdlp.on('close', (code) => {
@@ -126,6 +158,7 @@ export function createTrackResource(track: Track): ManagedAudioResource {
   }) as ManagedAudioResource
   resource.destroyStream = (): void => {
     active?.destroy()
+    steadyOutput.destroy()
     output.destroy()
   }
   return resource

@@ -59,7 +59,10 @@ export class GuildMusicPlayer extends EventEmitter {
     super()
     this.volume = getGuildSettings(guildId).defaultVolume
     this.player = createAudioPlayer({
-      behaviors: { noSubscriber: NoSubscriberBehavior.Pause }
+      behaviors: {
+        maxMissedFrames: 10,
+        noSubscriber: NoSubscriberBehavior.Pause
+      }
     })
 
     this.player.on('stateChange', (oldState, newState) => {
