@@ -21,7 +21,7 @@ vi.mock('os', () => ({
   setPriority: setPriorityMock
 }))
 
-import { applyWindowsPlaybackTuning, restoreWindowsPlaybackTuning } from '@main/discord/windows-tuning'
+import { applyWindowsPlaybackTuning, restoreWindowsPlaybackTuning } from '../../src/main/discord/windows-tuning'
 
 describe('windows playback tuning', () => {
   const originalPlatform = process.platform
