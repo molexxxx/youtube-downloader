@@ -24,6 +24,7 @@ import { addAudit } from './audit'
 import { createTrackResource, type ManagedAudioResource } from './audio'
 import { TrackQueue } from './queue'
 import { getGuildSettings, setGuildSettings } from './settings'
+import { applyWindowsPlaybackTuning, restoreWindowsPlaybackTuning } from './windows-tuning'
 
 /** Leave the channel this long after the queue runs dry (when auto-leave is on). */
 const AUTO_LEAVE_DELAY_MS = 60_000
@@ -262,6 +263,7 @@ export class GuildMusicPlayer extends EventEmitter {
     try {
       this.resource = createTrackResource(next)
       this.resource.volume?.setVolume(this.volume / 100)
+      applyWindowsPlaybackTuning()
       this.player.play(this.resource)
       this.audit(next.requestedBy, 'play', next.title)
     } catch (err) {
@@ -314,6 +316,7 @@ export class GuildMusicPlayer extends EventEmitter {
   private destroyResource(): void {
     this.resource?.destroyStream()
     this.resource = null
+    restoreWindowsPlaybackTuning()
   }
 
   private audit(actor: TrackRequester, action: AuditAction, detail: string): void {
