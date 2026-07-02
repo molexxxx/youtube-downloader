@@ -10,18 +10,25 @@ import {
   type DiscordGatewayAdapterCreator,
   type VoiceConnection
 } from '@discordjs/voice'
-import type {
-  AuditAction,
-  GuildPlayerState,
-  LoopMode,
-  PlayerControl,
-  PlayerStatus,
-  Track,
-  TrackRequester
+import {
+  DEFAULT_AUDIO_EFFECTS,
+  type AudioEffects,
+  type AuditAction,
+  type GuildPlayerState,
+  type LoopMode,
+  type PlayerControl,
+  type PlayerStatus,
+  type Track,
+  type TrackRequester
 } from '@shared/types'
 import { logger } from '../logger'
 import { addAudit } from './audit'
-import { createTrackResource, type ManagedAudioResource } from './audio'
+import {
+  createTrackResource,
+  effectsActive,
+  sanitizeEffects,
+  type ManagedAudioResource
+} from './audio'
 import { TrackQueue } from './queue'
 import { getGuildSettings, setGuildSettings } from './settings'
 import {
@@ -45,6 +52,13 @@ const STALE_CONNECTION_MS = 5 * 60_000
 /** Retry an errored track only when it died this early (a startup failure). */
 const RETRY_WINDOW_MS = 15_000
 
+/**
+ * A track that ends this much before its known duration didn't finish - the
+ * source starved (stalled read, dropped stream) - so resume it in place once.
+ * Generous because metadata durations (VBR files, live-ish sources) drift.
+ */
+const PREMATURE_END_GRACE_MS = 10_000
+
 /** How the service exposes the live discord.js guild to a player. */
 export interface GuildContext {
   adapterCreator: DiscordGatewayAdapterCreator
@@ -66,6 +80,7 @@ export class GuildMusicPlayer extends EventEmitter {
   private voiceChannelId: string | null = null
   private status: PlayerStatus = 'idle'
   private volume: number
+  private effects: AudioEffects = DEFAULT_AUDIO_EFFECTS
   private pendingSkip = false
   private trackErrored = false
   private retriedCurrentTrack = false
@@ -75,6 +90,7 @@ export class GuildMusicPlayer extends EventEmitter {
   private idleSince: number | null = null
   private bufferingSince: number | null = null
   private autoLeaveTimer: ReturnType<typeof setTimeout> | null = null
+  private effectsTimer: ReturnType<typeof setTimeout> | null = null
 
   constructor(
     private readonly guildId: string,
@@ -84,7 +100,10 @@ export class GuildMusicPlayer extends EventEmitter {
     this.volume = getGuildSettings(guildId).defaultVolume
     this.player = createAudioPlayer({
       behaviors: {
-        maxMissedFrames: 20,
+        // 100 frames = 2s of underrun grace. A stalled source (network hiccup,
+        // first-read antivirus scan on a local file) inserts silence instead of
+        // killing the track outright.
+        maxMissedFrames: 100,
         noSubscriber: NoSubscriberBehavior.Pause
       }
     })
@@ -219,6 +238,26 @@ export class GuildMusicPlayer extends EventEmitter {
     this.emitState()
   }
 
+  /**
+   * Apply playback effects (speed / pitch / EQ / character). The ffmpeg leg of
+   * the pipeline renders them, so the current track restarts at its current
+   * position with the new chain. Restarts are trailing-debounced: every change
+   * respawns the stream processes, and the last value must always win.
+   */
+  setEffects(effects: Partial<AudioEffects>, requester: TrackRequester): void {
+    this.effects = sanitizeEffects(effects)
+    this.audit(requester, 'effects', formatEffectsDetail(this.effects))
+    if (this.effectsTimer) clearTimeout(this.effectsTimer)
+    this.effectsTimer = setTimeout(() => {
+      this.effectsTimer = null
+      const current = this.queue.nowPlaying
+      if (!current) return
+      const positionSeconds = Math.max(0, Math.floor(this.getState().positionMs / 1000))
+      if (this.startTrack(current, positionSeconds)) this.emitState()
+    }, 350)
+    this.emitState()
+  }
+
   removeTrack(index: number, requester: TrackRequester): void {
     const removed = this.queue.removeAt(index)
     if (removed) {
@@ -275,13 +314,21 @@ export class GuildMusicPlayer extends EventEmitter {
       queue: snap.queue,
       loop: snap.loop,
       volume: this.volume,
-      positionMs: this.seekOffsetMs + (this.resource?.playbackDuration ?? 0)
+      // playbackDuration is wall-clock output time; at speed != 1 the media
+      // position advances faster/slower than the clock.
+      positionMs:
+        this.seekOffsetMs + (this.resource?.playbackDuration ?? 0) * this.effects.speed,
+      effects: this.effects
     }
   }
 
   /** Tear down processes and the voice connection (used on shutdown). */
   destroy(): void {
     this.clearAutoLeave()
+    if (this.effectsTimer) {
+      clearTimeout(this.effectsTimer)
+      this.effectsTimer = null
+    }
     this.destroyResource()
     this.player.stop(true)
     this.connection?.destroy()
@@ -325,6 +372,30 @@ export class GuildMusicPlayer extends EventEmitter {
         return
       }
     }
+    // A track that went Idle well before its known duration was starved, not
+    // finished (e.g. a stalled first read of a local file). Resume it once
+    // from where it stopped instead of silently dropping the rest.
+    const positionMs = this.seekOffsetMs + playedMs * this.effects.speed
+    const expectedMs = current?.duration != null ? current.duration * 1000 : null
+    if (
+      !skip &&
+      !errored &&
+      current &&
+      !this.retriedCurrentTrack &&
+      expectedMs != null &&
+      positionMs > 0 &&
+      expectedMs - positionMs > PREMATURE_END_GRACE_MS
+    ) {
+      this.retriedCurrentTrack = true
+      logger.warn(
+        `Track ended ${Math.round((expectedMs - positionMs) / 1000)}s early in guild ${this.guildId}, resuming:`,
+        current.title
+      )
+      if (this.startTrack(current, Math.floor(positionMs / 1000))) {
+        this.emitState()
+        return
+      }
+    }
     this.advanceAndPlay(skip)
   }
 
@@ -352,7 +423,15 @@ export class GuildMusicPlayer extends EventEmitter {
     this.destroyResource()
     this.refreshStaleConnection()
     try {
-      this.resource = createTrackResource(track, seekSeconds)
+      // Backfill an unknown duration from the ffmpeg banner (downloads and
+      // local imports are queued without one) so the seek bar comes alive and
+      // the premature-end guard has something to compare against.
+      this.resource = createTrackResource(track, seekSeconds, this.effects, (seconds) => {
+        if (track.duration == null && this.queue.nowPlaying === track) {
+          track.duration = seconds
+          this.emitState()
+        }
+      })
       this.resource.volume?.setVolume(this.volume / 100)
       this.player.play(this.resource)
       this.seekOffsetMs = seekSeconds * 1000
@@ -528,4 +607,16 @@ function formatSeekDetail(seconds: number): string {
   const m = Math.floor(seconds / 60)
   const s = seconds % 60
   return `to ${m}:${String(s).padStart(2, '0')}`
+}
+
+function formatEffectsDetail(effects: AudioEffects): string {
+  if (!effectsActive(effects)) return 'reset'
+  const parts: string[] = []
+  if (effects.speed !== 1) parts.push(`${effects.speed}× speed`)
+  if (effects.pitch !== 1) parts.push(`${effects.pitch}× pitch`)
+  if (effects.bassGain !== 0 || effects.midGain !== 0 || effects.trebleGain !== 0) {
+    parts.push(`EQ ${effects.bassGain}/${effects.midGain}/${effects.trebleGain}`)
+  }
+  if (effects.mode !== 'none') parts.push(effects.mode)
+  return parts.join(' · ')
 }

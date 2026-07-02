@@ -2,6 +2,7 @@ import { app, BrowserWindow, dialog } from 'electron'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { registerIPC } from './ipc'
 import { createMainWindow, getMainWindow, setQuitting } from './windows'
+import { registerLocalMediaProtocol, registerLocalMediaScheme } from './local-media'
 import { initUpdater } from './updater'
 import { initTray, destroyTray } from './tray'
 import { initDownloadObserver } from './download-observer'
@@ -82,6 +83,9 @@ if (!gotInstanceLock) {
 } else {
   app.on('second-instance', focusMainWindow)
 
+  // Privileged schemes must be declared before the app is ready.
+  registerLocalMediaScheme()
+
   app.whenReady().then(() => {
     electronApp.setAppUserModelId('com.molex.youtube-downloader')
 
@@ -91,6 +95,7 @@ if (!gotInstanceLock) {
 
     applyTheme()
     registerIPC()
+    registerLocalMediaProtocol()
     // Tray before window: start-minimized and close-to-tray both check that a
     // tray actually exists before they hide the window.
     initTray(getMainWindow)

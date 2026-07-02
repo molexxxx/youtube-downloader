@@ -1,9 +1,10 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import {
   IPC,
   type AppConfig,
   type AppUpdateStatus,
+  type AudioEffects,
   type AuditEntry,
   type BinariesStatus,
   type BootstrapProgress,
@@ -15,9 +16,11 @@ import {
   type GuildPlayerState,
   type GuildSettings,
   type HistoryEntry,
+  type LocalAudioFile,
   type LogEntry,
   type LoopMode,
   type MediaInfo,
+  type MiniWindowSize,
   type PlayerControl,
   type PlaylistEntry,
   type TrackInput
@@ -98,6 +101,22 @@ const api = {
     list: (): Promise<LogEntry[]> => ipcRenderer.invoke(IPC.logs.list),
     onEntry: (cb: (entry: LogEntry) => void) => on(IPC.logs.onEntry, cb)
   },
+  mini: {
+    open: (): Promise<void> => ipcRenderer.invoke(IPC.mini.open),
+    close: (): Promise<void> => ipcRenderer.invoke(IPC.mini.close),
+    setSize: (size: MiniWindowSize): Promise<void> =>
+      ipcRenderer.invoke(IPC.mini.setSize, size),
+    setPinned: (pinned: boolean): Promise<boolean> =>
+      ipcRenderer.invoke(IPC.mini.setPinned, pinned),
+    focusMain: (): Promise<void> => ipcRenderer.invoke(IPC.mini.focusMain)
+  },
+  localMedia: {
+    pick: (): Promise<LocalAudioFile[]> => ipcRenderer.invoke(IPC.localMedia.pick),
+    register: (paths: string[]): Promise<LocalAudioFile[]> =>
+      ipcRenderer.invoke(IPC.localMedia.register, paths),
+    /** Absolute disk path for a File dropped onto the window. */
+    pathForFile: (file: File): string => webUtils.getPathForFile(file)
+  },
   discord: {
     status: (): Promise<DiscordStatus> => ipcRenderer.invoke(IPC.discord.status),
     guilds: (): Promise<DiscordGuild[]> => ipcRenderer.invoke(IPC.discord.guilds),
@@ -120,6 +139,8 @@ const api = {
       ipcRenderer.invoke(IPC.discord.setLoop, guildId, mode),
     setVolume: (guildId: string, volume: number): Promise<void> =>
       ipcRenderer.invoke(IPC.discord.setVolume, guildId, volume),
+    setEffects: (guildId: string, effects: AudioEffects): Promise<void> =>
+      ipcRenderer.invoke(IPC.discord.setEffects, guildId, effects),
     seek: (guildId: string, seconds: number): Promise<void> =>
       ipcRenderer.invoke(IPC.discord.seek, guildId, seconds),
     removeTrack: (guildId: string, index: number): Promise<void> =>

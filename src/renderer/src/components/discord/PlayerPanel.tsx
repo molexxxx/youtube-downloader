@@ -16,6 +16,7 @@ import {
 import type { LoopMode, PlayerControl, PlayerStatus } from '@shared/types'
 import { useAppStore } from '../../stores/appStore'
 import { formatClock } from '../../lib/format'
+import { EffectsPopover } from './EffectsPopover'
 
 const NEXT_LOOP: Record<LoopMode, LoopMode> = {
   off: 'track',
@@ -50,6 +51,7 @@ export function PlayerPanel(): React.JSX.Element | null {
 
   // Tick the elapsed time locally between state events, anchored to the last
   // positionMs the main process reported (pause-aware, resets on seek/skip).
+  // At speed != 1 the media position advances faster/slower than the clock.
   useEffect(() => {
     if (!player) {
       setPosition(0)
@@ -57,10 +59,11 @@ export function PlayerPanel(): React.JSX.Element | null {
     }
     const anchorMs = player.positionMs
     const anchorAt = Date.now()
+    const speed = player.effects?.speed ?? 1
     setPosition(anchorMs / 1000)
     if (player.status !== 'playing') return
     const id = window.setInterval(() => {
-      setPosition((anchorMs + (Date.now() - anchorAt)) / 1000)
+      setPosition((anchorMs + (Date.now() - anchorAt) * speed) / 1000)
     }, 500)
     return () => window.clearInterval(id)
   }, [player])
@@ -188,6 +191,7 @@ export function PlayerPanel(): React.JSX.Element | null {
           >
             {loop === 'track' ? <Repeat1 size={15} /> : <Repeat size={15} />}
           </IconButton>
+          <EffectsPopover />
         </div>
         <div
           className="flex shrink-0 items-center gap-2"

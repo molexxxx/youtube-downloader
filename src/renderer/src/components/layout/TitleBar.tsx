@@ -1,4 +1,13 @@
-import { Bot, Download, Minus, ScrollText, Settings, Square, X } from 'lucide-react'
+import {
+  Bot,
+  Download,
+  Minus,
+  PictureInPicture2,
+  ScrollText,
+  Settings,
+  Square,
+  X
+} from 'lucide-react'
 import { useAppStore } from '../../stores/appStore'
 
 export function TitleBar(): React.JSX.Element {
@@ -40,6 +49,14 @@ export function TitleBar(): React.JSX.Element {
       <div className="no-drag flex items-center gap-1">
         {binariesReady && (
           <>
+            <button
+              onClick={() => void window.api.mini.open()}
+              title="Pin quick actions (compact always-on-top window)"
+              aria-label="Open quick actions window"
+              className="rounded p-1.5 text-white/60 hover:bg-white/10 hover:text-white"
+            >
+              <PictureInPicture2 size={14} />
+            </button>
             <IconTab
               active={view === 'logs'}
               onClick={() => setView('logs')}

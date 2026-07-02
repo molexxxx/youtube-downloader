@@ -7,6 +7,12 @@ function trunc(text: string, max: number): string {
   return text.length > max ? `${text.slice(0, max - 1)}…` : text
 }
 
+/** Markdown link to the track, or the bare title for local files without a URL. */
+function link(track: { title: string; url: string }, max: number): string {
+  const title = trunc(track.title, max)
+  return track.url ? `[${title}](${track.url})` : title
+}
+
 /** Format seconds as m:ss / h:mm:ss; flat playlist items often lack a duration. */
 export function fmtDuration(seconds: number | null): string {
   if (!seconds || seconds <= 0) return '—'
@@ -22,7 +28,7 @@ export function nowPlayingEmbed(track: Track | null): EmbedBuilder {
   if (!track) return embed.setDescription('Nothing is playing.')
   return embed
     .setTitle(trunc(track.title, 250))
-    .setURL(track.url)
+    .setURL(track.url || null)
     .setThumbnail(track.thumbnail)
     .addFields(
       { name: 'Artist', value: track.uploader ?? 'Unknown', inline: true },
@@ -34,14 +40,9 @@ export function nowPlayingEmbed(track: Track | null): EmbedBuilder {
 export function queueEmbed(state: GuildPlayerState): EmbedBuilder {
   const upNext = state.queue
     .slice(0, 10)
-    .map(
-      (t, i) =>
-        `\`${i + 1}.\` [${trunc(t.title, 60)}](${t.url}) \`${fmtDuration(t.duration)}\``
-    )
+    .map((t, i) => `\`${i + 1}.\` ${link(t, 60)} \`${fmtDuration(t.duration)}\``)
   const parts = [
-    state.nowPlaying
-      ? `**Now Playing**\n[${trunc(state.nowPlaying.title, 60)}](${state.nowPlaying.url})\n`
-      : '',
+    state.nowPlaying ? `**Now Playing**\n${link(state.nowPlaying, 60)}\n` : '',
     upNext.length ? `**Up Next**\n${upNext.join('\n')}` : '_The queue is empty._',
     state.queue.length > 10 ? `\n…and ${state.queue.length - 10} more` : ''
   ]
@@ -61,7 +62,7 @@ export function addedEmbed(tracks: TrackInput[]): EmbedBuilder {
       .setColor(COLOR)
       .setAuthor({ name: 'Added to Queue' })
       .setTitle(trunc(t.title, 250))
-      .setURL(t.url)
+      .setURL(t.url || null)
       .setThumbnail(t.thumbnail)
       .addFields(
         { name: 'Artist', value: t.uploader ?? 'Unknown', inline: true },
@@ -70,7 +71,7 @@ export function addedEmbed(tracks: TrackInput[]): EmbedBuilder {
   }
   const list = tracks
     .slice(0, 8)
-    .map((t, i) => `\`${i + 1}.\` [${trunc(t.title, 55)}](${t.url})`)
+    .map((t, i) => `\`${i + 1}.\` ${link(t, 55)}`)
     .join('\n')
   return new EmbedBuilder()
     .setColor(COLOR)
@@ -81,7 +82,7 @@ export function addedEmbed(tracks: TrackInput[]): EmbedBuilder {
 export function searchEmbed(query: string, results: TrackInput[]): EmbedBuilder {
   const lines = results.map(
     (t, i) =>
-      `\`${i + 1}.\` [${trunc(t.title, 60)}](${t.url}) \`${fmtDuration(t.duration)}\`` +
+      `\`${i + 1}.\` ${link(t, 60)} \`${fmtDuration(t.duration)}\`` +
       (t.uploader ? ` · ${trunc(t.uploader, 30)}` : '')
   )
   return new EmbedBuilder()

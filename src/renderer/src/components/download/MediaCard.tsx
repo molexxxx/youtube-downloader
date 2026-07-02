@@ -3,6 +3,7 @@ import {
   Music,
   Video,
   Download,
+  Play,
   SlidersHorizontal,
   Volume2,
   ListVideo,
@@ -20,8 +21,16 @@ import type {
   VideoFormat
 } from '@shared/types'
 import { PRESETS, getPreset } from '@shared/presets'
-import { formatBytes, formatDuration } from '../../lib/format'
+import { formatBytes, formatDuration, youtubeEmbedUrl } from '../../lib/format'
 import { Select, type SelectOption } from '../shared/Select'
+
+/** Open the in-app preview modal for a video, when an embed can be derived. */
+function openPreview(url: string, title: string, id?: string | null): void {
+  const embedUrl = youtubeEmbedUrl(url, id)
+  if (embedUrl) {
+    useAppStore.getState().setPreview({ embedUrl, watchUrl: url, title })
+  }
+}
 
 const AUDIO_FORMATS: AudioFormat[] = ['mp3', 'm4a', 'opus', 'flac', 'wav']
 const VIDEO_CONTAINERS: VideoContainer[] = ['mp4', 'mkv']
@@ -224,9 +233,22 @@ export function MediaCard(): React.JSX.Element | null {
     >
       <div className="flex gap-4">
         {info.thumbnail && (
-          <div className="relative shrink-0 overflow-hidden rounded-xl ring-1 ring-white/10">
+          <button
+            onClick={() =>
+              !info.isPlaylist && openPreview(info.webpageUrl, info.title, info.id)
+            }
+            disabled={info.isPlaylist || !youtubeEmbedUrl(info.webpageUrl, info.id)}
+            title={info.isPlaylist ? undefined : 'Preview this video'}
+            aria-label={info.isPlaylist ? undefined : 'Preview this video'}
+            className="group/thumb relative shrink-0 cursor-pointer overflow-hidden rounded-xl ring-1 ring-white/10 disabled:cursor-default"
+          >
             <img src={info.thumbnail} alt="" className="h-24 w-40 object-cover" />
             <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-black/60 to-transparent" />
+            {!info.isPlaylist && (
+              <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover/thumb:opacity-100">
+                <Play size={22} className="text-white" fill="currentColor" />
+              </span>
+            )}
             <span className="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded-md bg-black/70 px-1.5 py-0.5 text-[10px] font-medium text-white/90 backdrop-blur-sm">
               {info.isPlaylist ? (
                 <>
@@ -241,7 +263,7 @@ export function MediaCard(): React.JSX.Element | null {
                 </>
               )}
             </span>
-          </div>
+          </button>
         )}
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
@@ -567,11 +589,23 @@ function PlaylistPicker({
                   {index}
                 </span>
                 {entry.thumbnail && (
-                  <img
-                    src={entry.thumbnail}
-                    alt=""
-                    className="h-8 w-14 shrink-0 rounded object-cover"
-                  />
+                  <button
+                    onClick={(e) => {
+                      // Inside the checkbox label: keep the click from toggling
+                      // the item's selection when the intent is to preview.
+                      e.preventDefault()
+                      e.stopPropagation()
+                      openPreview(entry.url, entry.title, entry.id)
+                    }}
+                    title="Preview this video"
+                    aria-label={`Preview ${entry.title}`}
+                    className="group/thumb relative shrink-0 overflow-hidden rounded"
+                  >
+                    <img src={entry.thumbnail} alt="" className="h-8 w-14 object-cover" />
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover/thumb:opacity-100">
+                      <Play size={13} className="text-white" fill="currentColor" />
+                    </span>
+                  </button>
                 )}
                 <span className="min-w-0 flex-1 truncate text-sm text-white/80">
                   {entry.title}

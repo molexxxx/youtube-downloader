@@ -10,12 +10,20 @@ import type {
   DownloadJob,
   GuildPlayerState,
   HistoryEntry,
+  LocalAudioFile,
   LogEntry,
   MediaInfo,
   PlaylistEntry
 } from '@shared/types'
 
 export type AppView = 'downloads' | 'history' | 'logs' | 'settings' | 'discord'
+
+/** A YouTube video being previewed in the in-app player modal. */
+export interface VideoPreview {
+  embedUrl: string
+  watchUrl: string
+  title: string
+}
 
 const MAX_LOGS = 1000
 
@@ -35,6 +43,10 @@ interface AppState {
   error: string | null
   /** Set when a resolve/search fails on auth-gated content while cookies are off. */
   cookieHint: boolean
+  /** Video currently open in the in-app preview modal, if any. */
+  preview: VideoPreview | null
+  /** Local audio files imported for previewing / queueing on the bot. */
+  localFiles: LocalAudioFile[]
 
   // Discord bot section.
   discordStatus: DiscordStatus | null
@@ -67,6 +79,9 @@ interface AppState {
   setAppUpdate: (status: AppUpdateStatus) => void
   setError: (error: string | null) => void
   setCookieHint: (hint: boolean) => void
+  setPreview: (preview: VideoPreview | null) => void
+  addLocalFiles: (files: LocalAudioFile[]) => void
+  removeLocalFile: (path: string) => void
 
   setDiscordStatus: (status: DiscordStatus) => void
   setDiscordGuilds: (guilds: DiscordGuild[]) => void
@@ -105,6 +120,8 @@ export const useAppStore = create<AppState>((set) => ({
   appUpdate: null,
   error: null,
   cookieHint: false,
+  preview: null,
+  localFiles: [],
 
   discordStatus: null,
   discordGuilds: [],
@@ -156,6 +173,16 @@ export const useAppStore = create<AppState>((set) => ({
   setAppUpdate: (appUpdate) => set({ appUpdate }),
   setError: (error) => set({ error }),
   setCookieHint: (cookieHint) => set({ cookieHint }),
+  setPreview: (preview) => set({ preview }),
+  addLocalFiles: (files) =>
+    set((state) => {
+      // De-dupe by path so re-importing a file never creates a second row.
+      const seen = new Set(state.localFiles.map((f) => f.path))
+      const added = files.filter((f) => !seen.has(f.path))
+      return added.length ? { localFiles: [...state.localFiles, ...added] } : state
+    }),
+  removeLocalFile: (path) =>
+    set((state) => ({ localFiles: state.localFiles.filter((f) => f.path !== path) })),
 
   setDiscordStatus: (discordStatus) => set({ discordStatus, discordSeeded: true }),
   setDiscordGuilds: (discordGuilds) =>

@@ -19,6 +19,7 @@ const ACTION_LABEL: Record<AuditAction, string> = {
   remove: 'removed',
   move: 'reordered',
   seek: 'jumped',
+  effects: 'set effects:',
   'permission-denied': 'was denied',
   error: 'hit an error'
 }

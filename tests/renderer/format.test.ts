@@ -4,7 +4,8 @@ import {
   formatDuration,
   looksLikeAuthError,
   looksLikeUrl,
-  playlistChoiceId
+  playlistChoiceId,
+  youtubeEmbedUrl
 } from '@renderer/lib/format'
 
 describe('formatBytes', () => {
@@ -91,5 +92,40 @@ describe('playlistChoiceId', () => {
   })
   it('returns null for non-URLs', () => {
     expect(playlistChoiceId('not a url')).toBeNull()
+  })
+})
+
+describe('youtubeEmbedUrl', () => {
+  it('prefers a valid-looking entry id', () => {
+    expect(youtubeEmbedUrl('https://example.com/whatever', 'dQw4w9WgXcQ')).toBe(
+      'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?autoplay=1&rel=0'
+    )
+  })
+  it('parses watch URLs', () => {
+    expect(youtubeEmbedUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ')).toBe(
+      'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?autoplay=1&rel=0'
+    )
+    expect(youtubeEmbedUrl('youtube.com/watch?v=dQw4w9WgXcQ&list=PL1')).toBe(
+      'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?autoplay=1&rel=0'
+    )
+  })
+  it('parses youtu.be and shorts URLs', () => {
+    expect(youtubeEmbedUrl('https://youtu.be/dQw4w9WgXcQ')).toBe(
+      'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?autoplay=1&rel=0'
+    )
+    expect(youtubeEmbedUrl('https://www.youtube.com/shorts/dQw4w9WgXcQ')).toBe(
+      'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?autoplay=1&rel=0'
+    )
+  })
+  it('rejects non-YouTube hosts and playlist-only URLs', () => {
+    expect(youtubeEmbedUrl('https://vimeo.com/watch?v=dQw4w9WgXcQ')).toBeNull()
+    expect(youtubeEmbedUrl('https://www.youtube.com/playlist?list=PL456')).toBeNull()
+    expect(youtubeEmbedUrl('not a url')).toBeNull()
+    expect(youtubeEmbedUrl('https://notyoutube.combo/watch?v=dQw4w9WgXcQ')).toBeNull()
+  })
+  it('ignores ids that do not look like video ids', () => {
+    expect(youtubeEmbedUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'PL456')).toBe(
+      'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?autoplay=1&rel=0'
+    )
   })
 })

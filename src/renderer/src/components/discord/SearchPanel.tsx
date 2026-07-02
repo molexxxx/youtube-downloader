@@ -3,6 +3,7 @@ import { ListPlus, Loader2, Play, Plus, Search, X } from 'lucide-react'
 import type { PlaylistEntry, TrackInput } from '@shared/types'
 import { useAppStore } from '../../stores/appStore'
 import { formatDuration, looksLikeUrl } from '../../lib/format'
+import { LocalFilesPanel } from './LocalFilesPanel'
 
 /**
  * Search YouTube or paste a link/playlist, then add tracks to the active queue.
@@ -36,6 +37,13 @@ export function SearchPanel(): React.JSX.Element | null {
   }, [open])
 
   if (!guildId) return null
+
+  const trimmed = query.trim()
+  const isUrl = looksLikeUrl(trimmed)
+  // Mirrors the downloader's UrlBar: the button names the action it's about to
+  // take (Search this text / Resolve this link), not the eventual outcome -
+  // queueing is then explicit via Add / Add all on the results, same as there.
+  const action = trimmed && !isUrl ? 'Search' : 'Resolve'
 
   function flash(message: string): void {
     setNotice(message)
@@ -146,12 +154,17 @@ export function SearchPanel(): React.JSX.Element | null {
         </div>
         <button
           onClick={() => void submit()}
-          disabled={busy || !query.trim()}
+          disabled={busy || !trimmed}
           className="btn btn-indigo px-4 text-sm"
         >
-          {busy ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-          Queue
+          {busy ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : action === 'Search' ? (
+            <Search size={16} />
+          ) : null}
+          {action}
         </button>
+        <LocalFilesPanel />
       </div>
 
       {(notice || error) && !open && (

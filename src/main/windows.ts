@@ -1,17 +1,29 @@
-import { BrowserWindow, Menu, shell, type MenuItemConstructorOptions } from 'electron'
+import {
+  BrowserWindow,
+  Menu,
+  screen,
+  shell,
+  type MenuItemConstructorOptions
+} from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
+import type { MiniWindowSize } from '@shared/types'
 import { getConfig } from './config'
 import { launchedHidden } from './startup'
 import { hasTray } from './tray'
 import {
+  DEFAULT_MINI_WINDOW_SIZE,
   DEFAULT_WINDOW_SIZE,
+  MIN_MINI_WINDOW_SIZE,
   MIN_WINDOW_SIZE,
+  loadMiniWindowBounds,
   loadWindowState,
+  trackMiniWindowState,
   trackWindowState
 } from './window-state'
 
 let mainWindow: BrowserWindow | null = null
+let miniWindow: BrowserWindow | null = null
 let quitting = false
 
 export function getMainWindow(): BrowserWindow | null {
@@ -112,6 +124,87 @@ export function createMainWindow(): BrowserWindow {
     window.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
     window.loadFile(join(__dirname, '../renderer/index.html'))
+  }
+
+  return window
+}
+
+export function getMiniWindow(): BrowserWindow | null {
+  return miniWindow
+}
+
+/** Window dimensions for each quick-actions size preset. */
+export const MINI_WINDOW_SIZES: Record<
+  MiniWindowSize,
+  { width: number; height: number }
+> = {
+  compact: { width: 340, height: 440 },
+  standard: DEFAULT_MINI_WINDOW_SIZE,
+  tall: { width: 420, height: 680 }
+}
+
+/**
+ * Open (or focus) the pinned quick-actions window: a small frameless
+ * always-on-top companion with quick download and Discord bot controls.
+ */
+export function openMiniWindow(): BrowserWindow {
+  if (miniWindow && !miniWindow.isDestroyed()) {
+    miniWindow.show()
+    miniWindow.focus()
+    return miniWindow
+  }
+
+  const saved = loadMiniWindowBounds()
+  // Default to the top-right corner of the display the main window is on.
+  const display = screen.getDisplayMatching(
+    mainWindow?.getBounds() ?? { x: 0, y: 0, width: 1, height: 1 }
+  )
+  const area = display.workArea
+  const window = new BrowserWindow({
+    width: saved?.width ?? DEFAULT_MINI_WINDOW_SIZE.width,
+    height: saved?.height ?? DEFAULT_MINI_WINDOW_SIZE.height,
+    x: saved?.x ?? area.x + area.width - DEFAULT_MINI_WINDOW_SIZE.width - 24,
+    y: saved?.y ?? area.y + 24,
+    minWidth: MIN_MINI_WINDOW_SIZE.width,
+    minHeight: MIN_MINI_WINDOW_SIZE.height,
+    show: false,
+    frame: false,
+    alwaysOnTop: true,
+    maximizable: false,
+    fullscreenable: false,
+    skipTaskbar: true,
+    autoHideMenuBar: true,
+    icon: join(__dirname, '../../resources/icon.png'),
+    titleBarStyle: 'hidden',
+    backgroundColor: '#0b0d12',
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: false,
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  })
+
+  // 'floating' keeps it above normal windows without fighting fullscreen apps.
+  window.setAlwaysOnTop(true, 'floating')
+  trackMiniWindowState(window)
+
+  miniWindow = window
+  window.on('closed', () => {
+    miniWindow = null
+  })
+
+  window.on('ready-to-show', () => window.show())
+
+  window.webContents.setWindowOpenHandler((details) => {
+    shell.openExternal(details.url)
+    return { action: 'deny' }
+  })
+
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    window.loadURL(`${process.env['ELECTRON_RENDERER_URL']}#mini`)
+  } else {
+    window.loadFile(join(__dirname, '../renderer/index.html'), { hash: 'mini' })
   }
 
   return window

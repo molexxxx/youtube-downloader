@@ -8,7 +8,7 @@
 
 <br/>
 
-**Fast, modern desktop downloader for YouTube - powered by yt-dlp & FFmpeg**
+**Fast, modern YouTube downloader & self-hosted Discord music bot - powered by yt-dlp & FFmpeg**
 
 <a href="https://github.com/molexxxx/youtube-downloader/actions/workflows/ci.yml"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-ci-ytdl.svg" alt="CI" /></a>
 <a href="https://github.com/molexxxx/youtube-downloader/actions/workflows/build.yml"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-build-ytdl.svg" alt="build" /></a>
@@ -106,6 +106,7 @@
 - **6 Quick Presets** - Best MP4, 1080p MP4, 720p MP4, Best MKV, Audio MP3, and Audio FLAC - one click applies format, container, and resolution cap
 - **Playlist Picker** - Per-item checkboxes with toggle-all; only the selected subset is downloaded
 - **Search** - Type keywords to search YouTube via `ytsearch` and resolve any result with a click (thumbnail, title, duration)
+- **In-App Video Preview** - Click any thumbnail (resolved video, playlist item, or search result) to watch it in a built-in player modal before committing to a download
 
 ### Post-Processing
 
@@ -129,7 +130,9 @@
 - **Self-Hosted Bot** - Connect your own bot token (stored locally and encrypted via the OS keychain) and the app becomes a personal Discord music bot; a one-click OAuth invite link adds it to your servers. Free, no subscriptions - the in-app guide walks through the current Developer Portal flow (New Application → Bot tab → Reset Token)
 - **Voice Playback** - Stream YouTube audio - single videos or whole playlists - into voice channels through the same yt-dlp + FFmpeg pipeline, including the automatic cookie fallback for age-gated content. Native Opus encoding, generous stream buffering, and automatic voice reconnection keep playback smooth even when the host machine is under load
 - **Play Your Downloads** - Send any completed download to a server's queue right from the Downloads or History list; local files play straight from disk with no re-streaming
+- **Import Local Audio** - Drag audio files onto the dashboard (or browse for them), preview them with a built-in mini player, and queue them on the bot - MP3, M4A, FLAC, WAV, Opus, OGG, and more
 - **In-App Control** - Search or paste links, manage the queue, and drive playback: play / pause / skip / stop, a live seek bar with elapsed time, shuffle, loop (off / track / queue), play-next / reorder, and a per-server volume that's remembered
+- **Audio Effects & EQ** - A per-server effects popup with playback speed and pitch (independent, Lavalink-style timescale), a bass / mid / treble equalizer with clip-protection limiting, fun filters (8D rotation, karaoke vocal cut, tremolo, vibrato, echo), and one-tap presets like Nightcore, Slowed, and Bass Boost - applied live through the FFmpeg pipeline
 - **Slash Commands** - `/play`, `/search`, `/queue`, `/skip`, `/volume`, `/loop`, and more, registered per-server for instant use; slash commands and the desktop UI drive the **same** player and stay in sync live
 - **Multiple Servers** - Manage several servers at once with a Discord-style server rail and an independent queue per server
 - **Role Gating** - Optionally restrict slash-command playback to a chosen role (the host app always stays in control)
@@ -143,6 +146,7 @@
 - **Launch on Startup** - Optionally start the app at login on Windows, macOS, or Linux to keep the bot online, with a "start minimized to tray" option
 - **Single Instance** - Only one copy runs per machine; launching it again focuses the existing window
 - **System Tray** - Live download count and average progress in the tooltip; optional close-to-tray
+- **Quick Actions Window** - Pin a compact always-on-top companion window (three sizes) with instant downloads, Discord search and queueing, playback transport, and one-tap server/channel switching - no window juggling
 - **Frameless UI** - Custom titlebar, native right-click context menu, and a polished animated empty state
 - **Themes** - System, Dark, or Light
 - **Desktop Notifications** - Click-to-focus alerts when a download finishes

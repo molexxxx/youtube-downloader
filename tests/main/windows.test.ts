@@ -79,7 +79,12 @@ const {
 vi.mock('electron', () => ({
   BrowserWindow: BrowserWindowMock,
   Menu: MenuMock,
-  shell: shellMock
+  shell: shellMock,
+  screen: {
+    getDisplayMatching: vi.fn(() => ({
+      workArea: { x: 0, y: 0, width: 1920, height: 1080 }
+    }))
+  }
 }))
 vi.mock('@electron-toolkit/utils', () => ({ is: isObj }))
 vi.mock('@main/config', () => ({ getConfig: getConfigMock }))
@@ -87,8 +92,12 @@ vi.mock('@main/tray', () => ({ hasTray: hasTrayMock }))
 vi.mock('@main/window-state', () => ({
   DEFAULT_WINDOW_SIZE: { width: 1600, height: 900 },
   MIN_WINDOW_SIZE: { width: 1280, height: 720 },
+  DEFAULT_MINI_WINDOW_SIZE: { width: 380, height: 560 },
+  MIN_MINI_WINDOW_SIZE: { width: 320, height: 420 },
   loadWindowState: vi.fn(() => ({ bounds: null, maximized: false })),
-  trackWindowState: vi.fn()
+  trackWindowState: vi.fn(),
+  loadMiniWindowBounds: vi.fn(() => null),
+  trackMiniWindowState: vi.fn()
 }))
 
 import { createMainWindow, getMainWindow, setQuitting } from '@main/windows'

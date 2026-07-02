@@ -1,7 +1,7 @@
 {
   "name": "youtube-downloader",
-  "version": "1.3.0",
-  "description": "Modern, lightweight YouTube extractor powered by yt-dlp and ffmpeg",
+  "version": "1.4.0",
+  "description": "Modern, lightweight YouTube extractor and self-hosted Discord music bot, powered by yt-dlp and ffmpeg",
   "main": "./out/main/index.js",
   "author": "molex",
   "license": "MIT",

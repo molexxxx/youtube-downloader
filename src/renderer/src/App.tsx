@@ -4,6 +4,7 @@ import { useAppStore } from './stores/appStore'
 import { applyTheme } from './lib/theme'
 import { TitleBar } from './components/layout/TitleBar'
 import { UpdateToast } from './components/layout/UpdateToast'
+import { VideoPreviewModal } from './components/shared/VideoPreviewModal'
 import { SetupGate } from './components/setup/SetupGate'
 import { UrlBar } from './components/download/UrlBar'
 import { MediaCard } from './components/download/MediaCard'
@@ -124,6 +125,7 @@ function App(): React.JSX.Element {
     <div className="flex h-screen flex-col bg-[#0b0d12] text-white">
       <TitleBar />
       <UpdateToast />
+      <VideoPreviewModal />
       {!binariesReady && binaries !== null ? (
         <SetupGate />
       ) : view === 'settings' ? (

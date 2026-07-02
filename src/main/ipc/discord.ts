@@ -1,6 +1,7 @@
 import { BrowserWindow, ipcMain } from 'electron'
 import {
   IPC,
+  type AudioEffects,
   type AuditEntry,
   type DiscordGuild,
   type DiscordStatus,
@@ -96,6 +97,13 @@ export function registerDiscordIPC(): void {
   ipcMain.handle(IPC.discord.setVolume, (_e, guildId: string, volume: number) => {
     service.playerFor(guildId)?.setVolume(volume, UI_REQUESTER)
   })
+
+  ipcMain.handle(
+    IPC.discord.setEffects,
+    (_e, guildId: string, effects: Partial<AudioEffects>) => {
+      service.playerFor(guildId)?.setEffects(effects, UI_REQUESTER)
+    }
+  )
 
   ipcMain.handle(IPC.discord.seek, (_e, guildId: string, seconds: number) => {
     service.playerFor(guildId)?.seek(seconds, UI_REQUESTER)

@@ -5,7 +5,8 @@ import {
   looksLikeUrl,
   formatDuration,
   looksLikeAuthError,
-  playlistChoiceId
+  playlistChoiceId,
+  youtubeEmbedUrl
 } from '../../lib/format'
 
 export function UrlBar(): React.JSX.Element {
@@ -101,6 +102,15 @@ export function UrlBar(): React.JSX.Element {
   const trimmed = url.trim()
   const isUrl = looksLikeUrl(trimmed)
   const action = trimmed && !isUrl ? 'Search' : 'Resolve'
+
+  function previewResult(entry: (typeof results)[number]): void {
+    const embedUrl = youtubeEmbedUrl(entry.url, entry.id)
+    if (embedUrl) {
+      useAppStore
+        .getState()
+        .setPreview({ embedUrl, watchUrl: entry.url, title: entry.title })
+    }
+  }
 
   return (
     <div
@@ -209,7 +219,24 @@ export function UrlBar(): React.JSX.Element {
                   onClick={() => void resolveUrl(entry.url)}
                   className="group flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-white/[0.04]"
                 >
-                  <div className="relative shrink-0 overflow-hidden rounded-md">
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      // The row resolves the video; the thumbnail previews it.
+                      e.stopPropagation()
+                      previewResult(entry)
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.stopPropagation()
+                        previewResult(entry)
+                      }
+                    }}
+                    title="Preview this video"
+                    aria-label={`Preview ${entry.title}`}
+                    className="relative shrink-0 overflow-hidden rounded-md"
+                  >
                     {entry.thumbnail ? (
                       <img
                         src={entry.thumbnail}
@@ -217,14 +244,14 @@ export function UrlBar(): React.JSX.Element {
                         className="h-11 w-[72px] object-cover"
                       />
                     ) : (
-                      <div className="flex h-11 w-[72px] items-center justify-center bg-white/5">
+                      <span className="flex h-11 w-[72px] items-center justify-center bg-white/5">
                         <Play size={16} className="text-white/30" />
-                      </div>
+                      </span>
                     )}
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
                       <Play size={16} className="text-white" fill="currentColor" />
-                    </div>
-                  </div>
+                    </span>
+                  </span>
                   <span className="min-w-0 flex-1 truncate text-sm text-white/80 transition-colors group-hover:text-white">
                     {entry.title}
                   </span>

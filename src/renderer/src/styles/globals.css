@@ -641,8 +641,8 @@ html.light .btn-ghost:hover:not(:disabled) {
 /*
  * Range sliders. `.slider` is the base (volume etc.); components paint the fill
  * with an inline linear-gradient background so the track shows progress.
- * `.slider-seek` is the timeline variant: the thumb only appears on hover, so
- * it reads as a progress bar until you interact with it.
+ * `.slider-seek` is the timeline variant: a slightly smaller always-visible
+ * thumb marks the position (hidden only when the slider is disabled).
  */
 .slider {
   -webkit-appearance: none;
@@ -684,12 +684,17 @@ html.light .btn-ghost:hover:not(:disabled) {
 }
 
 .slider-seek::-webkit-slider-thumb {
-  opacity: 0;
+  height: 10px;
+  width: 10px;
 }
 
 .slider-seek:hover::-webkit-slider-thumb,
 .slider-seek:focus-visible::-webkit-slider-thumb {
-  opacity: 1;
+  transform: scale(1.25);
+}
+
+.slider-seek:disabled::-webkit-slider-thumb {
+  opacity: 0;
 }
 
 html.light .slider {

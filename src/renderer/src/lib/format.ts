@@ -57,6 +57,36 @@ export function playlistChoiceId(url: string): string | null {
 }
 
 /**
+ * Privacy-enhanced embed URL for a YouTube video, or null when no video id can
+ * be derived (non-YouTube URLs, bare playlists). Accepts the entry's `id` when
+ * it already looks like a video id, else parses `watch?v=`, `youtu.be/…`, and
+ * `/shorts/…` forms.
+ */
+export function youtubeEmbedUrl(url: string, id?: string | null): string | null {
+  const videoId = /^[\w-]{11}$/.test(id ?? '') ? id! : parseYoutubeVideoId(url)
+  if (!videoId) return null
+  return `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`
+}
+
+function parseYoutubeVideoId(url: string): string | null {
+  let parsed: URL
+  try {
+    parsed = new URL(/^https?:\/\//i.test(url) ? url : `https://${url}`)
+  } catch {
+    return null
+  }
+  if (!/(^|\.)((youtube|youtube-nocookie)\.com|youtu\.be)$/i.test(parsed.hostname)) {
+    return null
+  }
+  const candidate = parsed.hostname.toLowerCase().endsWith('youtu.be')
+    ? parsed.pathname.slice(1)
+    : (parsed.searchParams.get('v') ??
+      parsed.pathname.match(/\/(?:embed|shorts|live)\/([\w-]+)/)?.[1] ??
+      '')
+  return /^[\w-]{11}$/.test(candidate) ? candidate : null
+}
+
+/**
  * True when an error message indicates the content needs an authenticated
  * session (private, age-restricted, members-only) or YouTube is bot-flagging
  * this client - the cases where supplying browser cookies can help. Mirrors the

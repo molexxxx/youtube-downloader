@@ -9,10 +9,14 @@ const StoreCtor = ((ElectronStore as unknown as { default?: typeof ElectronStore
 interface WindowStateShape {
   bounds: Rectangle | null
   maximized: boolean
+  miniBounds: Rectangle | null
 }
 
 export const DEFAULT_WINDOW_SIZE = { width: 1600, height: 900 }
 export const MIN_WINDOW_SIZE = { width: 1280, height: 720 }
+
+export const DEFAULT_MINI_WINDOW_SIZE = { width: 380, height: 560 }
+export const MIN_MINI_WINDOW_SIZE = { width: 320, height: 420 }
 
 const SAVE_DEBOUNCE_MS = 500
 
@@ -22,7 +26,7 @@ function getStore(): ElectronStore<WindowStateShape> {
   if (!store) {
     store = new StoreCtor<WindowStateShape>({
       name: 'window-state',
-      defaults: { bounds: null, maximized: false }
+      defaults: { bounds: null, maximized: false, miniBounds: null }
     })
   }
   return store
@@ -77,6 +81,36 @@ export function trackWindowState(window: BrowserWindow): void {
   window.on('move', debouncedSave)
   window.on('maximize', debouncedSave)
   window.on('unmaximize', debouncedSave)
+  window.on('close', () => {
+    if (timer) clearTimeout(timer)
+    save()
+  })
+}
+
+/** Saved-and-valid quick-actions window bounds, or null to use defaults. */
+export function loadMiniWindowBounds(): Rectangle | null {
+  const saved = getStore().get('miniBounds')
+  if (!saved) return null
+  const displays = screen.getAllDisplays().map((d) => d.workArea)
+  return boundsVisible(saved, displays) ? saved : null
+}
+
+/** Persist the quick-actions window's bounds on move/resize (debounced) and close. */
+export function trackMiniWindowState(window: BrowserWindow): void {
+  let timer: ReturnType<typeof setTimeout> | null = null
+
+  const save = (): void => {
+    if (window.isDestroyed() || window.isMinimized()) return
+    getStore().set('miniBounds', window.getNormalBounds())
+  }
+
+  const debouncedSave = (): void => {
+    if (timer) clearTimeout(timer)
+    timer = setTimeout(save, SAVE_DEBOUNCE_MS)
+  }
+
+  window.on('resize', debouncedSave)
+  window.on('move', debouncedSave)
   window.on('close', () => {
     if (timer) clearTimeout(timer)
     save()

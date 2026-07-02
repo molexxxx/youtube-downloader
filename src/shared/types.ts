@@ -304,6 +304,48 @@ export type LoopMode = 'off' | 'track' | 'queue'
 
 export type PlayerStatus = 'idle' | 'buffering' | 'playing' | 'paused'
 
+/**
+ * Mutually exclusive character effects, mapped to ffmpeg filters. Parameter
+ * conventions follow the Lavalink filters API (the de-facto standard for
+ * Discord music bots): tremolo/vibrato as frequency+depth oscillators,
+ * rotation ("8D") as a slow stereo pan, karaoke as center-channel removal.
+ */
+export type AudioEffectMode =
+  | 'none'
+  | 'karaoke'
+  | 'tremolo'
+  | 'vibrato'
+  | 'rotate'
+  | 'echo'
+
+/**
+ * Per-guild playback effects (Lavalink-style timescale + tone controls).
+ * Applied live via the ffmpeg leg of the streaming pipeline; changing them
+ * restarts the stream at the current position.
+ */
+export interface AudioEffects {
+  /** Playback speed multiplier (media tempo), 0.5-2. Pitch is unaffected. */
+  speed: number
+  /** Pitch multiplier, 0.5-2 (asetrate-based; tempo-compensated). */
+  pitch: number
+  /** Bass shelf gain in dB (~100 Hz), -12..12. */
+  bassGain: number
+  /** Mid peak gain in dB (~1 kHz), -12..12. */
+  midGain: number
+  /** Treble shelf gain in dB (~3 kHz), -12..12. */
+  trebleGain: number
+  mode: AudioEffectMode
+}
+
+export const DEFAULT_AUDIO_EFFECTS: AudioEffects = {
+  speed: 1,
+  pitch: 1,
+  bassGain: 0,
+  midGain: 0,
+  trebleGain: 0,
+  mode: 'none'
+}
+
 /** Live state of one guild's music player. */
 export interface GuildPlayerState {
   guildId: string
@@ -316,6 +358,8 @@ export interface GuildPlayerState {
   volume: number
   /** Playback position of nowPlaying in ms (pause-aware, includes seeks). */
   positionMs: number
+  /** Active playback effects (speed, pitch, EQ, character effect). */
+  effects: AudioEffects
 }
 
 /** Per-guild settings persisted locally on this machine. */
@@ -355,6 +399,7 @@ export type AuditAction =
   | 'remove'
   | 'move'
   | 'seek'
+  | 'effects'
   | 'permission-denied'
   | 'error'
 
@@ -367,6 +412,21 @@ export interface AuditEntry {
   action: AuditAction
   detail: string
 }
+
+/** A local audio file imported by the user (for previewing / bot playback). */
+export interface LocalAudioFile {
+  /** Absolute path on disk. */
+  path: string
+  /** File name including extension. */
+  name: string
+  /** Size in bytes. */
+  size: number
+  /** Streamable app-scheme URL (`local-media:`) usable in an <audio> element. */
+  mediaUrl: string
+}
+
+/** Named window sizes for the pinned quick-actions window. */
+export type MiniWindowSize = 'compact' | 'standard' | 'tall'
 
 /** IPC channel names - single source of truth shared by preload + main. */
 export const IPC = {
@@ -425,6 +485,17 @@ export const IPC = {
     list: 'logs:list',
     onEntry: 'logs:entry'
   },
+  mini: {
+    open: 'mini:open',
+    close: 'mini:close',
+    setSize: 'mini:setSize',
+    setPinned: 'mini:setPinned',
+    focusMain: 'mini:focusMain'
+  },
+  localMedia: {
+    pick: 'localMedia:pick',
+    register: 'localMedia:register'
+  },
   discord: {
     status: 'discord:status',
     setToken: 'discord:setToken',
@@ -439,6 +510,7 @@ export const IPC = {
     control: 'discord:control',
     setLoop: 'discord:setLoop',
     setVolume: 'discord:setVolume',
+    setEffects: 'discord:setEffects',
     seek: 'discord:seek',
     removeTrack: 'discord:removeTrack',
     moveTrack: 'discord:moveTrack',
