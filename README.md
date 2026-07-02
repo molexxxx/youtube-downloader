@@ -47,32 +47,44 @@
       <a href=".github/assets/thumbs/3-playlist-download-details.png"><img src=".github/assets/thumbs/3-playlist-download-details.png" alt="Playlist Download Details" width="200"></a>
       <br/><sub><b>Playlist Download Details</b></sub>
     </td>
+    <td align="center" width="215">
+      <a href=".github/assets/thumbs/4-discord-dash-search.png"><img src=".github/assets/thumbs/4-discord-dash-search.png" alt="Discord Dashboard Search" width="200"></a>
+      <br/><sub><b>Discord Dashboard Search</b></sub>
+    </td>
   </tr>
   <tr>
     <td align="center" width="215">
-      <a href=".github/assets/thumbs/4-download-history.png"><img src=".github/assets/thumbs/4-download-history.png" alt="Download History" width="200"></a>
-      <br/><sub><b>Download History</b></sub>
-    </td>
-    <td align="center" width="215">
-      <a href=".github/assets/thumbs/4.5-discord-dash.png"><img src=".github/assets/thumbs/4.5-discord-dash.png" alt="Discord Dashboard" width="200"></a>
+      <a href=".github/assets/thumbs/5-discord-dash.png"><img src=".github/assets/thumbs/5-discord-dash.png" alt="Discord Dashboard" width="200"></a>
       <br/><sub><b>Discord Dashboard</b></sub>
     </td>
     <td align="center" width="215">
-      <a href=".github/assets/thumbs/5-view-logs.png"><img src=".github/assets/thumbs/5-view-logs.png" alt="View Logs" width="200"></a>
-      <br/><sub><b>View Logs</b></sub>
+      <a href=".github/assets/thumbs/6-discord-dash-playback.png"><img src=".github/assets/thumbs/6-discord-dash-playback.png" alt="Discord Dashboard Playback" width="200"></a>
+      <br/><sub><b>Discord Dashboard Playback</b></sub>
+    </td>
+    <td align="center" width="215">
+      <a href=".github/assets/thumbs/7-discord-channel.png"><img src=".github/assets/thumbs/7-discord-channel.png" alt="Discord Channel" width="200"></a>
+      <br/><sub><b>Discord Channel</b></sub>
+    </td>
+    <td align="center" width="215">
+      <a href=".github/assets/thumbs/8-download-history.png"><img src=".github/assets/thumbs/8-download-history.png" alt="Download History" width="200"></a>
+      <br/><sub><b>Download History</b></sub>
     </td>
   </tr>
   <tr>
     <td align="center" width="215">
-      <a href=".github/assets/thumbs/6-settings-top.png"><img src=".github/assets/thumbs/6-settings-top.png" alt="Settings - Top" width="200"></a>
+      <a href=".github/assets/thumbs/9-view-logs.png"><img src=".github/assets/thumbs/9-view-logs.png" alt="View Logs" width="200"></a>
+      <br/><sub><b>View Logs</b></sub>
+    </td>
+    <td align="center" width="215">
+      <a href=".github/assets/thumbs/10-settings-top.png"><img src=".github/assets/thumbs/10-settings-top.png" alt="Settings - Top" width="200"></a>
       <br/><sub><b>Settings - Top</b></sub>
     </td>
     <td align="center" width="215">
-      <a href=".github/assets/thumbs/7-settings-middle.png"><img src=".github/assets/thumbs/7-settings-middle.png" alt="Settings - Middle" width="200"></a>
+      <a href=".github/assets/thumbs/11-settings-middle.png"><img src=".github/assets/thumbs/11-settings-middle.png" alt="Settings - Middle" width="200"></a>
       <br/><sub><b>Settings - Middle</b></sub>
     </td>
     <td align="center" width="215">
-      <a href=".github/assets/thumbs/8-settings-bottom.png"><img src=".github/assets/thumbs/8-settings-bottom.png" alt="Settings - Bottom" width="200"></a>
+      <a href=".github/assets/thumbs/12-settings-bottom.png"><img src=".github/assets/thumbs/12-settings-bottom.png" alt="Settings - Bottom" width="200"></a>
       <br/><sub><b>Settings - Bottom</b></sub>
     </td>
   </tr>
