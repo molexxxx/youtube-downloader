@@ -48,14 +48,14 @@
       <br/><sub><b>Playlist Download Details</b></sub>
     </td>
     <td align="center" width="215">
-      <a href=".github/assets/thumbs/4-discord-dash-search.png"><img src=".github/assets/thumbs/4-discord-dash-search.png" alt="Discord Dashboard Search" width="200"></a>
-      <br/><sub><b>Discord Dashboard Search</b></sub>
+      <a href=".github/assets/thumbs/4-discord-dash.png"><img src=".github/assets/thumbs/4-discord-dash.png" alt="Discord Dashboard" width="200"></a>
+      <br/><sub><b>Discord Dashboard</b></sub>
     </td>
   </tr>
   <tr>
     <td align="center" width="215">
-      <a href=".github/assets/thumbs/5-discord-dash.png"><img src=".github/assets/thumbs/5-discord-dash.png" alt="Discord Dashboard" width="200"></a>
-      <br/><sub><b>Discord Dashboard</b></sub>
+      <a href=".github/assets/thumbs/5-discord-dash-search.png"><img src=".github/assets/thumbs/5-discord-dash-search.png" alt="Discord Dashboard Search" width="200"></a>
+      <br/><sub><b>Discord Dashboard Search</b></sub>
     </td>
     <td align="center" width="215">
       <a href=".github/assets/thumbs/6-discord-dash-playback.png"><img src=".github/assets/thumbs/6-discord-dash-playback.png" alt="Discord Dashboard Playback" width="200"></a>
