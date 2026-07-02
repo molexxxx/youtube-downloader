@@ -85,10 +85,13 @@ const api = {
     minimize: (): Promise<void> => ipcRenderer.invoke(IPC.system.minimize),
     maximize: (): Promise<void> => ipcRenderer.invoke(IPC.system.maximize),
     close: (): Promise<void> => ipcRenderer.invoke(IPC.system.close),
-    openPath: (path: string): Promise<string> => ipcRenderer.invoke(IPC.system.openPath, path),
-    showItem: (path: string): Promise<void> => ipcRenderer.invoke(IPC.system.showItem, path),
+    openPath: (path: string): Promise<string> =>
+      ipcRenderer.invoke(IPC.system.openPath, path),
+    showItem: (path: string): Promise<void> =>
+      ipcRenderer.invoke(IPC.system.showItem, path),
     chooseDir: (): Promise<string | null> => ipcRenderer.invoke(IPC.system.chooseDir),
-    openExternal: (url: string): Promise<void> => ipcRenderer.invoke(IPC.system.openExternal, url),
+    openExternal: (url: string): Promise<void> =>
+      ipcRenderer.invoke(IPC.system.openExternal, url),
     appVersion: (): Promise<string> => ipcRenderer.invoke(IPC.system.appVersion)
   },
   logs: {
@@ -107,7 +110,8 @@ const api = {
       ipcRenderer.invoke(IPC.discord.player, guildId),
     join: (guildId: string, channelId: string): Promise<void> =>
       ipcRenderer.invoke(IPC.discord.join, guildId, channelId),
-    leave: (guildId: string): Promise<void> => ipcRenderer.invoke(IPC.discord.leave, guildId),
+    leave: (guildId: string): Promise<void> =>
+      ipcRenderer.invoke(IPC.discord.leave, guildId),
     enqueue: (guildId: string, inputs: TrackInput[]): Promise<boolean> =>
       ipcRenderer.invoke(IPC.discord.enqueue, guildId, inputs),
     control: (guildId: string, action: PlayerControl): Promise<void> =>
@@ -116,11 +120,18 @@ const api = {
       ipcRenderer.invoke(IPC.discord.setLoop, guildId, mode),
     setVolume: (guildId: string, volume: number): Promise<void> =>
       ipcRenderer.invoke(IPC.discord.setVolume, guildId, volume),
+    seek: (guildId: string, seconds: number): Promise<void> =>
+      ipcRenderer.invoke(IPC.discord.seek, guildId, seconds),
     removeTrack: (guildId: string, index: number): Promise<void> =>
       ipcRenderer.invoke(IPC.discord.removeTrack, guildId, index),
+    moveTrack: (guildId: string, from: number, to: number): Promise<void> =>
+      ipcRenderer.invoke(IPC.discord.moveTrack, guildId, from, to),
     getSettings: (guildId: string): Promise<GuildSettings> =>
       ipcRenderer.invoke(IPC.discord.getSettings, guildId),
-    setSettings: (guildId: string, partial: Partial<GuildSettings>): Promise<GuildSettings> =>
+    setSettings: (
+      guildId: string,
+      partial: Partial<GuildSettings>
+    ): Promise<GuildSettings> =>
       ipcRenderer.invoke(IPC.discord.setSettings, guildId, partial),
     auditList: (guildId?: string): Promise<AuditEntry[]> =>
       ipcRenderer.invoke(IPC.discord.auditList, guildId),

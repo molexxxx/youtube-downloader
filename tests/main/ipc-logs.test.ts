@@ -9,7 +9,8 @@ const { handlers, sentMessages, windows, historyMock, subscribeMock } = vi.hoist
     windows: [
       {
         webContents: {
-          send: (channel: string, payload: unknown) => sentMessages.push({ channel, payload })
+          send: (channel: string, payload: unknown) =>
+            sentMessages.push({ channel, payload })
         }
       }
     ],

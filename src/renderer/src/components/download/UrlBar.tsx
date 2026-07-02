@@ -109,7 +109,7 @@ export function UrlBar(): React.JSX.Element {
       }`}
     >
       <div className="flex gap-2.5">
-        <div className="group flex flex-1 items-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 transition-colors focus-within:border-red-500/60 focus-within:bg-white/[0.05] focus-within:ring-1 focus-within:ring-red-500/20">
+        <div className="field field-red group flex flex-1 items-center gap-2.5 px-4 py-3">
           <Search
             size={18}
             className="shrink-0 text-white/40 transition-colors group-focus-within:text-red-400/80"
@@ -118,7 +118,7 @@ export function UrlBar(): React.JSX.Element {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && submit()}
-            placeholder="Paste a URL, or type to search YouTube…"
+            placeholder="Paste a video or playlist link, or type to search YouTube…"
             spellCheck={false}
             className="flex-1 bg-transparent text-sm text-white/90 outline-none placeholder:text-white/30"
           />
@@ -139,7 +139,7 @@ export function UrlBar(): React.JSX.Element {
         <button
           onClick={submit}
           disabled={busy || !trimmed}
-          className="flex items-center gap-2 rounded-xl bg-red-500 px-5 text-sm font-medium text-white shadow-lg shadow-red-500/20 transition-all hover:bg-red-600 hover:shadow-red-500/30 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+          className="btn btn-red px-5 text-sm"
         >
           {busy ? (
             <Loader2 size={16} className="animate-spin" />

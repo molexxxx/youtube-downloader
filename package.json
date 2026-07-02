@@ -32,6 +32,7 @@
     "release": "electron-vite build && electron-builder --publish always"
   },
   "dependencies": {
+    "@discordjs/opus": "^0.10.0",
     "@discordjs/voice": "^0.19.2",
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^4.0.0",
@@ -41,6 +42,7 @@
     "extract-zip": "^2.0.1",
     "libsodium-wrappers": "^0.8.4",
     "opusscript": "^0.0.8",
+    "sodium-native": "^5.1.0",
     "tar": "^7.5.15",
     "youtube-dl-exec": "^3.1.6"
   },

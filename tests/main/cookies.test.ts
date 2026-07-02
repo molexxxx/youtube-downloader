@@ -18,7 +18,12 @@ vi.mock('@main/config', () => ({ getConfig: () => baseConfig }))
 
 let baseConfig: AppConfig
 
-import { cookieArgs, cookieFlags, cookiesEnabled, isAuthRequiredError } from '@main/ytdlp/cookies'
+import {
+  cookieArgs,
+  cookieFlags,
+  cookiesEnabled,
+  isAuthRequiredError
+} from '@main/ytdlp/cookies'
 
 function makeConfig(over: Partial<AppConfig>): AppConfig {
   return { cookiesFromBrowser: null, ...over } as AppConfig
@@ -65,7 +70,9 @@ describe('isAuthRequiredError', () => {
 
   it('does not match ordinary errors', () => {
     expect(isAuthRequiredError(new Error('Video unavailable'))).toBe(false)
-    expect(isAuthRequiredError(new Error('Requested format is not available'))).toBe(false)
+    expect(isAuthRequiredError(new Error('Requested format is not available'))).toBe(
+      false
+    )
     expect(isAuthRequiredError(new Error('HTTP Error 404: Not Found'))).toBe(false)
   })
 })

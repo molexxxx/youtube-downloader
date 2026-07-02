@@ -14,7 +14,13 @@ import type { LoopMode, PlayerControl, TrackRequester } from '@shared/types'
 import { logger } from '../logger'
 import { addAudit } from './audit'
 import type { DiscordService } from './client'
-import { addedEmbed, fmtDuration, nowPlayingEmbed, queueEmbed, searchEmbed } from './embeds'
+import {
+  addedEmbed,
+  fmtDuration,
+  nowPlayingEmbed,
+  queueEmbed,
+  searchEmbed
+} from './embeds'
 import { canControl, type MemberContext } from './permissions'
 import { resolveQueryToTracks, searchTracks } from './resolve'
 
@@ -26,8 +32,9 @@ function buildCommands(): SlashCommandBuilder[] {
     new SlashCommandBuilder().setName(name).setDescription(description)
 
   return [
-    text('play', 'Play a song or playlist (YouTube URL or search text)').addStringOption((o) =>
-      o.setName('query').setDescription('YouTube URL or search text').setRequired(true)
+    text('play', 'Play a song or playlist (YouTube URL or search text)').addStringOption(
+      (o) =>
+        o.setName('query').setDescription('YouTube URL or search text').setRequired(true)
     ) as SlashCommandBuilder,
     text('search', 'Search YouTube and queue the top result').addStringOption((o) =>
       o.setName('query').setDescription('Search text').setRequired(true)
@@ -72,7 +79,10 @@ function buildCommands(): SlashCommandBuilder[] {
 }
 
 /** Register the command set for a single guild (instant availability). */
-export async function registerGuildCommands(client: Client, guildId: string): Promise<void> {
+export async function registerGuildCommands(
+  client: Client,
+  guildId: string
+): Promise<void> {
   try {
     await client.application?.commands.set(
       buildCommands().map((c) => c.toJSON()),
@@ -133,7 +143,12 @@ export async function handleInteraction(
       isGuildOwner: interaction.guild?.ownerId === interaction.user.id
     }
     if (!canControl(guildId, ctx)) {
-      addAudit({ guildId, actor: requester, action: 'permission-denied', detail: command })
+      addAudit({
+        guildId,
+        actor: requester,
+        action: 'permission-denied',
+        detail: command
+      })
       await interaction.reply({
         content: 'You do not have permission to control playback here.',
         flags: MessageFlags.Ephemeral
@@ -239,7 +254,10 @@ export async function handleInteraction(
       }
       case 'leave':
         player.leave(requester)
-        await interaction.reply({ content: '👋 Left the voice channel.', flags: MessageFlags.Ephemeral })
+        await interaction.reply({
+          content: '👋 Left the voice channel.',
+          flags: MessageFlags.Ephemeral
+        })
         return
       case 'skip':
       case 'pause':
@@ -259,18 +277,27 @@ export async function handleInteraction(
       }
       case 'clear':
         player.clearQueue(requester)
-        await interaction.reply({ content: '🗑️ Cleared the queue.', flags: MessageFlags.Ephemeral })
+        await interaction.reply({
+          content: '🗑️ Cleared the queue.',
+          flags: MessageFlags.Ephemeral
+        })
         return
       case 'loop': {
         const mode = interaction.options.getString('mode', true) as LoopMode
         player.setLoop(mode, requester)
-        await interaction.reply({ content: `🔁 Loop set to **${mode}**.`, flags: MessageFlags.Ephemeral })
+        await interaction.reply({
+          content: `🔁 Loop set to **${mode}**.`,
+          flags: MessageFlags.Ephemeral
+        })
         return
       }
       case 'volume': {
         const percent = interaction.options.getInteger('percent', true)
         player.setVolume(percent, requester)
-        await interaction.reply({ content: `🔊 Volume set to **${percent}%**.`, flags: MessageFlags.Ephemeral })
+        await interaction.reply({
+          content: `🔊 Volume set to **${percent}%**.`,
+          flags: MessageFlags.Ephemeral
+        })
         return
       }
       case 'remove': {
@@ -286,20 +313,25 @@ export async function handleInteraction(
         await interaction.reply({ embeds: [queueEmbed(player.getState())] })
         return
       case 'nowplaying':
-        await interaction.reply({ embeds: [nowPlayingEmbed(player.getState().nowPlaying)] })
+        await interaction.reply({
+          embeds: [nowPlayingEmbed(player.getState().nowPlaying)]
+        })
         return
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     logger.warn('Slash command failed:', command, message)
-    addAudit({ guildId, actor: requester, action: 'error', detail: `${command}: ${message}` })
+    addAudit({
+      guildId,
+      actor: requester,
+      action: 'error',
+      detail: `${command}: ${message}`
+    })
     const reply = { content: 'Something went wrong handling that command.' }
     if (interaction.deferred || interaction.replied) {
       await interaction.editReply(reply).catch(() => {})
     } else {
-      await interaction
-        .reply({ ...reply, flags: MessageFlags.Ephemeral })
-        .catch(() => {})
+      await interaction.reply({ ...reply, flags: MessageFlags.Ephemeral }).catch(() => {})
     }
   }
 }

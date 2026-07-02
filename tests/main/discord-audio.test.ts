@@ -1,14 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { createAudioPlayerMock } = vi.hoisted(() => ({
-  createAudioPlayerMock: vi.fn(() => ({
-    on: vi.fn(),
-    emit: vi.fn(),
-    play: vi.fn(),
-    pause: vi.fn(),
-    unpause: vi.fn(),
-    stop: vi.fn()
-  }) as never)
+  createAudioPlayerMock: vi.fn(
+    () =>
+      ({
+        on: vi.fn(),
+        emit: vi.fn(),
+        play: vi.fn(),
+        pause: vi.fn(),
+        unpause: vi.fn(),
+        stop: vi.fn()
+      }) as never
+  )
 }))
 
 vi.mock('electron-store', () => {
@@ -42,7 +45,11 @@ vi.mock('@main/ytdlp/cookies', () => ({
   isAuthRequiredError: () => false
 }))
 
-import { buildStreamArgs, createSteadyPcmChunker } from '@main/discord/audio'
+import {
+  buildFfmpegArgs,
+  buildStreamArgs,
+  createSteadyPcmChunker
+} from '@main/discord/audio'
 import { GuildMusicPlayer } from '@main/discord/player'
 
 describe('buildStreamArgs', () => {
@@ -65,6 +72,36 @@ describe('buildStreamArgs', () => {
     const args = buildStreamArgs('https://x', true)
     expect(args).toContain('--cookies')
     expect(args).toContain('/cache/cookies.txt')
+  })
+})
+
+describe('buildFfmpegArgs', () => {
+  it('transcodes stdin to 48kHz stereo raw PCM for streamed tracks', () => {
+    const args = buildFfmpegArgs('pipe:0')
+    expect(args[0]).toBe('-i')
+    expect(args[1]).toBe('pipe:0')
+    expect(args).toContain('s16le')
+    expect(args[args.length - 1]).toBe('pipe:1')
+  })
+
+  it('reads a local file directly for downloaded tracks', () => {
+    const args = buildFfmpegArgs('C:\\media\\song.m4a')
+    expect(args[1]).toBe('C:\\media\\song.m4a')
+  })
+
+  it('applies a seek offset as an input option for seekable files', () => {
+    const args = buildFfmpegArgs('C:\\media\\song.m4a', 90)
+    expect(args.slice(0, 4)).toEqual(['-ss', '90', '-i', 'C:\\media\\song.m4a'])
+  })
+
+  it('applies a seek offset after the input for pipes (not input-seekable)', () => {
+    const args = buildFfmpegArgs('pipe:0', 90)
+    expect(args.slice(0, 4)).toEqual(['-i', 'pipe:0', '-ss', '90'])
+  })
+
+  it('omits the seek flag at position zero', () => {
+    expect(buildFfmpegArgs('pipe:0', 0)).not.toContain('-ss')
+    expect(buildFfmpegArgs('C:\\media\\x.m4a', 0)).not.toContain('-ss')
   })
 })
 
@@ -92,12 +129,15 @@ describe('GuildMusicPlayer', () => {
   })
 
   it('configures the audio player to tolerate brief network hiccups', () => {
-    new GuildMusicPlayer('guild-1', { adapterCreator: (() => null) as never, channelName: () => null })
+    new GuildMusicPlayer('guild-1', {
+      adapterCreator: (() => null) as never,
+      channelName: () => null
+    })
 
     expect(createAudioPlayerMock).toHaveBeenCalledWith(
       expect.objectContaining({
         behaviors: expect.objectContaining({
-          maxMissedFrames: 10,
+          maxMissedFrames: 20,
           noSubscriber: 'pause'
         })
       })

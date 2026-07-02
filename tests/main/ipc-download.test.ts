@@ -15,7 +15,8 @@ const { handlers, sentMessages, managerMock, windows } = vi.hoisted(() => {
   const windows = [
     {
       webContents: {
-        send: (channel: string, payload: unknown) => sentMessages.push({ channel, payload })
+        send: (channel: string, payload: unknown) =>
+          sentMessages.push({ channel, payload })
       }
     }
   ]

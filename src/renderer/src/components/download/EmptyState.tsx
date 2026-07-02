@@ -45,7 +45,13 @@ function AnimatedIcon(): React.JSX.Element {
     <div className="anim-float relative mx-auto h-20 w-20">
       <svg viewBox="0 0 80 80" className="h-full w-full">
         {/* breathing halo */}
-        <circle className="anim-ring" cx="40" cy="40" r="30" fill="rgba(239,68,68,0.12)" />
+        <circle
+          className="anim-ring"
+          cx="40"
+          cy="40"
+          r="30"
+          fill="rgba(239,68,68,0.12)"
+        />
         {/* rotating dashed orbit */}
         <circle
           className="anim-orbit"

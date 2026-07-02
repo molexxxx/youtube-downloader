@@ -185,7 +185,9 @@ export async function getInfo(url: string, forcePlaylist = false): Promise<Media
     const info = mapInfo(await probe(false))
     logger.info(
       `Resolved "${info.title}"`,
-      info.isPlaylist ? `(${info.playlistCount} items)` : `(${info.formats.length} formats)`
+      info.isPlaylist
+        ? `(${info.playlistCount} items)`
+        : `(${info.formats.length} formats)`
     )
     return info
   } catch (err) {

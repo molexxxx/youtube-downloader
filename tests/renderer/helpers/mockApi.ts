@@ -28,10 +28,12 @@ export function installMockApi() {
   const api = {
     config: {
       get: vi.fn(async (): Promise<AppConfig> => baseConfig()),
-      set: vi.fn(async (partial: Partial<AppConfig>): Promise<AppConfig> => ({
-        ...baseConfig(),
-        ...partial
-      })),
+      set: vi.fn(
+        async (partial: Partial<AppConfig>): Promise<AppConfig> => ({
+          ...baseConfig(),
+          ...partial
+        })
+      ),
       reset: vi.fn(async (): Promise<AppConfig> => baseConfig())
     },
     binaries: {
@@ -47,14 +49,17 @@ export function installMockApi() {
       info: vi.fn(
         async (_url: string, _forcePlaylist?: boolean): Promise<MediaInfo | null> => null
       ),
-      search: vi.fn(async (_query: string, _limit?: number): Promise<PlaylistEntry[]> => []),
+      search: vi.fn(
+        async (_query: string, _limit?: number): Promise<PlaylistEntry[]> => []
+      ),
       playlistPage: vi.fn(
         async (_url: string, _start: number, _end: number): Promise<PlaylistEntry[]> => []
       )
     },
     download: {
       start: vi.fn(
-        async (_req: DownloadRequest): Promise<DownloadJob> => ({ id: 'job-1' }) as DownloadJob
+        async (_req: DownloadRequest): Promise<DownloadJob> =>
+          ({ id: 'job-1' }) as DownloadJob
       ),
       cancel: vi.fn(async (_id: string): Promise<void> => {}),
       list: vi.fn(async (): Promise<DownloadJob[]> => []),
@@ -63,7 +68,12 @@ export function installMockApi() {
     appUpdate: {
       status: vi.fn(
         async (): Promise<AppUpdateStatus> =>
-          ({ state: 'idle', version: null, percent: null, error: null }) as AppUpdateStatus
+          ({
+            state: 'idle',
+            version: null,
+            percent: null,
+            error: null
+          }) as AppUpdateStatus
       ),
       check: vi.fn(
         async (): Promise<{ ok: boolean; version?: string | null; error?: string }> => ({
@@ -71,7 +81,9 @@ export function installMockApi() {
           version: null
         })
       ),
-      download: vi.fn(async (): Promise<{ ok: boolean; error?: string }> => ({ ok: true })),
+      download: vi.fn(
+        async (): Promise<{ ok: boolean; error?: string }> => ({ ok: true })
+      ),
       install: vi.fn(async (): Promise<void> => {}),
       onStatus: vi.fn(() => unsub)
     },
@@ -104,7 +116,9 @@ export function installMockApi() {
     discord: {
       status: vi.fn(async (): Promise<DiscordStatus> => baseDiscordStatus()),
       guilds: vi.fn(async (): Promise<DiscordGuild[]> => []),
-      setToken: vi.fn(async (_token: string): Promise<DiscordStatus> => baseDiscordStatus()),
+      setToken: vi.fn(
+        async (_token: string): Promise<DiscordStatus> => baseDiscordStatus()
+      ),
       clearToken: vi.fn(async (): Promise<DiscordStatus> => baseDiscordStatus()),
       connect: vi.fn(async (): Promise<DiscordStatus> => baseDiscordStatus()),
       disconnect: vi.fn(async (): Promise<DiscordStatus> => baseDiscordStatus()),
@@ -115,8 +129,12 @@ export function installMockApi() {
       control: vi.fn(async (): Promise<void> => {}),
       setLoop: vi.fn(async (): Promise<void> => {}),
       setVolume: vi.fn(async (): Promise<void> => {}),
+      seek: vi.fn(async (): Promise<void> => {}),
       removeTrack: vi.fn(async (): Promise<void> => {}),
-      getSettings: vi.fn(async (_guildId: string): Promise<GuildSettings> => baseGuildSettings()),
+      moveTrack: vi.fn(async (): Promise<void> => {}),
+      getSettings: vi.fn(
+        async (_guildId: string): Promise<GuildSettings> => baseGuildSettings()
+      ),
       setSettings: vi.fn(async (): Promise<GuildSettings> => baseGuildSettings()),
       auditList: vi.fn(async (_guildId?: string): Promise<AuditEntry[]> => []),
       onStatus: vi.fn(() => unsub),

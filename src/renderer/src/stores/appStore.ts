@@ -78,7 +78,10 @@ interface AppState {
 }
 
 /** Pick a sensible active guild: keep the current one if still present, else first. */
-function resolveActiveGuild(guilds: DiscordGuild[], current: string | null): string | null {
+function resolveActiveGuild(
+  guilds: DiscordGuild[],
+  current: string | null
+): string | null {
   if (current && guilds.some((g) => g.id === current)) return current
   return guilds[0]?.id ?? null
 }
@@ -115,8 +118,7 @@ export const useAppStore = create<AppState>((set) => ({
     set((state) => ({
       config: state.config ? { ...state.config, ...partial } : state.config
     })),
-  setBinaries: (binaries) =>
-    set({ binaries, binariesReady: binariesAreReady(binaries) }),
+  setBinaries: (binaries) => set({ binaries, binariesReady: binariesAreReady(binaries) }),
   setBootstrap: (bootstrap) => set({ bootstrap }),
   setView: (view) => set({ view }),
   setInfo: (info) => set({ info }),
@@ -144,8 +146,7 @@ export const useAppStore = create<AppState>((set) => ({
   clearFinishedJobs: () =>
     set((state) => ({
       jobs: state.jobs.filter(
-        (j) =>
-          j.state !== 'completed' && j.state !== 'error' && j.state !== 'cancelled'
+        (j) => j.state !== 'completed' && j.state !== 'error' && j.state !== 'cancelled'
       )
     })),
   setHistory: (history) => set({ history }),

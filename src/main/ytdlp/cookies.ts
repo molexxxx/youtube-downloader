@@ -32,8 +32,10 @@ const BROWSER_PATHS: Record<string, Record<string, () => string>> = {
   darwin: {
     chrome: () => join(homedir(), 'Library', 'Application Support', 'Google', 'Chrome'),
     safari: () => join(homedir(), 'Library', 'Safari'),
-    firefox: () => join(homedir(), 'Library', 'Application Support', 'Firefox', 'Profiles'),
-    opera: () => join(homedir(), 'Library', 'Application Support', 'com.operasoftware.Opera'),
+    firefox: () =>
+      join(homedir(), 'Library', 'Application Support', 'Firefox', 'Profiles'),
+    opera: () =>
+      join(homedir(), 'Library', 'Application Support', 'com.operasoftware.Opera'),
     brave: () =>
       join(homedir(), 'Library', 'Application Support', 'BraveSoftware', 'Brave-Browser'),
     vivaldi: () => join(homedir(), 'Library', 'Application Support', 'Vivaldi'),
@@ -177,7 +179,9 @@ export function isAuthRequiredError(error: unknown): boolean {
     /sign in to confirm/i.test(message) ||
     /confirm your age|age[- ]restricted|inappropriate for some users/i.test(message) ||
     /private video/i.test(message) ||
-    /members[- ]only|available to (this channel's |)members|join this channel/i.test(message) ||
+    /members[- ]only|available to (this channel's |)members|join this channel/i.test(
+      message
+    ) ||
     /requires payment|purchase/i.test(message) ||
     /not a bot/i.test(message) ||
     /login required|account/i.test(message)

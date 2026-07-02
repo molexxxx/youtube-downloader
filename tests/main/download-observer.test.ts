@@ -1,23 +1,20 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import type { DownloadJob } from '@shared/types'
 
-const {
-  managerMock,
-  addHistoryMock,
-  notifyDownloadMock,
-  updateTrayMock
-} = vi.hoisted(() => ({
-  managerMock: {
-    listeners: new Map<string, (job: unknown) => void>(),
-    on(event: string, fn: (job: unknown) => void) {
-      this.listeners.set(event, fn)
+const { managerMock, addHistoryMock, notifyDownloadMock, updateTrayMock } = vi.hoisted(
+  () => ({
+    managerMock: {
+      listeners: new Map<string, (job: unknown) => void>(),
+      on(event: string, fn: (job: unknown) => void) {
+        this.listeners.set(event, fn)
+      },
+      list: vi.fn(() => [{ id: 'j1' }])
     },
-    list: vi.fn(() => [{ id: 'j1' }])
-  },
-  addHistoryMock: vi.fn(),
-  notifyDownloadMock: vi.fn(),
-  updateTrayMock: vi.fn()
-}))
+    addHistoryMock: vi.fn(),
+    notifyDownloadMock: vi.fn(),
+    updateTrayMock: vi.fn()
+  })
+)
 
 vi.mock('@main/ytdlp/downloader', () => ({ downloadManager: () => managerMock }))
 vi.mock('@main/history', () => ({ addHistory: addHistoryMock }))
@@ -74,7 +71,9 @@ describe('initDownloadObserver', () => {
 
   it('records cancelled jobs but does not notify', () => {
     emit(job({ id: 'e', state: 'cancelled' }))
-    expect(addHistoryMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'cancelled' }))
+    expect(addHistoryMock).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'cancelled' })
+    )
     expect(notifyDownloadMock).not.toHaveBeenCalled()
   })
 

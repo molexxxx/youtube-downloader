@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, dialog } from 'electron'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { registerIPC } from './ipc'
 import { createMainWindow, getMainWindow, setQuitting } from './windows'
@@ -13,6 +13,31 @@ import { logger } from './logger'
 
 /** Headless launch check: boot the window, confirm it loads, then exit. */
 const SMOKE_TEST = process.argv.includes('--smoke-test')
+
+// Boot diagnostics: a packaged build that dies before the window appears used
+// to exit silently. Log every fatal to userData/logs/app.log, and if no window
+// exists yet, show a visible error box instead of vanishing.
+process.on('uncaughtException', (err) => {
+  logger.error('Uncaught exception:', err?.stack ?? String(err))
+  try {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      dialog.showErrorBox(
+        'YouTube Downloader failed to start',
+        `${err?.message ?? err}\n\nDetails: %APPDATA%\\YouTube Downloader\\logs\\app.log`
+      )
+      app.exit(1)
+    }
+  } catch {
+    // Headless (e.g. CI) - the log line is all we can do.
+  }
+})
+
+process.on('unhandledRejection', (reason) => {
+  logger.error(
+    'Unhandled rejection:',
+    reason instanceof Error ? (reason.stack ?? reason.message) : String(reason)
+  )
+})
 
 /** Bring the existing window to the foreground (used on a second launch). */
 function focusMainWindow(): void {
@@ -66,8 +91,10 @@ if (!gotInstanceLock) {
 
     applyTheme()
     registerIPC()
-    createMainWindow()
+    // Tray before window: start-minimized and close-to-tray both check that a
+    // tray actually exists before they hide the window.
     initTray(getMainWindow)
+    createMainWindow()
     initDownloadObserver()
     initUpdater()
     void initDiscord()

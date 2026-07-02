@@ -34,7 +34,10 @@ export function nowPlayingEmbed(track: Track | null): EmbedBuilder {
 export function queueEmbed(state: GuildPlayerState): EmbedBuilder {
   const upNext = state.queue
     .slice(0, 10)
-    .map((t, i) => `\`${i + 1}.\` [${trunc(t.title, 60)}](${t.url}) \`${fmtDuration(t.duration)}\``)
+    .map(
+      (t, i) =>
+        `\`${i + 1}.\` [${trunc(t.title, 60)}](${t.url}) \`${fmtDuration(t.duration)}\``
+    )
   const parts = [
     state.nowPlaying
       ? `**Now Playing**\n[${trunc(state.nowPlaying.title, 60)}](${state.nowPlaying.url})\n`

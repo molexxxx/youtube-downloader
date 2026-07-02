@@ -106,7 +106,12 @@ export async function updateYtdlp(
     return ensureYtdlp(onProgress)
   }
 
-  onProgress?.({ binary: 'yt-dlp', stage: 'downloading', percent: null, message: 'Updating' })
+  onProgress?.({
+    binary: 'yt-dlp',
+    stage: 'downloading',
+    percent: null,
+    message: 'Updating'
+  })
   try {
     await execFileAsync(path, ['-U'], { timeout: 120_000 })
   } catch (err) {

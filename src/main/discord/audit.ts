@@ -3,9 +3,8 @@ import ElectronStore from 'electron-store'
 import type { AuditAction, AuditEntry, TrackRequester } from '@shared/types'
 
 // electron-store v11 is ESM-only; unwrap the default export (mirrors history.ts).
-const StoreCtor = (
-  (ElectronStore as unknown as { default?: typeof ElectronStore }).default ?? ElectronStore
-) as typeof ElectronStore
+const StoreCtor = ((ElectronStore as unknown as { default?: typeof ElectronStore })
+  .default ?? ElectronStore) as typeof ElectronStore
 
 interface AuditShape {
   entries: AuditEntry[]
@@ -20,7 +19,10 @@ const listeners = new Set<Listener>()
 
 function getStore(): ElectronStore<AuditShape> {
   if (!store) {
-    store = new StoreCtor<AuditShape>({ name: 'discord-audit', defaults: { entries: [] } })
+    store = new StoreCtor<AuditShape>({
+      name: 'discord-audit',
+      defaults: { entries: [] }
+    })
   }
   return store
 }

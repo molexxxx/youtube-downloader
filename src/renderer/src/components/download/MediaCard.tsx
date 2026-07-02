@@ -1,5 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Music, Video, Download, SlidersHorizontal, Volume2, ListVideo, Clock, X, Loader2, ChevronDown } from 'lucide-react'
+import {
+  Music,
+  Video,
+  Download,
+  SlidersHorizontal,
+  Volume2,
+  ListVideo,
+  Clock,
+  X,
+  Loader2,
+  ChevronDown
+} from 'lucide-react'
 import { useAppStore } from '../../stores/appStore'
 import type {
   AudioFormat,
@@ -18,7 +29,9 @@ const AUDIO_BITRATES = [320, 256, 192, 128, 96]
 
 function formatHeight(format: VideoFormat): number {
   const res = format.resolution ?? ''
-  const fromX = res.includes('x') ? Number(res.split('x')[1]) : Number(res.replace(/\D/g, ''))
+  const fromX = res.includes('x')
+    ? Number(res.split('x')[1])
+    : Number(res.replace(/\D/g, ''))
   return Number.isFinite(fromX) ? fromX : 0
 }
 
@@ -44,8 +57,12 @@ export function MediaCard(): React.JSX.Element | null {
   const [embedThumbnail, setEmbedThumbnail] = useState<boolean>(
     config?.embedThumbnail ?? true
   )
-  const [embedMetadata, setEmbedMetadata] = useState<boolean>(config?.embedMetadata ?? true)
-  const [embedChapters, setEmbedChapters] = useState<boolean>(config?.embedChapters ?? true)
+  const [embedMetadata, setEmbedMetadata] = useState<boolean>(
+    config?.embedMetadata ?? true
+  )
+  const [embedChapters, setEmbedChapters] = useState<boolean>(
+    config?.embedChapters ?? true
+  )
   const [writeSubtitles, setWriteSubtitles] = useState<boolean>(
     config?.writeSubtitles ?? false
   )
@@ -208,17 +225,14 @@ export function MediaCard(): React.JSX.Element | null {
       <div className="flex gap-4">
         {info.thumbnail && (
           <div className="relative shrink-0 overflow-hidden rounded-xl ring-1 ring-white/10">
-            <img
-              src={info.thumbnail}
-              alt=""
-              className="h-24 w-40 object-cover"
-            />
+            <img src={info.thumbnail} alt="" className="h-24 w-40 object-cover" />
             <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-black/60 to-transparent" />
             <span className="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded-md bg-black/70 px-1.5 py-0.5 text-[10px] font-medium text-white/90 backdrop-blur-sm">
               {info.isPlaylist ? (
                 <>
                   <ListVideo size={11} />
-                  {info.playlistCount > 0 ? info.playlistCount : info.entries.length} videos
+                  {info.playlistCount > 0 ? info.playlistCount : info.entries.length}{' '}
+                  videos
                 </>
               ) : (
                 <>
@@ -253,7 +267,9 @@ export function MediaCard(): React.JSX.Element | null {
             {info.title}
           </h3>
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/45">
-            <span className="selectable truncate">{info.uploader ?? 'Unknown channel'}</span>
+            <span className="selectable truncate">
+              {info.uploader ?? 'Unknown channel'}
+            </span>
             {info.isPlaylist && info.duration != null && info.duration > 0 && (
               <span className="flex items-center gap-1">
                 <Clock size={11} />
@@ -269,10 +285,10 @@ export function MediaCard(): React.JSX.Element | null {
           <button
             key={p.id}
             onClick={() => applyPreset(p.id)}
-            className={`rounded-full border px-3 py-1 text-xs ${
+            className={`rounded-full border px-3 py-1 text-xs transition-all duration-150 ${
               presetId === p.id
-                ? 'border-red-500/50 bg-red-500/10 text-red-300'
-                : 'border-white/10 text-white/50 hover:border-white/20'
+                ? 'border-red-500/50 bg-gradient-to-b from-red-500/20 to-red-500/5 text-red-200 shadow-[0_0_12px_-2px_rgba(239,68,68,0.35)]'
+                : 'border-white/10 text-white/50 hover:border-white/25 hover:text-white/80'
             }`}
           >
             {p.label}
@@ -311,10 +327,10 @@ export function MediaCard(): React.JSX.Element | null {
                 <button
                   key={c}
                   onClick={() => setContainer(c)}
-                  className={`rounded-lg border px-3 py-1 text-xs uppercase ${
+                  className={`rounded-lg border px-3 py-1 text-xs uppercase transition-all duration-150 ${
                     container === c
-                      ? 'border-red-500/50 bg-red-500/10 text-red-300'
-                      : 'border-white/10 text-white/60 hover:border-white/20'
+                      ? 'border-red-500/50 bg-gradient-to-b from-red-500/20 to-red-500/5 text-red-200 shadow-[0_0_12px_-2px_rgba(239,68,68,0.35)]'
+                      : 'border-white/10 text-white/60 hover:border-white/25'
                   }`}
                 >
                   {c}
@@ -329,10 +345,10 @@ export function MediaCard(): React.JSX.Element | null {
                 <button
                   key={fmt}
                   onClick={() => setAudioFormat(fmt)}
-                  className={`rounded-lg border px-3 py-1.5 text-sm uppercase ${
+                  className={`rounded-lg border px-3 py-1.5 text-sm uppercase transition-all duration-150 ${
                     audioFormat === fmt
-                      ? 'border-red-500/50 bg-red-500/10 text-red-300'
-                      : 'border-white/10 text-white/60 hover:border-white/20'
+                      ? 'border-red-500/50 bg-gradient-to-b from-red-500/20 to-red-500/5 text-red-200 shadow-[0_0_12px_-2px_rgba(239,68,68,0.35)]'
+                      : 'border-white/10 text-white/60 hover:border-white/25'
                   }`}
                 >
                   {fmt}
@@ -415,10 +431,12 @@ export function MediaCard(): React.JSX.Element | null {
       <button
         onClick={startDownload}
         disabled={info.isPlaylist && selectedItems.size === 0}
-        className="mt-4 flex w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-red-500 py-2.5 text-sm font-medium text-white hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-40"
+        className="btn btn-red mt-4 w-full shrink-0 py-2.5 text-sm"
       >
         <Download size={16} />
-        {info.isPlaylist ? `Download ${selectedItems.size} item${selectedItems.size === 1 ? '' : 's'}` : 'Download'}
+        {info.isPlaylist
+          ? `Download ${selectedItems.size} item${selectedItems.size === 1 ? '' : 's'}`
+          : 'Download'}
       </button>
     </div>
   )
@@ -440,10 +458,10 @@ function KindTab({
   return (
     <button
       onClick={onClick}
-      className={`flex flex-1 items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition ${
+      className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-all duration-200 ${
         active
-          ? 'border-red-500/40 bg-red-500/15 text-red-300'
-          : 'border-white/10 text-white/50 hover:border-white/20 hover:text-white'
+          ? 'border-red-500/45 bg-gradient-to-b from-red-500/25 to-red-500/10 text-red-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_4px_16px_-6px_rgba(239,68,68,0.45)]'
+          : 'border-white/10 text-white/50 hover:border-white/25 hover:bg-white/[0.03] hover:text-white'
       }`}
     >
       {icon}
@@ -451,7 +469,7 @@ function KindTab({
         {label}
         {sublabel && (
           <span
-            className={`text-[11px] font-normal ${active ? 'text-red-300/70' : 'text-white/30'}`}
+            className={`text-[11px] font-normal ${active ? 'text-red-200/70' : 'text-white/30'}`}
           >
             {sublabel}
           </span>
@@ -473,10 +491,10 @@ function OptionChip({
   return (
     <button
       onClick={onClick}
-      className={`rounded-full border px-3 py-1 text-xs transition ${
+      className={`rounded-full border px-3 py-1 text-xs transition-all duration-150 ${
         active
-          ? 'border-red-500/50 bg-red-500/10 text-red-300'
-          : 'border-white/10 text-white/45 hover:border-white/20'
+          ? 'border-red-500/50 bg-gradient-to-b from-red-500/20 to-red-500/5 text-red-200 shadow-[0_0_12px_-2px_rgba(239,68,68,0.35)]'
+          : 'border-white/10 text-white/45 hover:border-white/25'
       }`}
     >
       {label}
@@ -521,7 +539,9 @@ function PlaylistPicker({
         <span className="text-xs text-white/45">
           {selected.size} of {entries.length} selected
           {remaining > 0 && <span className="text-white/30"> · {total} total</span>}
-          {remaining <= 0 && canLoadMore && <span className="text-white/30"> · more available</span>}
+          {remaining <= 0 && canLoadMore && (
+            <span className="text-white/30"> · more available</span>
+          )}
         </span>
         <button
           onClick={onToggleAll}
@@ -541,7 +561,7 @@ function PlaylistPicker({
                   type="checkbox"
                   checked={checked}
                   onChange={() => onToggle(index)}
-                  className="h-4 w-4 shrink-0 accent-red-500"
+                  className="checkbox shrink-0"
                 />
                 <span className="w-6 shrink-0 text-right text-xs tabular-nums text-white/30">
                   {index}
@@ -583,7 +603,9 @@ function PlaylistPicker({
               />
               Load {remaining > 0 ? Math.min(remaining, fetchLimit) : fetchLimit} more
               {remaining > 0 && (
-                <span className="font-normal text-red-300/50">· {remaining} remaining</span>
+                <span className="font-normal text-red-300/50">
+                  · {remaining} remaining
+                </span>
               )}
             </>
           )}

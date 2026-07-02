@@ -53,6 +53,16 @@ export class TrackQueue {
     return this.items.splice(index, 1)[0]
   }
 
+  /** Move an upcoming track to a new position (both zero-based). */
+  move(from: number, to: number): Track | null {
+    if (from < 0 || from >= this.items.length) return null
+    const target = Math.max(0, Math.min(this.items.length - 1, to))
+    if (from === target) return this.items[from]
+    const [track] = this.items.splice(from, 1)
+    this.items.splice(target, 0, track)
+    return track
+  }
+
   shuffle(): void {
     // Fisher-Yates over the upcoming items only; the current track is untouched.
     for (let i = this.items.length - 1; i > 0; i--) {

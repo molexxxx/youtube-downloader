@@ -1,10 +1,6 @@
 import { BrowserWindow, ipcMain } from 'electron'
 import { IPC, type BootstrapProgress } from '@shared/types'
-import {
-  ensureYtdlp,
-  updateYtdlp,
-  ytdlpStatus
-} from '../binaries/ytdlp-binary'
+import { ensureYtdlp, updateYtdlp, ytdlpStatus } from '../binaries/ytdlp-binary'
 import { ensureFfmpeg, ffmpegStatus, updateFfmpeg } from '../binaries/ffmpeg-binary'
 
 function broadcast(progress: BootstrapProgress): void {

@@ -72,7 +72,10 @@ describe('notifyDownload', () => {
   it('shows a success notification with the job title', () => {
     notifyDownload(baseJob({ title: 'My Video' }))
     expect(instances).toHaveLength(1)
-    expect(instances[0].options).toMatchObject({ title: 'Download complete', body: 'My Video' })
+    expect(instances[0].options).toMatchObject({
+      title: 'Download complete',
+      body: 'My Video'
+    })
     expect(instances[0].show).toHaveBeenCalled()
   })
 

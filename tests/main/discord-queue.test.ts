@@ -83,3 +83,27 @@ describe('TrackQueue', () => {
     expect([...q.upcoming.map((t) => t.id)].sort()).toEqual([...ids].sort())
   })
 })
+
+describe('TrackQueue.move', () => {
+  it('moves an upcoming track to a new position', () => {
+    const q = new TrackQueue()
+    q.add([track('a'), track('b'), track('c')])
+    expect(q.move(2, 0)?.id).toBe('c')
+    expect(q.upcoming.map((t) => t.id)).toEqual(['c', 'a', 'b'])
+  })
+
+  it('clamps the target position to the queue bounds', () => {
+    const q = new TrackQueue()
+    q.add([track('a'), track('b')])
+    expect(q.move(0, 99)?.id).toBe('a')
+    expect(q.upcoming.map((t) => t.id)).toEqual(['b', 'a'])
+  })
+
+  it('rejects out-of-range sources', () => {
+    const q = new TrackQueue()
+    q.add([track('a')])
+    expect(q.move(5, 0)).toBeNull()
+    expect(q.move(-1, 0)).toBeNull()
+    expect(q.upcoming.map((t) => t.id)).toEqual(['a'])
+  })
+})

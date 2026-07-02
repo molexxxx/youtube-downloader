@@ -1,15 +1,17 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { IPC } from '@shared/types'
 
-const { handlers, getConfigMock, setConfigMock, resetConfigMock, applyThemeMock } = vi.hoisted(
-  () => ({
+const { handlers, getConfigMock, setConfigMock, resetConfigMock, applyThemeMock } =
+  vi.hoisted(() => ({
     handlers: new Map<string, (...args: unknown[]) => unknown>(),
     getConfigMock: vi.fn(() => ({ theme: 'dark' })),
-    setConfigMock: vi.fn((partial: Record<string, unknown>) => ({ theme: 'light', ...partial })),
+    setConfigMock: vi.fn((partial: Record<string, unknown>) => ({
+      theme: 'light',
+      ...partial
+    })),
     resetConfigMock: vi.fn(() => ({ theme: 'system' })),
     applyThemeMock: vi.fn()
-  })
-)
+  }))
 
 vi.mock('electron', () => ({
   ipcMain: {

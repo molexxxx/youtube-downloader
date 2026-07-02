@@ -1,5 +1,14 @@
-import { FolderOpen, X, CheckCircle2, AlertCircle, Loader2, Trash2 } from 'lucide-react'
+import {
+  FolderOpen,
+  Play,
+  X,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  Trash2
+} from 'lucide-react'
 import { useAppStore } from '../../stores/appStore'
+import { PlayInDiscord } from '../discord/PlayInDiscord'
 import type { DownloadJob, DownloadState } from '@shared/types'
 
 // Lower number = shown first. Active jobs float to the top, queued next,
@@ -8,7 +17,7 @@ const STATE_PRIORITY: Partial<Record<DownloadState, number>> = {
   downloading: 0,
   processing: 0,
   extracting: 0,
-  queued: 1,
+  queued: 1
 }
 
 export function DownloadQueue(): React.JSX.Element {
@@ -54,14 +63,14 @@ export function DownloadQueue(): React.JSX.Element {
 
 function JobRow({ job }: { job: DownloadJob }): React.JSX.Element {
   const isActive =
-    job.state === 'downloading' || job.state === 'processing' || job.state === 'extracting'
+    job.state === 'downloading' ||
+    job.state === 'processing' ||
+    job.state === 'extracting'
 
   return (
     <div
       className={`rounded-xl border p-3 transition-colors ${
-        isActive
-          ? 'border-red-500/25 bg-red-500/5'
-          : 'border-white/5 bg-white/2'
+        isActive ? 'border-red-500/25 bg-red-500/5' : 'border-white/5 bg-white/2'
       }`}
     >
       <div className="flex items-center justify-between gap-3">
@@ -72,13 +81,25 @@ function JobRow({ job }: { job: DownloadJob }): React.JSX.Element {
         </span>
         <StateIcon job={job} />
         {job.state === 'completed' && (
-          <button
-            onClick={() => window.api.system.showItem(job.outputPath ?? '')}
-            className="rounded p-1 text-white/40 hover:text-white"
-            aria-label="Show in folder"
-          >
-            <FolderOpen size={15} />
-          </button>
+          <>
+            <button
+              onClick={() => job.outputPath && window.api.system.openPath(job.outputPath)}
+              className="rounded p-1 text-white/40 transition-colors hover:text-emerald-300"
+              aria-label="Preview file"
+              title="Preview in your default player"
+            >
+              <Play size={15} />
+            </button>
+            <PlayInDiscord title={job.title} url={job.url} filePath={job.outputPath} />
+            <button
+              onClick={() => window.api.system.showItem(job.outputPath ?? '')}
+              className="rounded p-1 text-white/40 transition-colors hover:text-white"
+              aria-label="Show in folder"
+              title="Show in folder"
+            >
+              <FolderOpen size={15} />
+            </button>
+          </>
         )}
         {isActive && (
           <button

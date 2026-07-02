@@ -1,6 +1,15 @@
-import { CheckCircle2, FolderOpen, Music, Trash2, Video, XCircle } from 'lucide-react'
+import {
+  CheckCircle2,
+  FolderOpen,
+  Music,
+  Play,
+  Trash2,
+  Video,
+  XCircle
+} from 'lucide-react'
 import type { HistoryEntry } from '@shared/types'
 import { useAppStore } from '../../stores/appStore'
+import { PlayInDiscord } from '../discord/PlayInDiscord'
 
 function formatWhen(ms: number): string {
   const diff = Date.now() - ms
@@ -85,8 +94,21 @@ function HistoryRow({
       </div>
       {ok && entry.outputPath && (
         <button
+          onClick={() => void window.api.system.openPath(entry.outputPath!)}
+          className="rounded p-1.5 text-white/40 transition-colors hover:text-emerald-300"
+          aria-label="Preview file"
+          title="Preview in your default player"
+        >
+          <Play size={15} />
+        </button>
+      )}
+      {ok && (
+        <PlayInDiscord title={entry.title} url={entry.url} filePath={entry.outputPath} />
+      )}
+      {ok && entry.outputPath && (
+        <button
           onClick={reveal}
-          className="rounded p-1.5 text-white/40 hover:text-white"
+          className="rounded p-1.5 text-white/40 transition-colors hover:text-white"
           aria-label="Show in folder"
           title="Show in folder"
         >

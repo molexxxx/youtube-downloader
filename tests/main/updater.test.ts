@@ -1,45 +1,49 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import { IPC } from '@shared/types'
 
-const { autoUpdater, handlers, sentMessages, windows, appMock, loggerMock } = vi.hoisted(() => {
-  const sentMessages: Array<{ channel: string; payload: unknown }> = []
-  const autoUpdater = {
-    autoDownload: false,
-    autoInstallOnAppQuit: false,
-    allowDowngrade: true,
-    logger: {} as unknown,
-    forceDevUpdateConfig: false,
-    listeners: new Map<string, (arg: unknown) => void>(),
-    on(event: string, fn: (arg: unknown) => void) {
-      this.listeners.set(event, fn)
-      return this
-    },
-    checkForUpdates: vi.fn(),
-    downloadUpdate: vi.fn(),
-    quitAndInstall: vi.fn()
-  }
-  return {
-    autoUpdater,
-    handlers: new Map<string, (...a: unknown[]) => unknown>(),
-    sentMessages,
-    windows: [
-      {
-        webContents: {
-          send: (channel: string, payload: unknown) => sentMessages.push({ channel, payload })
+const { autoUpdater, handlers, sentMessages, windows, appMock, loggerMock } = vi.hoisted(
+  () => {
+    const sentMessages: Array<{ channel: string; payload: unknown }> = []
+    const autoUpdater = {
+      autoDownload: false,
+      autoInstallOnAppQuit: false,
+      allowDowngrade: true,
+      logger: {} as unknown,
+      forceDevUpdateConfig: false,
+      listeners: new Map<string, (arg: unknown) => void>(),
+      on(event: string, fn: (arg: unknown) => void) {
+        this.listeners.set(event, fn)
+        return this
+      },
+      checkForUpdates: vi.fn(),
+      downloadUpdate: vi.fn(),
+      quitAndInstall: vi.fn()
+    }
+    return {
+      autoUpdater,
+      handlers: new Map<string, (...a: unknown[]) => unknown>(),
+      sentMessages,
+      windows: [
+        {
+          webContents: {
+            send: (channel: string, payload: unknown) =>
+              sentMessages.push({ channel, payload })
+          }
         }
-      }
-    ],
-    appMock: { isPackaged: true },
-    loggerMock: { info: vi.fn(), warn: vi.fn() }
+      ],
+      appMock: { isPackaged: true },
+      loggerMock: { info: vi.fn(), warn: vi.fn() }
+    }
   }
-})
+)
 
 vi.mock('electron-updater', () => ({ default: { autoUpdater } }))
 vi.mock('electron', () => ({
   app: appMock,
   BrowserWindow: { getAllWindows: () => windows },
   ipcMain: {
-    handle: (channel: string, fn: (...a: unknown[]) => unknown) => handlers.set(channel, fn)
+    handle: (channel: string, fn: (...a: unknown[]) => unknown) =>
+      handlers.set(channel, fn)
   }
 }))
 vi.mock('@main/config', () => ({ getConfig: () => ({ autoUpdateApp: true }) }))
@@ -47,7 +51,8 @@ vi.mock('@main/logger', () => ({ logger: loggerMock }))
 
 import { initUpdater } from '@main/updater'
 
-const emit = (event: string, arg?: unknown): void => autoUpdater.listeners.get(event)!(arg)
+const emit = (event: string, arg?: unknown): void =>
+  autoUpdater.listeners.get(event)!(arg)
 
 beforeEach(() => {
   vi.useFakeTimers()
@@ -89,12 +94,18 @@ describe('initUpdater', () => {
 
   it('broadcasts available with version', () => {
     emit('update-available', { version: '2.0.0' })
-    expect(sentMessages.at(-1)!.payload).toMatchObject({ state: 'available', version: '2.0.0' })
+    expect(sentMessages.at(-1)!.payload).toMatchObject({
+      state: 'available',
+      version: '2.0.0'
+    })
   })
 
   it('broadcasts up-to-date', () => {
     emit('update-not-available', { version: '1.0.0' })
-    expect(sentMessages.at(-1)!.payload).toMatchObject({ state: 'up-to-date', version: '1.0.0' })
+    expect(sentMessages.at(-1)!.payload).toMatchObject({
+      state: 'up-to-date',
+      version: '1.0.0'
+    })
   })
 
   it('broadcasts rounded download progress preserving the known version', () => {
@@ -109,7 +120,10 @@ describe('initUpdater', () => {
 
   it('broadcasts downloaded at 100 percent', () => {
     emit('update-downloaded', { version: '2.0.0' })
-    expect(sentMessages.at(-1)!.payload).toMatchObject({ state: 'downloaded', percent: 100 })
+    expect(sentMessages.at(-1)!.payload).toMatchObject({
+      state: 'downloaded',
+      percent: 100
+    })
   })
 
   it('broadcasts errors', () => {
@@ -132,7 +146,10 @@ describe('initUpdater', () => {
     autoUpdater.checkForUpdates.mockRejectedValue(new Error('offline'))
     const result = await handlers.get(IPC.appUpdate.check)!()
     expect(result).toEqual({ ok: false, error: 'offline' })
-    expect(sentMessages.at(-1)!.payload).toMatchObject({ state: 'error', error: 'offline' })
+    expect(sentMessages.at(-1)!.payload).toMatchObject({
+      state: 'error',
+      error: 'offline'
+    })
   })
 
   it('download succeeds', async () => {
@@ -142,12 +159,15 @@ describe('initUpdater', () => {
 
   it('download reports failures', async () => {
     autoUpdater.downloadUpdate.mockRejectedValue(new Error('no space'))
-    expect(await handlers.get(IPC.appUpdate.download)!()).toEqual({ ok: false, error: 'no space' })
+    expect(await handlers.get(IPC.appUpdate.download)!()).toEqual({
+      ok: false,
+      error: 'no space'
+    })
   })
 
-  it('install quits and installs', () => {
+  it('install quits and installs silently', () => {
     handlers.get(IPC.appUpdate.install)!()
-    expect(autoUpdater.quitAndInstall).toHaveBeenCalledWith(false, true)
+    expect(autoUpdater.quitAndInstall).toHaveBeenCalledWith(true, true)
   })
 
   it('runs a launch check after the delay', () => {

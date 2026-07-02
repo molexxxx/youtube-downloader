@@ -63,12 +63,16 @@ describe('DownloadQueue', () => {
   })
 
   it('clears finished jobs', async () => {
-    useAppStore.getState().setJobs([
-      job({ id: 'a', state: 'downloading' }),
-      job({ id: 'b', state: 'completed' })
-    ])
+    useAppStore
+      .getState()
+      .setJobs([
+        job({ id: 'a', state: 'downloading' }),
+        job({ id: 'b', state: 'completed' })
+      ])
     render(<DownloadQueue />)
     fireEvent.click(screen.getByText('Clear finished'))
-    await waitFor(() => expect(useAppStore.getState().jobs.map((j) => j.id)).toEqual(['a']))
+    await waitFor(() =>
+      expect(useAppStore.getState().jobs.map((j) => j.id)).toEqual(['a'])
+    )
   })
 })

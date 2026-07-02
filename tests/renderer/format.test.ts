@@ -68,9 +68,9 @@ describe('looksLikeAuthError', () => {
 
 describe('playlistChoiceId', () => {
   it('returns the list id for a watch link that carries a playlist', () => {
-    expect(
-      playlistChoiceId('https://www.youtube.com/watch?v=abc123&list=PL456')
-    ).toBe('PL456')
+    expect(playlistChoiceId('https://www.youtube.com/watch?v=abc123&list=PL456')).toBe(
+      'PL456'
+    )
     expect(playlistChoiceId('youtube.com/watch?v=abc123&list=PL456')).toBe('PL456')
   })
   it('ignores watch links without a playlist', () => {
@@ -80,9 +80,9 @@ describe('playlistChoiceId', () => {
     expect(playlistChoiceId('https://www.youtube.com/playlist?list=PL456')).toBeNull()
   })
   it('prompts for auto-generated mixes/radios', () => {
-    expect(
-      playlistChoiceId('https://www.youtube.com/watch?v=abc123&list=RD456')
-    ).toBe('RD456')
+    expect(playlistChoiceId('https://www.youtube.com/watch?v=abc123&list=RD456')).toBe(
+      'RD456'
+    )
     expect(
       playlistChoiceId(
         'https://www.youtube.com/watch?v=nxg4C365LbQ&list=RDnxg4C365LbQ&start_radio=1'

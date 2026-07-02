@@ -12,7 +12,9 @@ beforeEach(() => cleanup())
 
 describe('Select', () => {
   it('shows the placeholder when nothing is selected', () => {
-    render(<Select value="" onChange={() => {}} options={options} placeholder="Pick one" />)
+    render(
+      <Select value="" onChange={() => {}} options={options} placeholder="Pick one" />
+    )
     expect(screen.getByText('Pick one')).toBeInTheDocument()
   })
 

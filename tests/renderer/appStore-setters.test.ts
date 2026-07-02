@@ -88,13 +88,15 @@ describe('appStore additional setters', () => {
   })
 
   it('clearFinishedJobs keeps only active jobs', () => {
-    useAppStore.getState().setJobs([
-      job('a', 'downloading'),
-      job('b', 'completed'),
-      job('c', 'error'),
-      job('d', 'cancelled'),
-      job('e', 'queued')
-    ])
+    useAppStore
+      .getState()
+      .setJobs([
+        job('a', 'downloading'),
+        job('b', 'completed'),
+        job('c', 'error'),
+        job('d', 'cancelled'),
+        job('e', 'queued')
+      ])
     useAppStore.getState().clearFinishedJobs()
     expect(useAppStore.getState().jobs.map((j) => j.id)).toEqual(['a', 'e'])
   })

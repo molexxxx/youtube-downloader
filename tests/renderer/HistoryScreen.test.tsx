@@ -39,9 +39,11 @@ describe('HistoryScreen', () => {
   })
 
   it('shows the error for a failed entry', () => {
-    useAppStore.getState().setHistory([
-      entry({ status: 'error', error: 'failed to fetch', outputPath: null })
-    ])
+    useAppStore
+      .getState()
+      .setHistory([
+        entry({ status: 'error', error: 'failed to fetch', outputPath: null })
+      ])
     render(<HistoryScreen />)
     expect(screen.getByText(/failed to fetch/)).toBeInTheDocument()
   })
@@ -71,12 +73,14 @@ describe('HistoryScreen', () => {
 
   it('formats relative timestamps across thresholds', () => {
     const now = Date.now()
-    useAppStore.getState().setHistory([
-      entry({ id: 'a', title: 'now', completedAt: now }),
-      entry({ id: 'b', title: 'mins', completedAt: now - 5 * 60_000 }),
-      entry({ id: 'c', title: 'hours', completedAt: now - 3 * 3_600_000 }),
-      entry({ id: 'd', title: 'days', completedAt: now - 3 * 86_400_000 })
-    ])
+    useAppStore
+      .getState()
+      .setHistory([
+        entry({ id: 'a', title: 'now', completedAt: now }),
+        entry({ id: 'b', title: 'mins', completedAt: now - 5 * 60_000 }),
+        entry({ id: 'c', title: 'hours', completedAt: now - 3 * 3_600_000 }),
+        entry({ id: 'd', title: 'days', completedAt: now - 3 * 86_400_000 })
+      ])
     render(<HistoryScreen />)
     expect(screen.getByText('just now')).toBeInTheDocument()
     expect(screen.getByText('5m ago')).toBeInTheDocument()

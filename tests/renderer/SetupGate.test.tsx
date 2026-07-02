@@ -29,7 +29,11 @@ describe('SetupGate', () => {
   it('shows the bootstrap stage label', async () => {
     api.binaries.bootstrap.mockResolvedValue(ready)
     useAppStore.setState({
-      bootstrap: { binary: 'ffmpeg', stage: 'downloading', percent: 50 } as BootstrapProgress
+      bootstrap: {
+        binary: 'ffmpeg',
+        stage: 'downloading',
+        percent: 50
+      } as BootstrapProgress
     })
     render(<SetupGate />)
     expect(screen.getByText(/ffmpeg: downloading 50%/)).toBeInTheDocument()

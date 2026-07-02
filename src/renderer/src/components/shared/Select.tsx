@@ -21,13 +21,15 @@ export function Select({
   onChange,
   options,
   placeholder = 'Select…',
-  className = ''
+  className = '',
+  accent = 'red'
 }: {
   value: string
   onChange: (value: string) => void
   options: SelectOption[]
   placeholder?: string
   className?: string
+  accent?: 'red' | 'indigo'
 }): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(0)
@@ -124,14 +126,14 @@ export function Select({
         aria-controls={listId}
         onClick={() => setOpen((o) => !o)}
         onKeyDown={onKeyDown}
-        className="flex w-full items-center justify-between gap-2 rounded-lg border border-white/10 bg-[#12151c] px-3 py-2 text-left text-sm outline-none transition hover:border-white/20 focus:border-red-500/50"
+        className={`field ${accent === 'indigo' ? 'field-indigo' : 'field-red'} flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm outline-none`}
       >
         <span className={`truncate ${selected ? '' : 'text-white/40'}`}>
           {selected ? selected.label : placeholder}
         </span>
         <ChevronDown
           size={15}
-          className={`shrink-0 text-white/40 transition-transform ${open ? 'rotate-180' : ''}`}
+          className={`shrink-0 text-white/40 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
         />
       </button>
 
@@ -155,7 +157,7 @@ export function Select({
                 onClick={() => commit(i)}
                 className={`flex cursor-pointer items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-sm ${
                   i === active ? 'bg-white/10' : ''
-                } ${isSelected ? 'text-red-300' : 'text-white/80'}`}
+                } ${isSelected ? (accent === 'indigo' ? 'text-indigo-300' : 'text-red-300') : 'text-white/80'}`}
               >
                 <span className="min-w-0 flex-1 truncate">
                   {o.label}

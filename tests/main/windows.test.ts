@@ -1,62 +1,80 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 
-const { instances, BrowserWindowMock, MenuMock, shellMock, getConfigMock, isObj, popupMock } =
-  vi.hoisted(() => {
-    interface WC {
-      handlers: Map<string, (...a: unknown[]) => void>
-      openHandler?: (d: unknown) => unknown
-      setWindowOpenHandler: ReturnType<typeof vi.fn>
-      on: ReturnType<typeof vi.fn>
-    }
-    interface MW {
-      options: Record<string, unknown>
-      handlers: Map<string, (...a: unknown[]) => void>
-      webContents: WC
-      show: ReturnType<typeof vi.fn>
-      hide: ReturnType<typeof vi.fn>
-      loadURL: ReturnType<typeof vi.fn>
-      loadFile: ReturnType<typeof vi.fn>
-      on: ReturnType<typeof vi.fn>
-    }
-    const instances: MW[] = []
-    const popupMock = vi.fn()
-    class BrowserWindowMock {
-      options: Record<string, unknown>
-      handlers = new Map<string, (...a: unknown[]) => void>()
-      webContents: WC
-      show = vi.fn()
-      hide = vi.fn()
-      loadURL = vi.fn()
-      loadFile = vi.fn()
-      on: ReturnType<typeof vi.fn>
-      constructor(options: Record<string, unknown>) {
-        this.options = options
-        const wc: WC = {
-          handlers: new Map(),
-          setWindowOpenHandler: vi.fn((fn: (d: unknown) => unknown) => {
-            wc.openHandler = fn
-          }),
-          on: vi.fn((event: string, cb: (...a: unknown[]) => void) => {
-            wc.handlers.set(event, cb)
-          })
-        }
-        this.webContents = wc
-        this.on = vi.fn((event: string, cb: (...a: unknown[]) => void) => {
-          this.handlers.set(event, cb)
+const {
+  instances,
+  BrowserWindowMock,
+  MenuMock,
+  shellMock,
+  getConfigMock,
+  hasTrayMock,
+  isObj,
+  popupMock
+} = vi.hoisted(() => {
+  interface WC {
+    handlers: Map<string, (...a: unknown[]) => void>
+    openHandler?: (d: unknown) => unknown
+    setWindowOpenHandler: ReturnType<typeof vi.fn>
+    on: ReturnType<typeof vi.fn>
+  }
+  interface MW {
+    options: Record<string, unknown>
+    handlers: Map<string, (...a: unknown[]) => void>
+    webContents: WC
+    show: ReturnType<typeof vi.fn>
+    hide: ReturnType<typeof vi.fn>
+    loadURL: ReturnType<typeof vi.fn>
+    loadFile: ReturnType<typeof vi.fn>
+    on: ReturnType<typeof vi.fn>
+    once: ReturnType<typeof vi.fn>
+    isDestroyed: () => boolean
+    isVisible: () => boolean
+  }
+  const instances: MW[] = []
+  const popupMock = vi.fn()
+  class BrowserWindowMock {
+    options: Record<string, unknown>
+    handlers = new Map<string, (...a: unknown[]) => void>()
+    webContents: WC
+    show = vi.fn()
+    hide = vi.fn()
+    loadURL = vi.fn()
+    loadFile = vi.fn()
+    on: ReturnType<typeof vi.fn>
+    once: ReturnType<typeof vi.fn>
+    isDestroyed = (): boolean => false
+    isVisible = (): boolean => false
+    constructor(options: Record<string, unknown>) {
+      this.options = options
+      const wc: WC = {
+        handlers: new Map(),
+        setWindowOpenHandler: vi.fn((fn: (d: unknown) => unknown) => {
+          wc.openHandler = fn
+        }),
+        on: vi.fn((event: string, cb: (...a: unknown[]) => void) => {
+          wc.handlers.set(event, cb)
         })
-        instances.push(this as unknown as MW)
       }
+      this.webContents = wc
+      this.on = vi.fn((event: string, cb: (...a: unknown[]) => void) => {
+        this.handlers.set(event, cb)
+      })
+      this.once = vi.fn((event: string, cb: (...a: unknown[]) => void) => {
+        this.handlers.set(`once:${event}`, cb)
+      })
+      instances.push(this as unknown as MW)
     }
-    return {
-      instances,
-      BrowserWindowMock,
-      MenuMock: { buildFromTemplate: vi.fn(() => ({ popup: popupMock })) },
-      shellMock: { openExternal: vi.fn() },
-      getConfigMock: vi.fn(() => ({ closeToTray: true })),
-      isObj: { dev: false },
-      popupMock
-    }
-  })
+  }
+  return {
+    instances,
+    BrowserWindowMock,
+    MenuMock: { buildFromTemplate: vi.fn(() => ({ popup: popupMock })) },
+    shellMock: { openExternal: vi.fn() },
+    getConfigMock: vi.fn(() => ({ closeToTray: true })),
+    hasTrayMock: vi.fn(() => true),
+    isObj: { dev: false },
+    popupMock
+  }
+})
 
 vi.mock('electron', () => ({
   BrowserWindow: BrowserWindowMock,
@@ -65,6 +83,13 @@ vi.mock('electron', () => ({
 }))
 vi.mock('@electron-toolkit/utils', () => ({ is: isObj }))
 vi.mock('@main/config', () => ({ getConfig: getConfigMock }))
+vi.mock('@main/tray', () => ({ hasTray: hasTrayMock }))
+vi.mock('@main/window-state', () => ({
+  DEFAULT_WINDOW_SIZE: { width: 1600, height: 900 },
+  MIN_WINDOW_SIZE: { width: 1280, height: 720 },
+  loadWindowState: vi.fn(() => ({ bounds: null, maximized: false })),
+  trackWindowState: vi.fn()
+}))
 
 import { createMainWindow, getMainWindow, setQuitting } from '@main/windows'
 
@@ -81,7 +106,7 @@ describe('createMainWindow', () => {
   it('creates a window with the expected dimensions and exposes it', () => {
     const win = createMainWindow()
     expect(getMainWindow()).toBe(win)
-    expect(instances[0].options).toMatchObject({ width: 1240, height: 880, frame: false })
+    expect(instances[0].options).toMatchObject({ width: 1600, height: 900, frame: false })
   })
 
   it('loads the renderer file in production', () => {
@@ -134,6 +159,16 @@ describe('createMainWindow', () => {
     expect(event.preventDefault).not.toHaveBeenCalled()
   })
 
+  it('never hides to a tray that does not exist', () => {
+    hasTrayMock.mockReturnValue(false)
+    createMainWindow()
+    const event = { preventDefault: vi.fn() }
+    instances[0].handlers.get('close')!(event)
+    expect(event.preventDefault).not.toHaveBeenCalled()
+    expect(instances[0].hide).not.toHaveBeenCalled()
+    hasTrayMock.mockReturnValue(true)
+  })
+
   it('opens external links in the browser and denies new windows', () => {
     createMainWindow()
     const result = instances[0].webContents.openHandler!({ url: 'https://x.com' })
@@ -159,7 +194,10 @@ describe('createMainWindow', () => {
   it('builds a copy-only menu for selected text', () => {
     createMainWindow()
     const handler = instances[0].webContents.handlers.get('context-menu')!
-    handler({}, { isEditable: false, editFlags: { canCopy: true }, selectionText: 'hello' })
+    handler(
+      {},
+      { isEditable: false, editFlags: { canCopy: true }, selectionText: 'hello' }
+    )
     expect(popupMock).toHaveBeenCalled()
   })
 

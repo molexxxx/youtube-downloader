@@ -35,7 +35,13 @@ const single = (overrides: Partial<MediaInfo> = {}): MediaInfo =>
   }) as MediaInfo
 
 const entry = (id: string): PlaylistEntry =>
-  ({ id, title: `Item ${id}`, url: `https://y/${id}`, duration: 60, thumbnail: null }) as PlaylistEntry
+  ({
+    id,
+    title: `Item ${id}`,
+    url: `https://y/${id}`,
+    duration: 60,
+    thumbnail: null
+  }) as PlaylistEntry
 
 const playlist = (count: number, overrides: Partial<MediaInfo> = {}): MediaInfo =>
   ({
@@ -164,8 +170,14 @@ describe('MediaCard', () => {
     fireEvent.click(screen.getAllByRole('checkbox')[1])
     fireEvent.click(screen.getByText('Download 2 items'))
     await waitFor(() => expect(api.download.start).toHaveBeenCalledTimes(2))
-    expect(api.download.start.mock.calls[0][0]).toMatchObject({ url: 'https://y/1', noPlaylist: true })
-    expect(api.download.start.mock.calls[1][0]).toMatchObject({ url: 'https://y/3', noPlaylist: true })
+    expect(api.download.start.mock.calls[0][0]).toMatchObject({
+      url: 'https://y/1',
+      noPlaylist: true
+    })
+    expect(api.download.start.mock.calls[1][0]).toMatchObject({
+      url: 'https://y/3',
+      noPlaylist: true
+    })
   })
 
   it('disables download when nothing is selected', () => {
@@ -234,6 +246,8 @@ describe('MediaCard', () => {
     render(<MediaCard />)
     fireEvent.click(screen.getByText(/Load \d+ more/))
     await waitFor(() => expect(api.extract.playlistPage).toHaveBeenCalled())
-    await waitFor(() => expect(screen.queryByText(/Load \d+ more/)).not.toBeInTheDocument())
+    await waitFor(() =>
+      expect(screen.queryByText(/Load \d+ more/)).not.toBeInTheDocument()
+    )
   })
 })

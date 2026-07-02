@@ -3,6 +3,13 @@ import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
 import { getConfig } from './config'
 import { launchedHidden } from './startup'
+import { hasTray } from './tray'
+import {
+  DEFAULT_WINDOW_SIZE,
+  MIN_WINDOW_SIZE,
+  loadWindowState,
+  trackWindowState
+} from './window-state'
 
 let mainWindow: BrowserWindow | null = null
 let quitting = false
@@ -17,11 +24,14 @@ export function setQuitting(value: boolean): void {
 }
 
 export function createMainWindow(): BrowserWindow {
+  const state = loadWindowState()
   const window = new BrowserWindow({
-    width: 1240,
-    height: 880,
-    minWidth: 980,
-    minHeight: 700,
+    width: state.bounds?.width ?? DEFAULT_WINDOW_SIZE.width,
+    height: state.bounds?.height ?? DEFAULT_WINDOW_SIZE.height,
+    x: state.bounds?.x,
+    y: state.bounds?.y,
+    minWidth: MIN_WINDOW_SIZE.width,
+    minHeight: MIN_WINDOW_SIZE.height,
     show: false,
     autoHideMenuBar: true,
     frame: false,
@@ -36,6 +46,9 @@ export function createMainWindow(): BrowserWindow {
     }
   })
 
+  if (state.maximized) window.maximize()
+  trackWindowState(window)
+
   mainWindow = window
   window.on('closed', () => {
     mainWindow = null
@@ -43,19 +56,30 @@ export function createMainWindow(): BrowserWindow {
 
   window.on('close', (event) => {
     // Keep running in the tray when the user closes the window, unless we are
-    // actually quitting (tray "Quit", app.quit(), or platform shutdown).
-    if (!quitting && getConfig().closeToTray) {
+    // actually quitting (tray "Quit", app.quit(), or platform shutdown). Never
+    // hide when no tray exists - there would be no way to bring the app back.
+    if (!quitting && getConfig().closeToTray && hasTray()) {
       event.preventDefault()
       window.hide()
     }
   })
 
   // Launched at login with "start minimized": stay hidden in the tray instead of
-  // popping the window. The tray icon (always created) brings it back.
-  const startHidden = launchedHidden() && getConfig().startMinimized
+  // popping the window. Falls back to visible when the tray is unavailable.
+  const startHidden = launchedHidden() && getConfig().startMinimized && hasTray()
   window.on('ready-to-show', () => {
     if (!startHidden) window.show()
   })
+
+  // Safety net for packaged builds: if the renderer never reaches ready-to-show
+  // (broken packaging, GPU issues), surface the window anyway so the failure is
+  // visible instead of a silent background process.
+  const showFallback = setTimeout(() => {
+    if (!window.isDestroyed() && !window.isVisible() && !startHidden) {
+      window.show()
+    }
+  }, 10_000)
+  window.once('closed', () => clearTimeout(showFallback))
 
   window.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)

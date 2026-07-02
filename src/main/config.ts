@@ -4,9 +4,8 @@ import { DEFAULT_CONFIG, type AppConfig } from '@shared/types'
 
 // electron-store v11 is ESM-only; under CJS interop the class can arrive wrapped
 // as `{ default: ElectronStore }`. Unwrap so the constructor is always callable.
-const StoreCtor = (
-  (ElectronStore as unknown as { default?: typeof ElectronStore }).default ?? ElectronStore
-) as typeof ElectronStore
+const StoreCtor = ((ElectronStore as unknown as { default?: typeof ElectronStore })
+  .default ?? ElectronStore) as typeof ElectronStore
 
 let store: ElectronStore<AppConfig> | null = null
 

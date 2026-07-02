@@ -1,11 +1,13 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 
-const { engineMock, cookieFlagsMock, cookiesEnabledMock, loggerMock } = vi.hoisted(() => ({
-  engineMock: vi.fn(),
-  cookieFlagsMock: vi.fn(() => ({ cookies: '/userdata/cookies.txt' })),
-  cookiesEnabledMock: vi.fn(() => true),
-  loggerMock: { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() }
-}))
+const { engineMock, cookieFlagsMock, cookiesEnabledMock, loggerMock } = vi.hoisted(
+  () => ({
+    engineMock: vi.fn(),
+    cookieFlagsMock: vi.fn(() => ({ cookies: '/userdata/cookies.txt' })),
+    cookiesEnabledMock: vi.fn(() => true),
+    loggerMock: { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() }
+  })
+)
 
 vi.mock('@main/config', () => ({ getConfig: () => ({ cookiesFromBrowser: 'auto' }) }))
 vi.mock('@main/binaries/ffmpeg-binary', () => ({ ffmpegDir: () => '/bin' }))
@@ -50,14 +52,18 @@ describe('getInfo cookie fallback', () => {
   it('retries with cookies when the video requires authentication', async () => {
     engineMock
       .mockRejectedValueOnce(
-        new Error('ERROR: [youtube] x: Private video. Sign in if you have been granted access')
+        new Error(
+          'ERROR: [youtube] x: Private video. Sign in if you have been granted access'
+        )
       )
       .mockResolvedValueOnce({ id: 'abc', title: 'Clip' })
     const info = await getInfo('https://x')
     expect(info.title).toBe('Clip')
     expect(engineMock).toHaveBeenCalledTimes(2)
     // retry includes the cookie flags
-    expect(engineMock.mock.calls[1][1]).toMatchObject({ cookies: '/userdata/cookies.txt' })
+    expect(engineMock.mock.calls[1][1]).toMatchObject({
+      cookies: '/userdata/cookies.txt'
+    })
     expect(loggerMock.warn).toHaveBeenCalled()
   })
 
@@ -91,11 +97,15 @@ describe('isPlaylistUrl', () => {
   })
 
   it('treats a /playlist URL as a playlist', () => {
-    expect(isPlaylistUrl('https://www.youtube.com/playlist?list=PLUo7r5eLeJSZ')).toBe(true)
+    expect(isPlaylistUrl('https://www.youtube.com/playlist?list=PLUo7r5eLeJSZ')).toBe(
+      true
+    )
   })
 
   it('treats a non-watch list= URL as a playlist', () => {
-    expect(isPlaylistUrl('https://www.youtube.com/embed/videoseries?list=PLUo7r5')).toBe(true)
+    expect(isPlaylistUrl('https://www.youtube.com/embed/videoseries?list=PLUo7r5')).toBe(
+      true
+    )
   })
 
   it('returns false for an unparseable string', () => {
@@ -129,7 +139,11 @@ describe('getPlaylistPage', () => {
         { id: 'b', title: 'B', url: 'https://b' }
       ]
     })
-    const page = await getPlaylistPage('https://www.youtube.com/playlist?list=PL1', 201, 400)
+    const page = await getPlaylistPage(
+      'https://www.youtube.com/playlist?list=PL1',
+      201,
+      400
+    )
     const opts = engineMock.mock.calls[0][1]
     expect(opts.playlistItems).toBe('201:400')
     expect(opts.flatPlaylist).toBe(true)
@@ -143,7 +157,9 @@ describe('getPlaylistPage', () => {
       .mockResolvedValueOnce({ entries: [{ id: 'a', title: 'A', url: 'https://a' }] })
     const page = await getPlaylistPage('https://x', 1, 200)
     expect(engineMock).toHaveBeenCalledTimes(2)
-    expect(engineMock.mock.calls[1][1]).toMatchObject({ cookies: '/userdata/cookies.txt' })
+    expect(engineMock.mock.calls[1][1]).toMatchObject({
+      cookies: '/userdata/cookies.txt'
+    })
     expect(page).toHaveLength(1)
   })
 })

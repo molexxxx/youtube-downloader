@@ -3,9 +3,8 @@ import type { GuildSettings } from '@shared/types'
 
 // electron-store v11 is ESM-only; under CJS interop unwrap the default export so
 // the constructor is always callable (mirrors config.ts / history.ts).
-const StoreCtor = (
-  (ElectronStore as unknown as { default?: typeof ElectronStore }).default ?? ElectronStore
-) as typeof ElectronStore
+const StoreCtor = ((ElectronStore as unknown as { default?: typeof ElectronStore })
+  .default ?? ElectronStore) as typeof ElectronStore
 
 export interface DiscordStoreShape {
   /** safeStorage-encrypted bot token, base64. Null when none or stored plain. */

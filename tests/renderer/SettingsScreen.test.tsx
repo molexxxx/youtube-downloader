@@ -2,7 +2,12 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react'
 import { SettingsScreen } from '@renderer/components/settings/SettingsScreen'
 import { useAppStore } from '@renderer/stores/appStore'
-import type { AppConfig, AppUpdateStatus, BinariesStatus, CookieInfo } from '@shared/types'
+import type {
+  AppConfig,
+  AppUpdateStatus,
+  BinariesStatus,
+  CookieInfo
+} from '@shared/types'
 import { installMockApi } from './helpers/mockApi'
 
 let api: ReturnType<typeof installMockApi>
@@ -138,13 +143,13 @@ describe('SettingsScreen', () => {
   it('warns when no browsers are detected', async () => {
     api.cookies.info.mockResolvedValue(cookieInfo({ detected: [] }))
     render(<SettingsScreen />)
-    expect(
-      await screen.findByText(/No supported browsers detected/)
-    ).toBeInTheDocument()
+    expect(await screen.findByText(/No supported browsers detected/)).toBeInTheDocument()
   })
 
   it('shows cookie controls when a browser is configured', async () => {
-    api.cookies.info.mockResolvedValue(cookieInfo({ cached: true, effectiveLabel: 'Chrome', ageMs: 1000 }))
+    api.cookies.info.mockResolvedValue(
+      cookieInfo({ cached: true, effectiveLabel: 'Chrome', ageMs: 1000 })
+    )
     useAppStore.setState({ config: fullConfig({ cookiesFromBrowser: 'chrome' }) })
     render(<SettingsScreen />)
     expect(await screen.findByText('Refresh')).toBeInTheDocument()
@@ -202,7 +207,9 @@ describe('SettingsScreen', () => {
 
 describe('SettingsScreen - extended controls', () => {
   it('edits subtitle languages', async () => {
-    useAppStore.setState({ config: fullConfig({ writeSubtitles: true, subtitleLangs: ['en'] }) })
+    useAppStore.setState({
+      config: fullConfig({ writeSubtitles: true, subtitleLangs: ['en'] })
+    })
     render(<SettingsScreen />)
     const input = screen.getByPlaceholderText('en, es, fr')
     fireEvent.change(input, { target: { value: 'en, es, ' } })
@@ -232,7 +239,9 @@ describe('SettingsScreen - extended controls', () => {
   it('switches the default container', async () => {
     render(<SettingsScreen />)
     fireEvent.click(screen.getByText('mkv'))
-    await waitFor(() => expect(api.config.set).toHaveBeenCalledWith({ videoContainer: 'mkv' }))
+    await waitFor(() =>
+      expect(api.config.set).toHaveBeenCalledWith({ videoContainer: 'mkv' })
+    )
   })
 
   it('toggles sponsor block and archive', async () => {
@@ -247,7 +256,12 @@ describe('SettingsScreen - extended controls', () => {
 
   it('shows a cached-ready cookie status with age', async () => {
     api.cookies.info.mockResolvedValue(
-      cookieInfo({ cached: true, effectiveBrowser: 'chrome', effectiveLabel: 'Chrome', ageMs: 5 * 60_000 })
+      cookieInfo({
+        cached: true,
+        effectiveBrowser: 'chrome',
+        effectiveLabel: 'Chrome',
+        ageMs: 5 * 60_000
+      })
     )
     useAppStore.setState({ config: fullConfig({ cookiesFromBrowser: 'chrome' }) })
     render(<SettingsScreen />)

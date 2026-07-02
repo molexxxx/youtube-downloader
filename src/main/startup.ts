@@ -35,7 +35,10 @@ export async function applyLaunchOnStartup(
   }
 }
 
-async function applyLinuxAutostart(enabled: boolean, startMinimized: boolean): Promise<void> {
+async function applyLinuxAutostart(
+  enabled: boolean,
+  startMinimized: boolean
+): Promise<void> {
   try {
     if (!enabled) {
       await unlink(LINUX_DESKTOP_FILE).catch(() => {})

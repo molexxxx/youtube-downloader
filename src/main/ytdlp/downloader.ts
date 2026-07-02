@@ -48,7 +48,11 @@ function sameRequest(a: DownloadRequest, b: DownloadRequest): boolean {
 /**
  * Builds the yt-dlp argument list for a download request. Pure function - unit tested.
  */
-export function buildArgs(req: DownloadRequest, cfg = getConfig(), includeCookies = true): string[] {
+export function buildArgs(
+  req: DownloadRequest,
+  cfg = getConfig(),
+  includeCookies = true
+): string[] {
   const args: string[] = [
     req.url,
     '--ignore-config',
@@ -339,7 +343,9 @@ export class DownloadManager extends EventEmitter {
     ) {
       this.patch(id, { state: 'processing' })
     } else if (trimmed.startsWith('[download] Destination:')) {
-      this.patch(id, { outputPath: trimmed.replace('[download] Destination:', '').trim() })
+      this.patch(id, {
+        outputPath: trimmed.replace('[download] Destination:', '').trim()
+      })
     }
   }
 

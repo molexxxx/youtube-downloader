@@ -16,7 +16,13 @@ import {
 } from 'lucide-react'
 import { useAppStore } from '../../stores/appStore'
 import { PRESETS } from '@shared/presets'
-import type { AppConfig, AppUpdateStatus, CookieInfo, Theme, VideoContainer } from '@shared/types'
+import type {
+  AppConfig,
+  AppUpdateStatus,
+  CookieInfo,
+  Theme,
+  VideoContainer
+} from '@shared/types'
 import { Select } from '../shared/Select'
 
 const THEMES: Theme[] = ['system', 'dark', 'light']
@@ -194,7 +200,9 @@ export function SettingsScreen(): React.JSX.Element | null {
             max={5000}
             value={config.playlistFetchLimit}
             onChange={(e) =>
-              update({ playlistFetchLimit: Math.max(0, Math.floor(Number(e.target.value) || 0)) })
+              update({
+                playlistFetchLimit: Math.max(0, Math.floor(Number(e.target.value) || 0))
+              })
             }
             className="w-full rounded-lg border border-white/10 bg-[#12151c] px-3 py-2 text-sm outline-none"
           />
@@ -284,7 +292,9 @@ export function SettingsScreen(): React.JSX.Element | null {
 
             <CookieNote tone="info">
               Tip: close
-              {cookies?.effectiveLabel ? ` ${cookies.effectiveLabel}` : ' your browser'}{' '}
+              {cookies?.effectiveLabel
+                ? ` ${cookies.effectiveLabel}`
+                : ' your browser'}{' '}
               completely before refreshing - a running browser locks its cookie database
               and the import will fail.
             </CookieNote>
@@ -292,7 +302,9 @@ export function SettingsScreen(): React.JSX.Element | null {
             {cookieFailed && (
               <CookieNote tone="warn">
                 Couldn&apos;t read cookies. Make sure
-                {cookies?.effectiveLabel ? ` ${cookies.effectiveLabel}` : ' your browser'}{' '}
+                {cookies?.effectiveLabel
+                  ? ` ${cookies.effectiveLabel}`
+                  : ' your browser'}{' '}
                 is fully closed (check the system tray), then press Refresh.
               </CookieNote>
             )}
@@ -708,7 +720,9 @@ function CookieNote({
       : 'border-white/10 bg-white/[0.02] text-white/45'
   const Icon = tone === 'warn' ? AlertTriangle : Info
   return (
-    <div className={`flex items-start gap-2 rounded-lg border px-3 py-2 text-xs ${styles}`}>
+    <div
+      className={`flex items-start gap-2 rounded-lg border px-3 py-2 text-xs ${styles}`}
+    >
       <Icon size={13} className="mt-0.5 shrink-0" />
       <span>{children}</span>
     </div>
@@ -721,7 +735,9 @@ function AboutPanel({ version }: { version: string | null }): React.JSX.Element 
   return (
     <div className="space-y-4">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-sm font-medium text-white/80 selectable">YouTube Downloader</span>
+        <span className="text-sm font-medium text-white/80 selectable">
+          YouTube Downloader
+        </span>
         <span className="text-xs text-white/40 selectable">
           {version ? `v${version}` : ''}
         </span>

@@ -179,7 +179,13 @@ describe('ensureFfmpeg', () => {
     expect(chmodMock).toHaveBeenCalledWith(BIN, 0o755)
     expect(status.installed).toBe(true)
     expect(status.version).toBe('7.1')
-    expect(stages).toEqual(['checking', 'downloading', 'extracting', 'verifying', 'complete'])
+    expect(stages).toEqual([
+      'checking',
+      'downloading',
+      'extracting',
+      'verifying',
+      'complete'
+    ])
   })
 
   it('uses PowerShell Expand-Archive on Windows and skips chmod', async () => {

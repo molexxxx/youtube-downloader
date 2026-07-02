@@ -1,8 +1,9 @@
 import { useEffect } from 'react'
-import { Bell, BellOff, KeyRound, X } from 'lucide-react'
+import { Bell, BellOff, Download, History, KeyRound, X } from 'lucide-react'
 import { useAppStore } from './stores/appStore'
 import { applyTheme } from './lib/theme'
 import { TitleBar } from './components/layout/TitleBar'
+import { UpdateToast } from './components/layout/UpdateToast'
 import { SetupGate } from './components/setup/SetupGate'
 import { UrlBar } from './components/download/UrlBar'
 import { MediaCard } from './components/download/MediaCard'
@@ -41,17 +42,25 @@ function App(): React.JSX.Element {
     void (async () => {
       // Fire all reads in parallel so the nav (gated on binaries) unlocks as
       // soon as possible instead of waiting behind config/jobs/history/logs.
-      const [config, binaries, jobs, history, logs, appUpdate, discordStatus, discordGuilds] =
-        await Promise.all([
-          window.api.config.get(),
-          window.api.binaries.status(),
-          window.api.download.list(),
-          window.api.history.list(),
-          window.api.logs.list(),
-          window.api.appUpdate.status(),
-          window.api.discord.status(),
-          window.api.discord.guilds()
-        ])
+      const [
+        config,
+        binaries,
+        jobs,
+        history,
+        logs,
+        appUpdate,
+        discordStatus,
+        discordGuilds
+      ] = await Promise.all([
+        window.api.config.get(),
+        window.api.binaries.status(),
+        window.api.download.list(),
+        window.api.history.list(),
+        window.api.logs.list(),
+        window.api.appUpdate.status(),
+        window.api.discord.status(),
+        window.api.discord.guilds()
+      ])
       setConfig(config)
       setBinaries(binaries)
       setJobs(jobs)
@@ -114,15 +123,12 @@ function App(): React.JSX.Element {
   return (
     <div className="flex h-screen flex-col bg-[#0b0d12] text-white">
       <TitleBar />
+      <UpdateToast />
       {!binariesReady && binaries !== null ? (
         <SetupGate />
       ) : view === 'settings' ? (
         <main className="flex-1 overflow-y-auto p-5">
           <SettingsScreen />
-        </main>
-      ) : view === 'history' ? (
-        <main className="flex-1 overflow-y-auto p-5">
-          <HistoryScreen />
         </main>
       ) : view === 'logs' ? (
         <main className="flex flex-1 flex-col overflow-hidden p-5">
@@ -133,33 +139,92 @@ function App(): React.JSX.Element {
           <DiscordScreen />
         </main>
       ) : (
-        <main className="flex flex-1 gap-5 overflow-hidden p-5">
-          <section className="flex min-h-0 flex-1 flex-col gap-4">
-            <UrlBar />
-            {error && (
-              <div className="rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-2 text-sm text-red-300">
-                {error}
-              </div>
-            )}
-            <CookieHint />
-            {resolving ? (
-              <ResolveSkeleton />
-            ) : info ? (
-              <MediaCard />
-            ) : searchResults.length === 0 && !error ? (
-              <EmptyState />
-            ) : null}
-          </section>
-          <aside className="scroll-thin flex w-80 flex-col gap-3 overflow-y-auto border-l border-white/5 pl-5 pr-2">
-            <div className="flex shrink-0 items-center justify-between">
-              <h2 className="text-sm font-semibold text-white/70">Downloads</h2>
-              <NotificationToggle />
+        <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <DownloaderTabs />
+          {view === 'history' ? (
+            <div className="flex-1 overflow-y-auto px-5 pb-5">
+              <HistoryScreen />
             </div>
-            <DownloadQueue />
-          </aside>
+          ) : (
+            <div className="flex min-h-0 flex-1 gap-5 overflow-hidden px-5 pb-5">
+              <section className="flex min-h-0 flex-1 flex-col gap-4">
+                <UrlBar />
+                {error && (
+                  <div className="rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-2 text-sm text-red-300">
+                    {error}
+                  </div>
+                )}
+                <CookieHint />
+                {resolving ? (
+                  <ResolveSkeleton />
+                ) : info ? (
+                  <MediaCard />
+                ) : searchResults.length === 0 && !error ? (
+                  <EmptyState />
+                ) : null}
+              </section>
+              <aside className="scroll-thin flex w-80 flex-col gap-3 overflow-y-auto border-l border-white/5 pl-5 pr-2">
+                <div className="flex shrink-0 items-center justify-between">
+                  <h2 className="text-sm font-semibold text-white/70">Downloads</h2>
+                  <NotificationToggle />
+                </div>
+                <DownloadQueue />
+              </aside>
+            </div>
+          )}
         </main>
       )}
     </div>
+  )
+}
+
+function DownloaderTabs(): React.JSX.Element {
+  const view = useAppStore((s) => s.view)
+  const setView = useAppStore((s) => s.setView)
+
+  return (
+    <div className="flex shrink-0 items-center gap-1 px-5 pb-3 pt-3">
+      <SubTab
+        active={view === 'downloads'}
+        onClick={() => setView('downloads')}
+        icon={<Download size={13} />}
+        label="Download"
+      />
+      <SubTab
+        active={view === 'history'}
+        onClick={() => setView('history')}
+        icon={<History size={13} />}
+        label="History"
+      />
+    </div>
+  )
+}
+
+function SubTab({
+  active,
+  onClick,
+  icon,
+  label
+}: {
+  active: boolean
+  onClick: () => void
+  icon: React.ReactNode
+  label: string
+}): React.JSX.Element {
+  return (
+    <button
+      onClick={onClick}
+      role="tab"
+      aria-selected={active}
+      className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+        active
+          ? 'bg-red-500/15 text-red-200 ring-1 ring-inset ring-red-500/25'
+          : 'text-white/50 hover:bg-white/5 hover:text-white'
+      }`}
+    >
+      {icon}
+      {label}
+    </button>
   )
 }
 
@@ -215,7 +280,11 @@ function NotificationToggle(): React.JSX.Element {
       title={notifications ? 'Mute notifications' : 'Unmute notifications'}
       className="rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white/70"
     >
-      {notifications ? <Bell size={14} /> : <BellOff size={14} className="text-red-400" />}
+      {notifications ? (
+        <Bell size={14} />
+      ) : (
+        <BellOff size={14} className="text-red-400" />
+      )}
     </button>
   )
 }

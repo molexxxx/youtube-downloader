@@ -74,7 +74,11 @@ describe('registerSystemIPC', () => {
   })
 
   it('maximize toggles between maximize and unmaximize', () => {
-    const win = { isMaximized: vi.fn(() => false), maximize: vi.fn(), unmaximize: vi.fn() }
+    const win = {
+      isMaximized: vi.fn(() => false),
+      maximize: vi.fn(),
+      unmaximize: vi.fn()
+    }
     fromWebContentsMock.mockReturnValue(win)
     handlers.get(IPC.system.maximize)!({ sender })
     expect(win.maximize).toHaveBeenCalled()
@@ -122,7 +126,10 @@ describe('registerSystemIPC', () => {
 
   it('chooseDir returns the selected directory', async () => {
     fromWebContentsMock.mockReturnValue({})
-    dialogMock.showOpenDialog.mockResolvedValue({ canceled: false, filePaths: ['/picked'] })
+    dialogMock.showOpenDialog.mockResolvedValue({
+      canceled: false,
+      filePaths: ['/picked']
+    })
     const result = await handlers.get(IPC.system.chooseDir)!({ sender })
     expect(result).toBe('/picked')
   })

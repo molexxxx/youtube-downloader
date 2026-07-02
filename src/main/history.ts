@@ -3,9 +3,8 @@ import type { HistoryEntry } from '@shared/types'
 
 // electron-store v11 is ESM-only; under CJS interop unwrap the default export so
 // the constructor is always callable (mirrors config.ts).
-const StoreCtor = (
-  (ElectronStore as unknown as { default?: typeof ElectronStore }).default ?? ElectronStore
-) as typeof ElectronStore
+const StoreCtor = ((ElectronStore as unknown as { default?: typeof ElectronStore })
+  .default ?? ElectronStore) as typeof ElectronStore
 
 interface HistoryShape {
   entries: HistoryEntry[]

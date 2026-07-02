@@ -15,7 +15,10 @@ vi.mock('https', () => ({ get: getMock }))
 
 import { binDir, ensureBinDir, currentPlatform, downloadFile } from '@main/binaries/net'
 
-function makeRequest(): EventEmitter & { setTimeout: ReturnType<typeof vi.fn>; destroy: ReturnType<typeof vi.fn> } {
+function makeRequest(): EventEmitter & {
+  setTimeout: ReturnType<typeof vi.fn>
+  destroy: ReturnType<typeof vi.fn>
+} {
   const req = new EventEmitter() as EventEmitter & {
     setTimeout: ReturnType<typeof vi.fn>
     destroy: ReturnType<typeof vi.fn>
@@ -28,7 +31,12 @@ function makeRequest(): EventEmitter & { setTimeout: ReturnType<typeof vi.fn>; d
 function makeResponse(
   statusCode: number,
   headers: Record<string, unknown> = {}
-): EventEmitter & { statusCode: number; headers: Record<string, unknown>; resume: ReturnType<typeof vi.fn>; pipe: ReturnType<typeof vi.fn> } {
+): EventEmitter & {
+  statusCode: number
+  headers: Record<string, unknown>
+  resume: ReturnType<typeof vi.fn>
+  pipe: ReturnType<typeof vi.fn>
+} {
   const res = new EventEmitter() as EventEmitter & {
     statusCode: number
     headers: Record<string, unknown>
@@ -123,7 +131,9 @@ describe('downloadFile', () => {
       cb(makeResponse(404, {}))
       return makeRequest()
     })
-    await expect(downloadFile('https://x/missing', '/dest')).rejects.toThrow(/failed \(404\)/)
+    await expect(downloadFile('https://x/missing', '/dest')).rejects.toThrow(
+      /failed \(404\)/
+    )
   })
 
   it('rejects after too many redirects', async () => {
@@ -131,7 +141,9 @@ describe('downloadFile', () => {
       cb(makeResponse(302, { location: 'https://x/loop' }))
       return makeRequest()
     })
-    await expect(downloadFile('https://x/loop', '/dest')).rejects.toThrow(/Too many redirects/)
+    await expect(downloadFile('https://x/loop', '/dest')).rejects.toThrow(
+      /Too many redirects/
+    )
   })
 
   it('rejects on a request error', async () => {

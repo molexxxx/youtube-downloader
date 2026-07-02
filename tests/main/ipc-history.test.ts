@@ -18,7 +18,8 @@ const {
     windows: [
       {
         webContents: {
-          send: (channel: string, payload: unknown) => sentMessages.push({ channel, payload })
+          send: (channel: string, payload: unknown) =>
+            sentMessages.push({ channel, payload })
         }
       }
     ],
@@ -88,6 +89,8 @@ describe('registerHistoryIPC', () => {
 
   it('broadcasts history changes to all windows', () => {
     capturedSubscriber?.([{ id: 'h2' }])
-    expect(sentMessages).toEqual([{ channel: IPC.history.onChange, payload: [{ id: 'h2' }] }])
+    expect(sentMessages).toEqual([
+      { channel: IPC.history.onChange, payload: [{ id: 'h2' }] }
+    ])
   })
 })

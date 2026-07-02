@@ -2,11 +2,20 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { join } from 'path'
 import type { BootstrapProgress } from '@shared/types'
 
-const { state, downloadFileMock, ensureBinDirMock, chmodMock, statMock } =
-  vi.hoisted(() => ({
-    state: { exists: false, version: 'v1', execFails: false, platform: 'linux' as string },
+const { state, downloadFileMock, ensureBinDirMock, chmodMock, statMock } = vi.hoisted(
+  () => ({
+    state: {
+      exists: false,
+      version: 'v1',
+      execFails: false,
+      platform: 'linux' as string
+    },
     downloadFileMock: vi.fn(
-      (_url: string, _dest: string, onProgress?: (d: number, t: number | null) => void) => {
+      (
+        _url: string,
+        _dest: string,
+        onProgress?: (d: number, t: number | null) => void
+      ) => {
         onProgress?.(512, 1024)
         return Promise.resolve()
       }
@@ -14,7 +23,8 @@ const { state, downloadFileMock, ensureBinDirMock, chmodMock, statMock } =
     ensureBinDirMock: vi.fn(() => Promise.resolve('/userdata/bin')),
     chmodMock: vi.fn(() => Promise.resolve()),
     statMock: vi.fn()
-  }))
+  })
+)
 
 vi.mock('@main/binaries/net', () => ({
   binDir: () => '/userdata/bin',

@@ -282,6 +282,8 @@ export interface Track {
   thumbnail: string | null
   /** Channel / artist name, when known. */
   uploader: string | null
+  /** Local media file to play directly (from a completed download), skipping yt-dlp. */
+  filePath?: string | null
   requestedBy: TrackRequester
   addedAt: number
 }
@@ -294,6 +296,8 @@ export interface TrackInput {
   thumbnail: string | null
   /** Channel / artist name, when known. */
   uploader: string | null
+  /** Local media file to play directly (from a completed download), skipping yt-dlp. */
+  filePath?: string | null
 }
 
 export type LoopMode = 'off' | 'track' | 'queue'
@@ -310,6 +314,8 @@ export interface GuildPlayerState {
   loop: LoopMode
   /** 0-100. */
   volume: number
+  /** Playback position of nowPlaying in ms (pause-aware, includes seeks). */
+  positionMs: number
 }
 
 /** Per-guild settings persisted locally on this machine. */
@@ -347,6 +353,8 @@ export type AuditAction =
   | 'loop'
   | 'volume'
   | 'remove'
+  | 'move'
+  | 'seek'
   | 'permission-denied'
   | 'error'
 
@@ -431,7 +439,9 @@ export const IPC = {
     control: 'discord:control',
     setLoop: 'discord:setLoop',
     setVolume: 'discord:setVolume',
+    seek: 'discord:seek',
     removeTrack: 'discord:removeTrack',
+    moveTrack: 'discord:moveTrack',
     getSettings: 'discord:getSettings',
     setSettings: 'discord:setSettings',
     auditList: 'discord:auditList',

@@ -11,7 +11,13 @@ const info = (overrides: Partial<MediaInfo> = {}): MediaInfo =>
   ({ id: 'v', title: 'Video', entries: [], formats: [], ...overrides }) as MediaInfo
 
 const result = (id: string): PlaylistEntry =>
-  ({ id, title: `Result ${id}`, url: `https://y/${id}`, duration: 90, thumbnail: null }) as PlaylistEntry
+  ({
+    id,
+    title: `Result ${id}`,
+    url: `https://y/${id}`,
+    duration: 90,
+    thumbnail: null
+  }) as PlaylistEntry
 
 beforeEach(() => {
   api = installMockApi()
@@ -27,7 +33,9 @@ beforeEach(() => {
 afterEach(() => cleanup())
 
 function type(value: string): void {
-  fireEvent.change(screen.getByPlaceholderText(/Paste a URL/), { target: { value } })
+  fireEvent.change(screen.getByPlaceholderText(/Paste a video or playlist link/), {
+    target: { value }
+  })
 }
 
 describe('UrlBar', () => {
@@ -36,10 +44,12 @@ describe('UrlBar', () => {
     render(<UrlBar />)
     type('https://youtube.com/watch?v=abc')
     fireEvent.click(screen.getByText('Resolve'))
-    await waitFor(() => expect(api.extract.info).toHaveBeenCalledWith(
-      'https://youtube.com/watch?v=abc',
-      false
-    ))
+    await waitFor(() =>
+      expect(api.extract.info).toHaveBeenCalledWith(
+        'https://youtube.com/watch?v=abc',
+        false
+      )
+    )
     await waitFor(() => expect(useAppStore.getState().info?.title).toBe('Resolved'))
   })
 
@@ -56,7 +66,7 @@ describe('UrlBar', () => {
   it('submits on Enter', async () => {
     api.extract.info.mockResolvedValue(info())
     render(<UrlBar />)
-    const input = screen.getByPlaceholderText(/Paste a URL/)
+    const input = screen.getByPlaceholderText(/Paste a video or playlist link/)
     fireEvent.change(input, { target: { value: 'https://youtube.com/watch?v=xyz' } })
     fireEvent.keyDown(input, { key: 'Enter' })
     await waitFor(() => expect(api.extract.info).toHaveBeenCalled())
@@ -101,7 +111,10 @@ describe('UrlBar', () => {
     render(<UrlBar />)
     type('something')
     fireEvent.click(screen.getByTitle('Clear'))
-    expect((screen.getByPlaceholderText(/Paste a URL/) as HTMLInputElement).value).toBe('')
+    expect(
+      (screen.getByPlaceholderText(/Paste a video or playlist link/) as HTMLInputElement)
+        .value
+    ).toBe('')
   })
 
   it('surfaces resolve errors and the cookie hint on auth failures', async () => {
@@ -121,6 +134,8 @@ describe('UrlBar', () => {
     fireEvent.click(screen.getByText('Search'))
     await screen.findByText('Result a')
     fireEvent.click(screen.getByText('Result a'))
-    await waitFor(() => expect(api.extract.info).toHaveBeenCalledWith('https://y/a', false))
+    await waitFor(() =>
+      expect(api.extract.info).toHaveBeenCalledWith('https://y/a', false)
+    )
   })
 })

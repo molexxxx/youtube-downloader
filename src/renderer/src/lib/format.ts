@@ -12,9 +12,15 @@ export function formatBytes(bytes: number | null): string {
 
 export function formatDuration(seconds: number | null): string {
   if (!seconds || seconds <= 0) return '-'
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = Math.floor(seconds % 60)
+  return formatClock(seconds)
+}
+
+/** Like {@link formatDuration} but renders zero/invalid as 0:00 (for tickers). */
+export function formatClock(seconds: number | null): string {
+  const total = Math.max(0, Math.floor(seconds ?? 0))
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  const s = total % 60
   const pad = (n: number) => n.toString().padStart(2, '0')
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`
 }
@@ -61,7 +67,9 @@ export function looksLikeAuthError(message: string): boolean {
     /sign in to confirm/i.test(message) ||
     /confirm your age|age[- ]restricted|inappropriate for some users/i.test(message) ||
     /private video/i.test(message) ||
-    /members[- ]only|available to (this channel's |)members|join this channel/i.test(message) ||
+    /members[- ]only|available to (this channel's |)members|join this channel/i.test(
+      message
+    ) ||
     /requires payment|purchase/i.test(message) ||
     /not a bot/i.test(message) ||
     /login required|account/i.test(message)

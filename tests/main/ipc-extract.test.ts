@@ -77,7 +77,12 @@ describe('registerExtractIPC', () => {
 
   it('playlistPage forwards the url and 1-based range', async () => {
     getPlaylistPageMock.mockResolvedValue([{ id: 'a' }, { id: 'b' }])
-    const result = await handlers.get(IPC.extract.playlistPage)!({}, 'https://x', 201, 400)
+    const result = await handlers.get(IPC.extract.playlistPage)!(
+      {},
+      'https://x',
+      201,
+      400
+    )
     expect(getPlaylistPageMock).toHaveBeenCalledWith('https://x', 201, 400)
     expect(result).toEqual([{ id: 'a' }, { id: 'b' }])
   })

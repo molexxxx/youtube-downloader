@@ -122,7 +122,10 @@ describe('DownloadManager progress', () => {
     const manager = new DownloadManager()
     const job = manager.enqueue({ url: 'https://x', kind: 'video' })
     const child = latestChild()
-    child.stdout.emit('data', Buffer.from('[download] Destination: /downloads/clip.mp4\n'))
+    child.stdout.emit(
+      'data',
+      Buffer.from('[download] Destination: /downloads/clip.mp4\n')
+    )
     child.stdout.emit('data', Buffer.from('[Merger] Merging formats\n'))
     const last = manager.list().find((j) => j.id === job.id)!
     expect(last.outputPath).toBe('/downloads/clip.mp4')
@@ -134,7 +137,10 @@ describe('DownloadManager progress', () => {
     const job = manager.enqueue({ url: 'https://x', kind: 'video' })
     const child = latestChild()
     // The per-stream destination is an intermediate file deleted after merge.
-    child.stdout.emit('data', Buffer.from('[download] Destination: /downloads/clip.f401.mp4\n'))
+    child.stdout.emit(
+      'data',
+      Buffer.from('[download] Destination: /downloads/clip.f401.mp4\n')
+    )
     child.stdout.emit(
       'data',
       Buffer.from('[Merger] Merging formats into "/downloads/clip.mp4"\n')
@@ -148,8 +154,14 @@ describe('DownloadManager progress', () => {
     const manager = new DownloadManager()
     const job = manager.enqueue({ url: 'https://x', kind: 'audio' })
     const child = latestChild()
-    child.stdout.emit('data', Buffer.from('[download] Destination: /downloads/song.webm\n'))
-    child.stdout.emit('data', Buffer.from('[ExtractAudio] Destination: /downloads/song.mp3\n'))
+    child.stdout.emit(
+      'data',
+      Buffer.from('[download] Destination: /downloads/song.webm\n')
+    )
+    child.stdout.emit(
+      'data',
+      Buffer.from('[ExtractAudio] Destination: /downloads/song.mp3\n')
+    )
     const last = manager.list().find((j) => j.id === job.id)!
     expect(last.outputPath).toBe('/downloads/song.mp3')
     expect(last.state).toBe('processing')

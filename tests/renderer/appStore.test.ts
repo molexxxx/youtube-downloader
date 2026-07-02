@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { binariesAreReady, useAppStore } from '@renderer/stores/appStore'
-import type { BinariesStatus, DownloadJob, LogEntry, MediaInfo, PlaylistEntry } from '@shared/types'
+import type {
+  BinariesStatus,
+  DownloadJob,
+  LogEntry,
+  MediaInfo,
+  PlaylistEntry
+} from '@shared/types'
 
 function status(ytInstalled: boolean, ffInstalled: boolean): BinariesStatus {
   return {

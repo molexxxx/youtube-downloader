@@ -83,7 +83,12 @@ export function initUpdater(): void {
       return { ok: true, version: result?.updateInfo?.version ?? null }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Update check failed'
-      broadcast({ state: 'error', version: lastStatus.version, percent: null, error: message })
+      broadcast({
+        state: 'error',
+        version: lastStatus.version,
+        percent: null,
+        error: message
+      })
       return { ok: false, error: message }
     }
   })
@@ -99,7 +104,10 @@ export function initUpdater(): void {
   })
 
   ipcMain.handle(IPC.appUpdate.install, () => {
-    autoUpdater.quitAndInstall(false, true)
+    // Silent install + relaunch: in-app updates apply in the background (NSIS
+    // /S on Windows) instead of popping the interactive installer. Manual
+    // downloads from GitHub still run the normal assisted installer.
+    autoUpdater.quitAndInstall(true, true)
   })
 
   // Check on launch once the window can receive events. Never throws.

@@ -69,7 +69,9 @@ export function registerDiscordIPC(): void {
     return service.getStatus()
   })
 
-  ipcMain.handle(IPC.discord.player, (_e, guildId: string) => service.getPlayerState(guildId))
+  ipcMain.handle(IPC.discord.player, (_e, guildId: string) =>
+    service.getPlayerState(guildId)
+  )
 
   ipcMain.handle(IPC.discord.join, async (_e, guildId: string, channelId: string) => {
     await service.playerFor(guildId)?.join(channelId, UI_REQUESTER)
@@ -95,11 +97,24 @@ export function registerDiscordIPC(): void {
     service.playerFor(guildId)?.setVolume(volume, UI_REQUESTER)
   })
 
+  ipcMain.handle(IPC.discord.seek, (_e, guildId: string, seconds: number) => {
+    service.playerFor(guildId)?.seek(seconds, UI_REQUESTER)
+  })
+
   ipcMain.handle(IPC.discord.removeTrack, (_e, guildId: string, index: number) => {
     service.playerFor(guildId)?.removeTrack(index, UI_REQUESTER)
   })
 
-  ipcMain.handle(IPC.discord.getSettings, (_e, guildId: string) => getGuildSettings(guildId))
+  ipcMain.handle(
+    IPC.discord.moveTrack,
+    (_e, guildId: string, from: number, to: number) => {
+      service.playerFor(guildId)?.moveTrack(from, to, UI_REQUESTER)
+    }
+  )
+
+  ipcMain.handle(IPC.discord.getSettings, (_e, guildId: string) =>
+    getGuildSettings(guildId)
+  )
 
   ipcMain.handle(
     IPC.discord.setSettings,

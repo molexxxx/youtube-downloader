@@ -46,8 +46,8 @@ export function SetupGate(): React.JSX.Element {
       <div>
         <h2 className="text-xl font-semibold">Setting things up</h2>
         <p className="mt-1 max-w-md text-sm text-white/50">
-          Downloading the latest <code>yt-dlp</code> and <code>ffmpeg</code> engines.
-          This happens once and keeps the app self-contained.
+          Downloading the latest <code>yt-dlp</code> and <code>ffmpeg</code> engines. This
+          happens once and keeps the app self-contained.
         </p>
       </div>
 

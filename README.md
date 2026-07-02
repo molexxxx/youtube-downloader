@@ -114,11 +114,12 @@
 
 ### Discord Music Bot
 
-- **Self-Hosted Bot** - Connect your own bot token (stored locally and encrypted via the OS keychain) and the app becomes a personal Discord music bot; a one-click OAuth invite link adds it to your servers
-- **Voice Playback** - Stream YouTube audio - single videos or whole playlists - into voice channels through the same yt-dlp + FFmpeg pipeline, including the automatic cookie fallback for age-gated content
-- **In-App Control** - Search or paste links, manage the queue, and drive playback: play / pause / skip / stop, shuffle, loop (off / track / queue), a live volume slider, and per-track removal
+- **Self-Hosted Bot** - Connect your own bot token (stored locally and encrypted via the OS keychain) and the app becomes a personal Discord music bot; a one-click OAuth invite link adds it to your servers. Free, no subscriptions - the in-app guide walks through the current Developer Portal flow (New Application → Bot tab → Reset Token)
+- **Voice Playback** - Stream YouTube audio - single videos or whole playlists - into voice channels through the same yt-dlp + FFmpeg pipeline, including the automatic cookie fallback for age-gated content. Native Opus encoding, generous stream buffering, and automatic voice reconnection keep playback smooth even when the host machine is under load
+- **Play Your Downloads** - Send any completed download to a server's queue right from the Downloads or History list; local files play straight from disk with no re-streaming
+- **In-App Control** - Search or paste links, manage the queue, and drive playback: play / pause / skip / stop, a live seek bar with elapsed time, shuffle, loop (off / track / queue), play-next / reorder, and a per-server volume that's remembered
 - **Slash Commands** - `/play`, `/search`, `/queue`, `/skip`, `/volume`, `/loop`, and more, registered per-server for instant use; slash commands and the desktop UI drive the **same** player and stay in sync live
-- **Multiple Servers** - Manage several servers at once with a server switcher and an independent queue per server
+- **Multiple Servers** - Manage several servers at once with a Discord-style server rail and an independent queue per server
 - **Role Gating** - Optionally restrict slash-command playback to a chosen role (the host app always stays in control)
 - **Audit Log** - Persistent, per-server activity feed of who did what - from the app or from Discord - stored locally on your machine
 

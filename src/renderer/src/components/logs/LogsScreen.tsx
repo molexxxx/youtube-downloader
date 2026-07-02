@@ -106,7 +106,9 @@ export function LogsScreen(): React.JSX.Element {
         ) : (
           visible.map((entry, i) => (
             <div key={i} className="flex gap-2 whitespace-pre-wrap break-all">
-              <span className="shrink-0 text-white/30">{formatTime(entry.timestamp)}</span>
+              <span className="shrink-0 text-white/30">
+                {formatTime(entry.timestamp)}
+              </span>
               <span className={`shrink-0 uppercase ${LEVEL_STYLE[entry.level]}`}>
                 {entry.level}
               </span>
