@@ -69,6 +69,43 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get update && sudo apt-get install -y rpm
 
+      # A tag pushed by check-binary-updates.yml carries an "## Automated binary
+      # update" section in its annotated message naming the tool that moved.
+      # Lift it out so it heads the release notes. Manually pushed tags have no
+      # such section and fall back to GitHub's generated notes alone.
+      - name: Extract binary-update notes from tag
+        id: notes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tag="${{ github.ref_name }}"
+          message=""
+
+          ref=$(gh api "repos/${{ github.repository }}/git/ref/tags/$tag" \
+            --jq '.object.type + " " + .object.sha' 2>/dev/null || true)
+
+          # An annotated tag points at a tag object holding the message; a
+          # lightweight tag points straight at a commit and carries none.
+          if [[ "${ref%% *}" == "tag" ]]; then
+            message=$(gh api "repos/${{ github.repository }}/git/tags/${ref##* }" \
+              --jq '.message' 2>/dev/null || true)
+          fi
+
+          notes=$(printf '%s\n' "$message" | awk '/^## Automated binary update/{found=1} found')
+
+          {
+            echo "body<<__NOTES_EOF__"
+            printf '%s\n' "$notes"
+            echo "__NOTES_EOF__"
+          } >> "$GITHUB_OUTPUT"
+
+          if [[ -n "$notes" ]]; then
+            echo "Binary-update notes found for $tag"
+          else
+            echo "No binary-update section on $tag - using generated notes only"
+          fi
+
       # macOS signed: builds a signed (not-yet-notarized) .dmg/.zip. The next
       # step submits the .dmg to Apple without waiting; the notarize-macos job
       # polls for approval and staples it.
@@ -121,6 +158,7 @@ jobs:
         with:
           draft: true
           generate_release_notes: true
+          body: ${{ steps.notes.outputs.body }}
           files: |
             dist/*.exe
             dist/*.deb
@@ -149,6 +187,7 @@ jobs:
         with:
           draft: true
           generate_release_notes: true
+          body: ${{ steps.notes.outputs.body }}
           files: |
             dist/YouTube-Downloader-*-macOS-Installer.dmg
             dist/YouTube-Downloader-*-macOS-Updater.zip
@@ -161,6 +200,7 @@ jobs:
         with:
           draft: true
           generate_release_notes: true
+          body: ${{ steps.notes.outputs.body }}
           files: |
             dist/YouTube-Downloader-*-macOS-Installer.dmg
             dist/YouTube-Downloader-*-macOS-Updater.zip
