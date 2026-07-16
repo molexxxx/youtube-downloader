@@ -1,9 +1,17 @@
 name: Check binary updates
 
 # Runs daily and on-demand. Compares the latest upstream yt-dlp and ffmpeg
-# releases against the versions last recorded in .github/binary-versions.json.
-# When either has a new release, it bumps the app patch version and pushes a
-# tag that triggers release.yml to build and publish the new version.
+# versions against the ones last recorded in .github/binary-versions.json.
+# When either publishes a new version it bumps the app patch version and pushes
+# an annotated tag, which triggers release.yml to build and publish.
+#
+# Only real, stable upstream version numbers are tracked. The Windows/Linux
+# ffmpeg builds (BtbN) are rolling master autobuilds with no stable version:
+# every identifying field (published_at, asset updated_at, release name) moves
+# on every rebuild, so tracking them cut a pointless release every single day.
+# They are deliberately not a trigger. Fresh installs and the in-app updater
+# always fetch the newest BtbN master regardless of the app version, so nothing
+# is lost by leaving them out.
 
 on:
   schedule:
@@ -21,6 +29,9 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
+      # GH_TOKEN (a PAT) rather than the default GITHUB_TOKEN: pushes made with
+      # GITHUB_TOKEN cannot trigger another workflow, and the tag push below has
+      # to start release.yml.
       - uses: actions/checkout@v6
         with:
           token: ${{ secrets.GH_TOKEN }}
@@ -40,42 +51,50 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # yt-dlp: single versioned release tag covers all platforms.
+          set -euo pipefail
+
+          # yt-dlp: one versioned release tag covers all platforms.
           YTDLP=$(gh api repos/yt-dlp/yt-dlp/releases/latest --jq '.tag_name')
 
-          # ffmpeg macOS: evermeet.cx publishes stable semantic version numbers.
-          FFMPEG_MAC=$(curl -fsSL https://evermeet.cx/ffmpeg/info/ffmpeg/release | jq -r '.version')
+          # ffmpeg: evermeet.cx follows upstream ffmpeg releases and reports a
+          # real semantic version (e.g. 8.1.2). Used as the cross-platform
+          # "a new ffmpeg was released" signal for every platform.
+          FFMPEG=$(curl -fsSL https://evermeet.cx/ffmpeg/info/ffmpeg/release | jq -r '.version')
 
-          # ffmpeg Windows/Linux: BtbN publishes a rolling "latest" release whose
-          # published_at timestamp moves with each autobuild. Truncate to the date
-          # portion so at most one release per day fires even when BtbN pushes
-          # multiple builds.
-          FFMPEG_BTBN=$(gh api repos/BtbN/FFmpeg-Builds/releases/latest --jq '.published_at' \
-            | cut -dT -f1)
+          # Fail loudly instead of writing "null" into the tracking file, which
+          # would cut a bogus release on the next run.
+          for pair in "yt-dlp:$YTDLP" "ffmpeg:$FFMPEG"; do
+            name="${pair%%:*}"
+            value="${pair#*:}"
+            if [[ -z "$value" || "$value" == "null" ]]; then
+              echo "::error::Could not resolve the latest $name version"
+              exit 1
+            fi
+          done
 
-          echo "yt-dlp latest:         $YTDLP"
-          echo "ffmpeg macOS latest:   $FFMPEG_MAC"
-          echo "ffmpeg win/linux date: $FFMPEG_BTBN"
+          echo "yt-dlp latest: $YTDLP"
+          echo "ffmpeg latest: $FFMPEG"
 
-          echo "ytdlp=$YTDLP"             >> "$GITHUB_OUTPUT"
-          echo "ffmpeg_mac=$FFMPEG_MAC"   >> "$GITHUB_OUTPUT"
-          echo "ffmpeg_btbn=$FFMPEG_BTBN" >> "$GITHUB_OUTPUT"
+          echo "ytdlp=$YTDLP"   >> "$GITHUB_OUTPUT"
+          echo "ffmpeg=$FFMPEG" >> "$GITHUB_OUTPUT"
 
       - name: Compare versions and release if updated
+        env:
+          YTDLP_NEW: ${{ steps.versions.outputs.ytdlp }}
+          FFMPEG_NEW: ${{ steps.versions.outputs.ffmpeg }}
         run: |
+          set -euo pipefail
+
           FILE=".github/binary-versions.json"
-          YTDLP_NEW="${{ steps.versions.outputs.ytdlp }}"
-          FFMPEG_MAC_NEW="${{ steps.versions.outputs.ffmpeg_mac }}"
-          FFMPEG_BTBN_NEW="${{ steps.versions.outputs.ffmpeg_btbn }}"
 
           write_versions() {
-            printf '{\n  "ytdlp": "%s",\n  "ffmpeg_mac": "%s",\n  "ffmpeg_btbn": "%s"\n}\n' \
-              "$YTDLP_NEW" "$FFMPEG_MAC_NEW" "$FFMPEG_BTBN_NEW" > "$FILE"
+            printf '{\n  "ytdlp": "%s",\n  "ffmpeg": "%s"\n}\n' \
+              "$YTDLP_NEW" "$FFMPEG_NEW" > "$FILE"
           }
 
           # First run: create the tracking file without bumping the app version.
           if [[ ! -f "$FILE" ]]; then
-            echo "No tracking file found — initializing with current versions (no release bump)."
+            echo "No tracking file found - initializing with current versions (no release bump)."
             write_versions
             git add "$FILE"
             git commit -m "chore(ci): initialize binary version tracking [skip ci]"
@@ -83,25 +102,48 @@ jobs:
             exit 0
           fi
 
-          YTDLP_OLD=$(jq -r '.ytdlp' "$FILE")
-          FFMPEG_MAC_OLD=$(jq -r '.ffmpeg_mac' "$FILE")
-          FFMPEG_BTBN_OLD=$(jq -r '.ffmpeg_btbn' "$FILE")
+          YTDLP_OLD=$(jq -r '.ytdlp // ""' "$FILE")
+          FFMPEG_OLD=$(jq -r '.ffmpeg // ""' "$FILE")
 
-          if [[ "$YTDLP_NEW" == "$YTDLP_OLD" && \
-                "$FFMPEG_MAC_NEW" == "$FFMPEG_MAC_OLD" && \
-                "$FFMPEG_BTBN_NEW" == "$FFMPEG_BTBN_OLD" ]]; then
-            echo "All binaries are up to date — no release needed."
+          if [[ "$YTDLP_NEW" == "$YTDLP_OLD" && "$FFMPEG_NEW" == "$FFMPEG_OLD" ]]; then
+            echo "yt-dlp $YTDLP_OLD and ffmpeg $FFMPEG_OLD are current - no release needed."
+            echo "No binary updates. Nothing to release." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
 
-          [[ "$YTDLP_NEW"      != "$YTDLP_OLD"      ]] && echo "yt-dlp:         $YTDLP_OLD → $YTDLP_NEW"
-          [[ "$FFMPEG_MAC_NEW" != "$FFMPEG_MAC_OLD"  ]] && echo "ffmpeg macOS:   $FFMPEG_MAC_OLD → $FFMPEG_MAC_NEW"
-          [[ "$FFMPEG_BTBN_NEW" != "$FFMPEG_BTBN_OLD" ]] && echo "ffmpeg win/linux: $FFMPEG_BTBN_OLD → $FFMPEG_BTBN_NEW"
+          # Record exactly what moved; this becomes the release notes body.
+          CHANGES=""
+          if [[ "$YTDLP_NEW" != "$YTDLP_OLD" ]]; then
+            echo "yt-dlp: $YTDLP_OLD -> $YTDLP_NEW"
+            CHANGES+="- **yt-dlp** \`${YTDLP_OLD:-none}\` -> \`$YTDLP_NEW\`"$'\n'
+          fi
+          if [[ "$FFMPEG_NEW" != "$FFMPEG_OLD" ]]; then
+            echo "ffmpeg: $FFMPEG_OLD -> $FFMPEG_NEW"
+            CHANGES+="- **ffmpeg** \`${FFMPEG_OLD:-none}\` -> \`$FFMPEG_NEW\`"$'\n'
+          fi
 
           write_versions
           new_version=$(npm version patch --no-git-tag-version)
 
           git add "$FILE" package.json package-lock.json
           git commit -m "chore(release): $new_version [skip ci]"
-          git tag "$new_version"
-          git push origin HEAD:main --follow-tags
+
+          # Annotated tag, not lightweight: a lightweight tag is skipped by
+          # --follow-tags and never reaches origin, which is why earlier bumps
+          # (v1.4.6 to v1.4.10) landed on main but never released. The message
+          # body is what release.yml lifts into the release notes.
+          TAG_MESSAGE=$(printf 'chore(release): %s\n\n## Automated binary update\n\nThis release was published automatically because a bundled tool shipped a new version:\n\n%s' \
+            "$new_version" "$CHANGES")
+          # --cleanup=verbatim is required: the default mode strips lines
+          # starting with '#', which would silently eat the markdown heading
+          # that release.yml keys off.
+          git tag -a "$new_version" --cleanup=verbatim -m "$TAG_MESSAGE"
+
+          git push origin HEAD:main
+          git push origin "refs/tags/$new_version"
+
+          {
+            echo "## Released $new_version"
+            echo
+            echo "$CHANGES"
+          } >> "$GITHUB_STEP_SUMMARY"

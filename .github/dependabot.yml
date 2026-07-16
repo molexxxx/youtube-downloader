@@ -5,6 +5,15 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    # eslint-plugin-react caps its eslint peer range at ^9.7, and ESLint 10
+    # crashes the lint run ("Cannot read properties of undefined (reading
+    # 'Cjs')"). Hold eslint on v9 until the plugin declares v10 support, then
+    # drop these two entries and take the major in one deliberate PR.
+    ignore:
+      - dependency-name: 'eslint'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@eslint/js'
+        update-types: ['version-update:semver-major']
     groups:
       dev-dependencies:
         dependency-type: development
