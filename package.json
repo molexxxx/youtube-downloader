@@ -36,7 +36,7 @@
     "@discordjs/voice": "^0.19.2",
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^4.0.0",
-    "discord.js": "^14.26.5",
+    "discord.js": "^14.27.0",
     "electron-store": "^11.0.2",
     "electron-updater": "^6.8.3",
     "extract-zip": "^2.0.1",
