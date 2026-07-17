@@ -5,9 +5,9 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
-    # Three separate majors each break `npm run lint`. Each was reproduced in
-    # isolation; drop an entry once its upstream declares support, and take the
-    # major in its own deliberate PR.
+    # Majors held back because they break `npm run lint` or `npm run build`.
+    # Each was reproduced in isolation. Drop an entry once its upstream declares
+    # support, and take that major in its own deliberate PR.
     #
     # typescript v7 is the ESM-only native rewrite. @typescript-eslint's CJS
     # require('typescript') gets a different shape back, so ts.Extension is
@@ -19,6 +19,11 @@ updates:
     # eslint-plugin-react-hooks v7 does not crash: it adds the
     # react-hooks/set-state-in-effect rule, which flags 7 genuine pre-existing
     # setState-in-useEffect sites. Unpinning means fixing those first.
+    #
+    # @vitejs/plugin-react v6 requires vite ^8, but electron-vite caps vite at
+    # ^7. npm ci --legacy-peer-deps installs the conflicting pair anyway, so it
+    # fails at build with ERR_PACKAGE_PATH_NOT_EXPORTED on 'vite/internal'
+    # rather than at install. Unpin once electron-vite supports vite 8.
     ignore:
       - dependency-name: 'typescript'
         update-types: ['version-update:semver-major']
@@ -28,9 +33,19 @@ updates:
         update-types: ['version-update:semver-major']
       - dependency-name: 'eslint-plugin-react-hooks'
         update-types: ['version-update:semver-major']
+      - dependency-name: '@vitejs/plugin-react'
+        update-types: ['version-update:semver-major']
+    # Group only minor and patch updates. Majors arrive as their own PRs so one
+    # breaking major cannot hold back the routine updates: a single group of 20
+    # was blocked first by typescript 7, then by @vitejs/plugin-react 6, while
+    # 17 harmless bumps waited behind them. Each major can now be judged, and
+    # merged or closed, on its own.
     groups:
       dev-dependencies:
         dependency-type: development
+        update-types:
+          - minor
+          - patch
   - package-ecosystem: github-actions
     directory: '/'
     schedule:
