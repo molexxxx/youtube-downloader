@@ -5,14 +5,28 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
-    # eslint-plugin-react caps its eslint peer range at ^9.7, and ESLint 10
-    # crashes the lint run ("Cannot read properties of undefined (reading
-    # 'Cjs')"). Hold eslint on v9 until the plugin declares v10 support, then
-    # drop these two entries and take the major in one deliberate PR.
+    # Three separate majors each break `npm run lint`. Each was reproduced in
+    # isolation; drop an entry once its upstream declares support, and take the
+    # major in its own deliberate PR.
+    #
+    # typescript v7 is the ESM-only native rewrite. @typescript-eslint's CJS
+    # require('typescript') gets a different shape back, so ts.Extension is
+    # undefined and typescript-estree dies on `ts.Extension.Cjs`.
+    #
+    # eslint v10 crashes inside eslint-plugin-react, which still caps its peer
+    # range at ^9.7.
+    #
+    # eslint-plugin-react-hooks v7 does not crash: it adds the
+    # react-hooks/set-state-in-effect rule, which flags 7 genuine pre-existing
+    # setState-in-useEffect sites. Unpinning means fixing those first.
     ignore:
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
       - dependency-name: 'eslint'
         update-types: ['version-update:semver-major']
       - dependency-name: '@eslint/js'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'eslint-plugin-react-hooks'
         update-types: ['version-update:semver-major']
     groups:
       dev-dependencies:
