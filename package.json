@@ -31,6 +31,12 @@
     "package:linux": "electron-vite build && electron-builder --linux --publish never",
     "release": "electron-vite build && electron-builder --publish always"
   },
+  "overrides": {
+    "@discordjs/node-pre-gyp": {
+      "tar": "^7.5.22"
+    },
+    "vite": "^7.3.6"
+  },
   "dependencies": {
     "@discordjs/opus": "^0.10.0",
     "@discordjs/voice": "^0.19.2",
