@@ -1,3 +1,20 @@
+# Two transitive advisories have no upstream fix, so package.json carries
+# `overrides` for them. JSON takes no comments, so they are documented here.
+# Re-check both on any dependency sweep and drop the override once the parent
+# ships the fix itself.
+#
+# @discordjs/node-pre-gyp 0.4.5 (latest) still depends on tar ^6.1.11, and every
+# tar 6 release is vulnerable to the node-tar path traversal set (GHSA-34x7-hfp2-rc4v
+# and 11 others, critical). It only calls `tar.extract({cwd, strip, onentry})`,
+# which tar 7 still supports, so the chain is overridden to ^7.5.22. Verified:
+# @discordjs/opus still installs its prebuilt binary rather than falling back to
+# a source build.
+#
+# vite is pinned to ^7.3.6, the first vite 7 accepting esbuild ^0.28.0. esbuild
+# 0.27.3 to 0.28.0 has an arbitrary-file-read in its dev server (GHSA-g7r4-m6w7-qqqr),
+# fixed in 0.28.1. Do not let this drift to vite 8: electron-vite caps vite at ^7,
+# and npm ci --legacy-peer-deps installs the pair anyway, then fails at build with
+# ERR_PACKAGE_PATH_NOT_EXPORTED on 'vite/internal'.
 version: 2
 updates:
   - package-ecosystem: npm
