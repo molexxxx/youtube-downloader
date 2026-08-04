@@ -117,7 +117,7 @@ jobs:
       # Windows / Linux: upload directly to the draft release.
       - name: Upload artifacts to draft release (Windows/Linux)
         if: matrix.os != 'macos-latest'
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
           draft: true
           files: |
@@ -144,7 +144,7 @@ jobs:
 
       - name: Upload unstapled macOS installer to draft release
         if: matrix.os == 'macos-latest' && env.MAC_CSC_LINK != ''
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
           draft: true
           files: |
@@ -155,7 +155,7 @@ jobs:
       # macOS unsigned fallback: upload directly (no notarization step needed).
       - name: Upload macOS unsigned build to draft release
         if: matrix.os == 'macos-latest' && env.MAC_CSC_LINK == ''
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
           draft: true
           files: |
