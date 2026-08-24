@@ -12,7 +12,7 @@ const {
   rmMock,
   statMock,
   readdirMock,
-  extractZipMock,
+  execFileMock,
   tarXMock
 } = vi.hoisted(() => ({
   state: {
@@ -34,7 +34,7 @@ const {
   rmMock: vi.fn(() => Promise.resolve()),
   statMock: vi.fn(),
   readdirMock: vi.fn(),
-  extractZipMock: vi.fn(() => Promise.resolve()),
+  execFileMock: vi.fn(),
   tarXMock: vi.fn(() => Promise.resolve())
 }))
 
@@ -61,15 +61,15 @@ vi.mock('stream/promises', () => ({
 vi.mock('zlib', () => ({
   createGunzip: vi.fn(() => ({}))
 }))
-vi.mock('extract-zip', () => ({ default: extractZipMock }))
 vi.mock('tar', () => ({ x: tarXMock }))
 vi.mock('child_process', () => ({
   execFile: (
-    _file: string,
-    _args: string[],
+    file: string,
+    args: string[],
     _opts: unknown,
     cb: (err: Error | null, out?: { stdout: string }) => void
   ) => {
+    execFileMock(file, args)
     if (state.execFails) cb(new Error('boom'))
     else cb(null, { stdout: state.version })
   }
@@ -86,6 +86,13 @@ import {
 
 const BIN = join('/userdata/bin', 'ffmpeg')
 
+/** Commands run through execFile, minus the `<binary> -version` probe. */
+function extractorCalls(): string[] {
+  return execFileMock.mock.calls
+    .filter((call) => (call[1] as string[])[0] !== '-version')
+    .map((call) => call[0] as string)
+}
+
 function fileEntry(name: string): { name: string; isDirectory: () => boolean } {
   return { name, isDirectory: () => false }
 }
@@ -100,7 +107,7 @@ beforeEach(() => {
   chmodMock.mockClear()
   renameMock.mockClear()
   rmMock.mockClear()
-  extractZipMock.mockClear()
+  execFileMock.mockClear()
   tarXMock.mockClear()
   statMock.mockReset()
   statMock.mockImplementation(() => {
@@ -193,7 +200,11 @@ describe('ensureFfmpeg', () => {
     state.platform = 'win32'
     readdirMock.mockResolvedValue([fileEntry('ffmpeg.exe'), fileEntry('ffprobe.exe')])
     await ensureFfmpeg()
-    expect(extractZipMock).not.toHaveBeenCalled()
+    expect(extractorCalls()).toEqual(['powershell.exe'])
+    expect(execFileMock).toHaveBeenCalledWith(
+      'powershell.exe',
+      expect.arrayContaining([expect.stringContaining('Expand-Archive')])
+    )
     expect(tarXMock).not.toHaveBeenCalled()
     expect(chmodMock).not.toHaveBeenCalled()
   })
@@ -204,7 +215,7 @@ describe('ensureFfmpeg', () => {
     await ensureFfmpeg()
     // evermeet.cx publishes ffmpeg and ffprobe as two separate archives
     expect(downloadFileMock).toHaveBeenCalledTimes(2)
-    expect(extractZipMock).toHaveBeenCalledTimes(2)
+    expect(extractorCalls()).toEqual(['ditto', 'ditto'])
     expect(chmodMock).toHaveBeenCalledWith(BIN, 0o755)
   })
 
