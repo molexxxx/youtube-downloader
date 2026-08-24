@@ -201,7 +201,6 @@ npm run package:linux    # Linux
 - **electron-vite** - Vite build tooling for main / preload / renderer
 - **Tailwind CSS v4** - Utility-first styling
 - **Zustand** - Lightweight state management
-- **Framer Motion** - Animations and transitions
 - **Lucide React** - Icon library
 - **electron-store** - Persistent configuration
 - **electron-updater** - App auto-update from GitHub Releases
