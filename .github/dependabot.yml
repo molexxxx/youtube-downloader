@@ -67,3 +67,10 @@ updates:
     directory: '/'
     schedule:
       interval: weekly
+    # Same split as npm: routine action bumps arrive as one PR, majors as their
+    # own so a breaking runner change is judged on its own.
+    groups:
+      github-actions:
+        update-types:
+          - minor
+          - patch
