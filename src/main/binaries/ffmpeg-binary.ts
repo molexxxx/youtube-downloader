@@ -5,7 +5,6 @@ import { join } from 'path'
 import { promisify } from 'util'
 import { pipeline } from 'stream/promises'
 import { createGunzip } from 'zlib'
-import extractZip from 'extract-zip'
 import * as tar from 'tar'
 import type { BinaryStatus, BootstrapProgress } from '@shared/types'
 import { logger } from '../logger'
@@ -95,6 +94,31 @@ async function findBinary(root: string, name: string): Promise<string | null> {
   return null
 }
 
+/**
+ * Unpack a zip with the extractor the platform already ships. No npm zip
+ * library is used: extract-zip carries an unvalidated symlink path traversal
+ * advisory (GHSA-jmr9-qjv8-65gv) that has no fixed release.
+ */
+async function extractZipArchive(archivePath: string, dest: string): Promise<void> {
+  const platform = currentPlatform()
+  if (platform === 'win32') {
+    const psCommand = `Expand-Archive -Path '${archivePath}' -DestinationPath '${dest}' -Force`
+    await execFileAsync('powershell.exe', ['-NoProfile', '-Command', psCommand], {
+      timeout: 120_000
+    })
+    return
+  }
+  // ditto is part of the macOS base system and keeps the bundle metadata that
+  // evermeet.cx's archives carry.
+  if (platform === 'darwin') {
+    await execFileAsync('ditto', ['-x', '-k', archivePath, dest], { timeout: 120_000 })
+    return
+  }
+  await execFileAsync('unzip', ['-o', '-q', archivePath, '-d', dest], {
+    timeout: 120_000
+  })
+}
+
 async function extractArchive(
   archivePath: string,
   kind: ArchiveKind,
@@ -105,16 +129,7 @@ async function extractArchive(
 
   try {
     if (kind === 'zip') {
-      // On Windows, use PowerShell's Expand-Archive for better reliability
-      if (currentPlatform() === 'win32') {
-        const psCommand = `Expand-Archive -Path '${archivePath}' -DestinationPath '${dest}' -Force`
-        await execFileAsync('powershell.exe', ['-NoProfile', '-Command', psCommand], {
-          timeout: 120_000
-        })
-      } else {
-        // On macOS/Linux, fall back to extract-zip
-        await extractZip(archivePath, { dir: dest })
-      }
+      await extractZipArchive(archivePath, dest)
       logger.info('Zip extraction complete')
       return
     }
