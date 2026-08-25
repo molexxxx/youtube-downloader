@@ -10,11 +10,11 @@
 
 **Fast, modern YouTube downloader & self-hosted Discord music bot - powered by yt-dlp & FFmpeg**
 
-<a href="https://github.com/molexxxx/youtube-downloader/actions/workflows/ci.yml"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-ci-ytdl.svg" alt="CI" /></a>
-<a href="https://github.com/molexxxx/youtube-downloader/actions/workflows/build.yml"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-build-ytdl.svg" alt="build" /></a>
-<a href="https://github.com/molexxxx/youtube-downloader/releases"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-release-ytdl.svg" alt="release" /></a>
-<a href="LICENSE"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-license-ytdl.svg" alt="license" /></a>
-<a href="https://github.com/molexxxx/youtube-downloader/releases"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-downloads-ytdl.svg" alt="downloads" /></a>
+<a href="https://github.com/molexxxx/youtube-downloader/actions/workflows/ci.yml"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-ci-ytdl.svg?v=c06aef1f" alt="CI" /></a>
+<a href="https://github.com/molexxxx/youtube-downloader/actions/workflows/build.yml"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-build-ytdl.svg?v=e802fb6a" alt="build" /></a>
+<a href="https://github.com/molexxxx/youtube-downloader/releases"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-release-ytdl.svg?v=41a91d94" alt="release" /></a>
+<a href="LICENSE"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-license-ytdl.svg?v=8c412731" alt="license" /></a>
+<a href="https://github.com/molexxxx/youtube-downloader/releases"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-downloads-ytdl.svg?v=5c363c7b" alt="downloads" /></a>
 
 <br/>
 
