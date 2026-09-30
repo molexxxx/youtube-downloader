@@ -64,12 +64,7 @@ export const DEFAULT_CONFIG: AppConfig = {
 
 /** Stages reported while acquiring a managed binary. */
 export type BootstrapStage =
-  | 'checking'
-  | 'downloading'
-  | 'extracting'
-  | 'verifying'
-  | 'complete'
-  | 'error'
+  'checking' | 'downloading' | 'extracting' | 'verifying' | 'complete' | 'error'
 
 export interface BootstrapProgress {
   binary: 'yt-dlp' | 'ffmpeg'
@@ -311,12 +306,7 @@ export type PlayerStatus = 'idle' | 'buffering' | 'playing' | 'paused'
  * rotation ("8D") as a slow stereo pan, karaoke as center-channel removal.
  */
 export type AudioEffectMode =
-  | 'none'
-  | 'karaoke'
-  | 'tremolo'
-  | 'vibrato'
-  | 'rotate'
-  | 'echo'
+  'none' | 'karaoke' | 'tremolo' | 'vibrato' | 'rotate' | 'echo'
 
 /**
  * Per-guild playback effects (Lavalink-style timescale + tone controls).
