@@ -27,7 +27,6 @@ export async function applyLaunchOnStartup(
   try {
     app.setLoginItemSettings({
       openAtLogin: enabled,
-      openAsHidden: startMinimized,
       args: startMinimized ? [HIDDEN_LAUNCH_ARG] : []
     })
   } catch (err) {
@@ -67,8 +66,11 @@ export function isLaunchOnStartupEnabled(): boolean {
   return app.getLoginItemSettings().openAtLogin
 }
 
-/** True when this instance was started by the login item and should stay hidden. */
+/**
+ * True when this instance was started by the login item. macOS login items take
+ * no launch args, so there the caller's `startMinimized` check decides hiding.
+ */
 export function launchedHidden(): boolean {
   if (process.argv.includes(HIDDEN_LAUNCH_ARG)) return true
-  return process.platform === 'darwin' && app.getLoginItemSettings().wasOpenedAsHidden
+  return process.platform === 'darwin' && app.getLoginItemSettings().wasOpenedAtLogin
 }
