@@ -116,6 +116,15 @@ jobs:
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
 
+      # Electron 44 requires macOS 13. electron-builder does not put a minimum OS
+      # in latest-mac.yml, so older installs would download an update they cannot
+      # launch. electron-updater compares this value with os.release(), the Darwin
+      # version, so macOS 13 is 22.0.0. Raise it when Electron drops a macOS release.
+      - name: Set the minimum macOS version in the update feed
+        if: matrix.os == 'macos-latest'
+        run: |
+          printf "minimumSystemVersion: '22.0.0'\n" >> dist/latest-mac.yml
+
       - name: Build and package (Windows/Linux)
         if: matrix.os != 'macos-latest'
         run: npm run ${{ matrix.script }}
