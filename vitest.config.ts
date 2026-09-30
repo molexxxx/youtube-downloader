@@ -12,6 +12,12 @@ export default defineConfig({
   },
   test: {
     globals: true,
+    // The electron package downloads its binary on the first require('electron'),
+    // and parallel workers racing that download fail with EEXIST on a fresh
+    // install. Tests never launch the binary; the override skips the download.
+    env: {
+      ELECTRON_OVERRIDE_DIST_PATH: resolve('node_modules/electron/dist')
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
