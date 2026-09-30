@@ -126,7 +126,10 @@ jobs:
           new_version=$(npm version patch --no-git-tag-version)
 
           git add "$FILE" package.json package-lock.json
-          git commit -m "chore(release): $new_version [skip ci]"
+          # No [skip ci] on this commit: GitHub honors it for tag pushes too, so
+          # the tag below would never start release.yml. That is how v1.4.13 to
+          # v1.4.16 were tagged with no build behind them.
+          git commit -m "chore(release): $new_version"
 
           # Annotated tag, not lightweight: a lightweight tag is skipped by
           # --follow-tags and never reaches origin, which is why earlier bumps
