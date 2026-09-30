@@ -5,10 +5,12 @@ on:
     tags:
       - 'v*.*.*'
   # Manual recovery path. A tag push only starts this workflow when the push was
-  # authenticated with the GH_TOKEN PAT: GITHUB_TOKEN pushes never trigger another
-  # workflow, which is how v1.4.13 to v1.4.15 landed as tags with no build behind
-  # them. Pick the tag under "Use workflow from" to build and publish it; every
-  # job already keys off github.ref_name, which resolves to that tag either way.
+  # authenticated with the GH_TOKEN PAT (GITHUB_TOKEN pushes never trigger another
+  # workflow) and the tagged commit's message has no [skip ci], which GitHub
+  # honors for tag pushes as well. v1.4.13 to v1.4.16 landed as tags with no
+  # build behind them for the second reason. Pick the tag under "Use workflow
+  # from" to build and publish it; every job already keys off github.ref_name,
+  # which resolves to that tag either way.
   workflow_dispatch:
 
 permissions:
