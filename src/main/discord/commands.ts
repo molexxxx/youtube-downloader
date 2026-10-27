@@ -27,7 +27,8 @@ import { resolveQueryToTracks, searchTracks } from './resolve'
 /** Commands anyone may run regardless of the allowed-role gate. */
 const READ_ONLY = new Set(['queue', 'nowplaying'])
 
-function buildCommands(): SlashCommandBuilder[] {
+/** The slash commands the bot registers with Discord. */
+export function buildCommands(): SlashCommandBuilder[] {
   const text = (name: string, description: string): SlashCommandBuilder =>
     new SlashCommandBuilder().setName(name).setDescription(description)
 
@@ -36,7 +37,10 @@ function buildCommands(): SlashCommandBuilder[] {
       (o) =>
         o.setName('query').setDescription('YouTube URL or search text').setRequired(true)
     ) as SlashCommandBuilder,
-    text('search', 'Search YouTube and queue the top result').addStringOption((o) =>
+    text(
+      'search',
+      'Search YouTube and pick one of the top 5 results to queue'
+    ).addStringOption((o) =>
       o.setName('query').setDescription('Search text').setRequired(true)
     ) as SlashCommandBuilder,
     text('skip', 'Skip the current track'),
