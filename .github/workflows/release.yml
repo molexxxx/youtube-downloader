@@ -296,12 +296,44 @@ jobs:
       # GitHub re-append the generated notes to the body that the previous leg
       # had already written, so v1.4.12 shipped with its changelog three times
       # over. One job, one write.
+      #
+      # GitHub's generated notes only list merged pull requests, so a release
+      # whose changes were pushed straight to main came out with nothing but a
+      # compare link. The body is now the annotated tag's message (hand-written
+      # highlights, when present), then feat and fix commit subjects since the
+      # previous tag (skipping squash-merged PRs, which the generated notes
+      # already list), then the generated notes.
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
       - name: Compose release notes
+        env:
+          TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          gh api --method POST \
-            "repos/${{ github.repository }}/releases/generate-notes" \
-            -f tag_name="${{ github.ref_name }}" --jq '.body' > release-notes.md
+          # Checkout rewrites the triggering tag as a lightweight one; fetch it
+          # back so its annotated message is readable.
+          git fetch --force --tags origin
+          prev=$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || true)
+          range="${prev:+${prev}..}${TAG}"
+          section() {
+            git log --no-merges --format='%s' "$range" \
+              | grep -E "^$1(\([^)]*\))?!?: " \
+              | grep -vE '\(#[0-9]+\)$' \
+              | sed -E "s/^$1(\([^)]*\))?!?: (.)/- \U\2/" || true
+          }
+          {
+            highlights=$(git tag -l --format='%(contents:body)' "$TAG")
+            if [ -n "$highlights" ]; then printf '%s\n\n' "$highlights"; fi
+            feats=$(section feat)
+            fixes=$(section fix)
+            if [ -n "$feats" ]; then printf '## Features\n\n%s\n\n' "$feats"; fi
+            if [ -n "$fixes" ]; then printf '## Fixes\n\n%s\n\n' "$fixes"; fi
+            gh api --method POST \
+              "repos/${{ github.repository }}/releases/generate-notes" \
+              -f tag_name="$TAG" --jq '.body'
+          } > release-notes.md
 
       - name: Publish the release
         run: |
