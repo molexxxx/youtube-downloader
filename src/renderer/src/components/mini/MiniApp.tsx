@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { AppWindow, Bot, Download, Pin, PinOff, Play, X } from 'lucide-react'
+import { AppWindow, Bot, Download, Pin, PinOff, X } from 'lucide-react'
 import type { MiniWindowSize } from '@shared/types'
 import { useAppStore } from '../../stores/appStore'
 import { applyTheme } from '../../lib/theme'
+import { BrandMark } from '../shared/BrandMark'
 import { MiniDiscord } from './MiniDiscord'
 import { MiniDownloads } from './MiniDownloads'
 
@@ -122,7 +123,7 @@ function MiniTitleBar(): React.JSX.Element {
 
   return (
     <header className="drag-region flex h-9 shrink-0 items-center gap-2 px-3">
-      <Play size={11} fill="currentColor" className="text-[var(--w-red)]" />
+      <BrandMark size={14} />
       <span className="text-xs font-semibold tracking-tight">Quick Actions</span>
       <div className="no-drag ml-auto flex items-center gap-0.5">
         <div

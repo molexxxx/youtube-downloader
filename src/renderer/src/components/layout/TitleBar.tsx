@@ -3,13 +3,13 @@ import {
   Download,
   Minus,
   PictureInPicture2,
-  Play,
   ScrollText,
   Settings,
   Square,
   X
 } from 'lucide-react'
 import { useAppStore } from '../../stores/appStore'
+import { BrandMark } from '../shared/BrandMark'
 
 const ICON_BUTTON =
   'rounded-sm p-1.5 text-[var(--t-dim)] transition-colors hover:bg-[var(--t-hover)] hover:text-[var(--t-fg)]'
@@ -27,7 +27,7 @@ export function TitleBar(): React.JSX.Element {
     <header className="floor drag-region flex h-10 shrink-0 items-center justify-between border-b border-[var(--t-rule)] px-4">
       <div className="flex h-full items-center gap-6">
         <div className="flex items-center gap-2 text-sm font-semibold tracking-tight">
-          <Play size={13} fill="currentColor" className="text-[var(--w-red)]" />
+          <BrandMark size={16} />
           <span>YouTube Downloader</span>
         </div>
         {binariesReady && (

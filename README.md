@@ -1,9 +1,8 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/logo.svg">
-  <source media="(prefers-color-scheme: light)" srcset=".github/assets/logo.svg">
-  <img alt="YouTube Downloader" src=".github/assets/logo.svg" width="500">
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/logo-dark.svg">
+  <img alt="YouTube Downloader" src=".github/assets/logo-light.svg" width="507">
 </picture>
 
 <br/>

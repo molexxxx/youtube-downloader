@@ -7,8 +7,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 
 const D = 1024
 const RADIUS = 232
-const TILE_TOP = [0xff, 0x47, 0x57]
-const TILE_BOTTOM = [0xe0, 0x16, 0x2b]
+const TILE = [0xd2, 0x2f, 0x24]
 const TRI = { ax: 349, ay: 305, bx: 675, by: 305, cx: 512, cy: 552 }
 const BAR = { x: 349, y: 676, w: 326, h: 58, r: 29 }
 
@@ -82,32 +81,23 @@ function render(size) {
     for (let px = 0; px < size; px++) {
       let nTile = 0
       let nGlyph = 0
-      let gradAccum = 0
       for (let sy = 0; sy < SS; sy++) {
         for (let sx = 0; sx < SS; sx++) {
           const dx = (px + (sx + 0.5) / SS) * scale
           const dy = (py + (sy + 0.5) / SS) * scale
           if (!inRoundedRect(dx, dy, 0, 0, D, D, RADIUS)) continue
           nTile++
-          gradAccum += dy / D
           const glyph =
-            inTriangle(dx, dy) ||
-            inRoundedRect(dx, dy, BAR.x, BAR.y, BAR.w, BAR.h, BAR.r)
+            inTriangle(dx, dy) || inRoundedRect(dx, dy, BAR.x, BAR.y, BAR.w, BAR.h, BAR.r)
           if (glyph) nGlyph++
         }
       }
       if (nTile === 0) continue
       const i = (py * size + px) * 4
       const nRed = nTile - nGlyph
-      const t = gradAccum / nTile
-      const tile = [
-        TILE_TOP[0] + (TILE_BOTTOM[0] - TILE_TOP[0]) * t,
-        TILE_TOP[1] + (TILE_BOTTOM[1] - TILE_TOP[1]) * t,
-        TILE_TOP[2] + (TILE_BOTTOM[2] - TILE_TOP[2]) * t
-      ]
-      buf[i] = Math.round((tile[0] * nRed + 255 * nGlyph) / nTile)
-      buf[i + 1] = Math.round((tile[1] * nRed + 255 * nGlyph) / nTile)
-      buf[i + 2] = Math.round((tile[2] * nRed + 255 * nGlyph) / nTile)
+      buf[i] = Math.round((TILE[0] * nRed + 255 * nGlyph) / nTile)
+      buf[i + 1] = Math.round((TILE[1] * nRed + 255 * nGlyph) / nTile)
+      buf[i + 2] = Math.round((TILE[2] * nRed + 255 * nGlyph) / nTile)
       buf[i + 3] = Math.round((nTile / total) * 255)
     }
   }
