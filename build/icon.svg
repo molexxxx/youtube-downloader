@@ -1,7 +1,19 @@
-<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
-  <rect x="0" y="0" width="1024" height="1024" rx="232" fill="#d22f24"/>
-  <!-- Downward play = download -->
-  <path d="M349 305 h326 a28 28 0 0 1 24 43 l-163 247 a28 28 0 0 1 -48 0 l-163 -247 a28 28 0 0 1 24 -43 z" fill="#ffffff"/>
-  <!-- Baseline bar -->
-  <rect x="349" y="676" width="326" height="58" rx="29" fill="#ffffff"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="YouTube Downloader">
+  <defs>
+    <mask id="badge-gap">
+      <rect width="1024" height="1024" fill="#fff"/>
+      <circle cx="844" cy="844" r="186" fill="#000"/>
+    </mask>
+  </defs>
+  <g mask="url(#badge-gap)">
+    <rect width="1024" height="1024" rx="232" fill="#d22f24"/>
+    <path d="M349 305 h326 a28 28 0 0 1 24 43 l-163 247 a28 28 0 0 1 -48 0 l-163 -247 a28 28 0 0 1 24 -43 z" fill="#fff"/>
+    <rect x="349" y="676" width="326" height="58" rx="29" fill="#fff"/>
+  </g>
+  <circle cx="844" cy="844" r="160" fill="#4a4fd6"/>
+  <rect x="835.74" y="773.81" width="16.52" height="26.84" fill="#fff"/>
+  <circle cx="844" cy="765.55" r="13.42" fill="#fff"/>
+  <rect x="773.81" y="798.58" width="140.39" height="107.35" rx="30.97" fill="#fff"/>
+  <circle cx="813.03" cy="852.26" r="15.48" fill="#4a4fd6"/>
+  <circle cx="874.97" cy="852.26" r="15.48" fill="#4a4fd6"/>
 </svg>

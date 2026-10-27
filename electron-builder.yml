@@ -41,7 +41,8 @@ nsis:
 
 mac:
   category: public.app-category.utilities
-  icon: build/icon.png
+  # Inset to Apple's icon grid so it sits at the same size as other apps in the Dock.
+  icon: build/icon-mac.png
   hardenedRuntime: true
   gatekeeperAssess: false
   entitlements: build/entitlements.mac.plist
