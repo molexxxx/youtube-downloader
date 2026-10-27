@@ -1,242 +1,227 @@
 <div align="center">
 
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/logo-dark.svg">
+    <img alt="YouTube Downloader" src=".github/assets/logo-light.svg" width="507">
+  </picture>
+</h1>
+
+**Paste a YouTube link, pick a preset, get the file. The same app runs your own Discord music bot.**
+
+<a href="https://github.com/molexxxx/youtube-downloader/actions/workflows/ci.yml"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-ci-ytdl.svg?v=c06aef1f" alt="CI status" /></a>
+<a href="https://github.com/molexxxx/youtube-downloader/releases"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-release-ytdl.svg?v=41a91d94" alt="Latest release" /></a>
+<a href="https://github.com/molexxxx/youtube-downloader/releases"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-downloads-ytdl.svg?v=5c363c7b" alt="Total downloads" /></a>
+<a href="LICENSE"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-license-ytdl.svg?v=8c412731" alt="MIT license" /></a>
+
+**[Download for Windows, macOS, or Linux](#install)**
+
+[Screenshots](#screenshots) · [Features](#features) · [Discord music bot](#discord-music-bot) · [Troubleshooting](#troubleshooting) · [Build from source](#build-from-source)
+
+<br/>
+
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/logo-dark.svg">
-  <img alt="YouTube Downloader" src=".github/assets/logo-light.svg" width="507">
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/screenshots/hero-dark.png">
+  <img alt="The Download tab: a resolved video with presets and a Download button, beside the Downloads queue showing progress, queued, and finished items" src=".github/assets/screenshots/hero-light.png" width="860">
 </picture>
-
-<br/>
-
-**Fast, modern YouTube downloader & self-hosted Discord music bot - powered by yt-dlp & FFmpeg**
-
-<a href="https://github.com/molexxxx/youtube-downloader/actions/workflows/ci.yml"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-ci-ytdl.svg?v=c06aef1f" alt="CI" /></a>
-<a href="https://github.com/molexxxx/youtube-downloader/actions/workflows/build.yml"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-build-ytdl.svg?v=e802fb6a" alt="build" /></a>
-<a href="https://github.com/molexxxx/youtube-downloader/releases"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-release-ytdl.svg?v=41a91d94" alt="release" /></a>
-<a href="LICENSE"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-license-ytdl.svg?v=8c412731" alt="license" /></a>
-<a href="https://github.com/molexxxx/youtube-downloader/releases"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-downloads-ytdl.svg?v=5c363c7b" alt="downloads" /></a>
-
-<br/>
-
-[Download](#install) · [Features](#features) · [Quick Start](#quick-start) · [Contributing](#contributing) · [Report a Bug](https://github.com/molexxxx/youtube-downloader/issues/new?template=bug_report.yml) · [Request a Feature](https://github.com/molexxxx/youtube-downloader/issues/new?template=feature_request.yml)
 
 </div>
 
----
+## How it works
+
+1. **Paste or search.** Drop in a YouTube link to a video, playlist, channel, or Mix, or type keywords to search YouTube from the same bar.
+2. **Pick a preset.** Best MP4, 1080p MP4, 720p MP4, Best MKV, Audio MP3, or Audio FLAC. Power users can choose the exact resolution, frame rate, and codec instead.
+3. **Download.** Files land in your Downloads folder with the thumbnail, metadata, and chapters embedded.
+
+The app sets up and updates its own copies of [yt-dlp](https://github.com/yt-dlp/yt-dlp) and [FFmpeg](https://ffmpeg.org), so there is nothing else to install. It is free, needs no account or API key, and sends no telemetry.
+
+## Install
+
+Download the file for your system from the **[latest release](https://github.com/molexxxx/youtube-downloader/releases/latest)**:
+
+| System      | File to download                                             | Requirements                                   |
+| ----------- | ------------------------------------------------------------ | ---------------------------------------------- |
+| **Windows** | `YouTube-Downloader-<version>-Windows-Setup.exe`             | Windows 10 or 11, 64-bit (x64)                 |
+| **macOS**   | `YouTube-Downloader-<version>-macOS-Installer.dmg`           | Apple Silicon (M1 or later), macOS 13 or later |
+| **Linux**   | `YouTube-Downloader-<version>-Linux-Installer.deb` or `.rpm` | 64-bit (x64)                                   |
+
+The other files on the release page (`.yml` files and the macOS `Updater.zip`) are used by the built-in updater; you do not need them.
+
+- **Windows SmartScreen:** the installer is not code-signed yet, so Windows may say "Windows protected your PC". Choose **More info**, then **Run anyway**. The macOS build is signed and notarized by Apple.
+- **First launch:** a short setup screen offers the app's own verified copies of yt-dlp and FFmpeg (or copies already on your computer) and installs them with one click. Expect a download of about 220 MB on Windows, 190 MB on Linux, and 95 MB on macOS.
+- **Intel Macs** are not supported: Discord's encrypted voice module cannot be built into a universal macOS app.
+- **Updates:** the app updates itself from GitHub Releases, and keeps yt-dlp current on its own.
 
 ## Screenshots
 
 <div align="center">
 
-<a href=".github/assets/main-window.png"><img src=".github/assets/main-window.png" alt="Main window" width="860"></a>
-
-<br/>
-<br/>
-
 <table>
   <tr>
-    <td align="center" width="215">
-      <a href=".github/assets/thumbs/1-youtube-search.png"><img src=".github/assets/thumbs/1-youtube-search.png" alt="YouTube Search" width="200"></a>
-      <br/><sub><b>YouTube Search</b></sub>
+    <td align="center" width="50%">
+      <a href=".github/assets/screenshots/playlist.png"><img src=".github/assets/screenshots/playlist.png" alt="A resolved playlist with every item checked, presets, and a Download 12 items button" width="420"></a>
+      <br/><sub><b>Playlists:</b> pick exactly which items to download</sub>
     </td>
-    <td align="center" width="215">
-      <a href=".github/assets/thumbs/2-video-download-details.png"><img src=".github/assets/thumbs/2-video-download-details.png" alt="Video Download Details" width="200"></a>
-      <br/><sub><b>Video Download Details</b></sub>
-    </td>
-    <td align="center" width="215">
-      <a href=".github/assets/thumbs/3-playlist-download-details.png"><img src=".github/assets/thumbs/3-playlist-download-details.png" alt="Playlist Download Details" width="200"></a>
-      <br/><sub><b>Playlist Download Details</b></sub>
-    </td>
-    <td align="center" width="215">
-      <a href=".github/assets/thumbs/4-discord-dash.png"><img src=".github/assets/thumbs/4-discord-dash.png" alt="Discord Dashboard" width="200"></a>
-      <br/><sub><b>Discord Dashboard</b></sub>
+    <td align="center" width="50%">
+      <a href=".github/assets/screenshots/quick-actions.png"><img src=".github/assets/screenshots/quick-actions.png" alt="The compact Quick Actions window, showing its Download tab and its Discord tab side by side" width="420"></a>
+      <br/><sub><b>Quick Actions:</b> an always-on-top mini window for both</sub>
     </td>
   </tr>
   <tr>
-    <td align="center" width="215">
-      <a href=".github/assets/thumbs/5-discord-dash-search.png"><img src=".github/assets/thumbs/5-discord-dash-search.png" alt="Discord Dashboard Search" width="200"></a>
-      <br/><sub><b>Discord Dashboard Search</b></sub>
+    <td align="center" width="50%">
+      <a href=".github/assets/screenshots/discord.png"><img src=".github/assets/screenshots/discord.png" alt="The Discord bot dashboard: server rail, now playing with seek and transport controls, voice channels, and a numbered queue" width="420"></a>
+      <br/><sub><b>Discord bot:</b> now playing, the queue, and voice channels</sub>
     </td>
-    <td align="center" width="215">
-      <a href=".github/assets/thumbs/6-discord-dash-playback.png"><img src=".github/assets/thumbs/6-discord-dash-playback.png" alt="Discord Dashboard Playback" width="200"></a>
-      <br/><sub><b>Discord Dashboard Playback</b></sub>
-    </td>
-    <td align="center" width="215">
-      <a href=".github/assets/thumbs/7-discord-channel.png"><img src=".github/assets/thumbs/7-discord-channel.png" alt="Discord Channel" width="200"></a>
-      <br/><sub><b>Discord Channel</b></sub>
-    </td>
-    <td align="center" width="215">
-      <a href=".github/assets/thumbs/8-download-history.png"><img src=".github/assets/thumbs/8-download-history.png" alt="Download History" width="200"></a>
-      <br/><sub><b>Download History</b></sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center" width="215">
-      <a href=".github/assets/thumbs/9-view-logs.png"><img src=".github/assets/thumbs/9-view-logs.png" alt="View Logs" width="200"></a>
-      <br/><sub><b>View Logs</b></sub>
-    </td>
-    <td align="center" width="215">
-      <a href=".github/assets/thumbs/10-settings-top.png"><img src=".github/assets/thumbs/10-settings-top.png" alt="Settings - Top" width="200"></a>
-      <br/><sub><b>Settings - Top</b></sub>
-    </td>
-    <td align="center" width="215">
-      <a href=".github/assets/thumbs/11-settings-middle.png"><img src=".github/assets/thumbs/11-settings-middle.png" alt="Settings - Middle" width="200"></a>
-      <br/><sub><b>Settings - Middle</b></sub>
-    </td>
-    <td align="center" width="215">
-      <a href=".github/assets/thumbs/12-settings-bottom.png"><img src=".github/assets/thumbs/12-settings-bottom.png" alt="Settings - Bottom" width="200"></a>
-      <br/><sub><b>Settings - Bottom</b></sub>
+    <td align="center" width="50%">
+      <a href=".github/assets/screenshots/effects.png"><img src=".github/assets/screenshots/effects.png" alt="The audio effects panel with presets, speed and pitch sliders, a three-band equalizer, and effect choices" width="420"></a>
+      <br/><sub><b>Audio effects:</b> speed, pitch, EQ, and one-tap presets</sub>
     </td>
   </tr>
 </table>
 
 </div>
 
----
+<details>
+<summary><b>More screenshots</b></summary>
+<br/>
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <a href=".github/assets/screenshots/quality.png"><img src=".github/assets/screenshots/quality.png" alt="The quality menu listing each resolution with frame rate, codec, container, and size" width="420"></a>
+      <br/><sub><b>Exact quality:</b> resolution, frame rate, codec, and size</sub>
+    </td>
+    <td align="center" width="50%">
+      <a href=".github/assets/screenshots/history.png"><img src=".github/assets/screenshots/history.png" alt="Download history with play, send to Discord, show in folder, and remove actions on each row" width="420"></a>
+      <br/><sub><b>History:</b> replay, open the folder, or send to Discord</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <a href=".github/assets/screenshots/settings.png"><img src=".github/assets/screenshots/settings.png" alt="Settings for the download folder, default preset, container, concurrent downloads, output template, and post-processing" width="420"></a>
+      <br/><sub><b>Settings</b></sub>
+    </td>
+    <td align="center" width="50%">
+      <a href=".github/assets/screenshots/setup.png"><img src=".github/assets/screenshots/setup.png" alt="First-run setup offering the app's copies of yt-dlp and FFmpeg, with a self-test report for an FFmpeg found on the computer" width="420"></a>
+      <br/><sub><b>Setup:</b> the app's verified copies or your own</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <a href=".github/assets/screenshots/logs.png"><img src=".github/assets/screenshots/logs.png" alt="The log viewer with level filters, tail, copy, and clear" width="420"></a>
+      <br/><sub><b>Logs:</b> filter by level, follow, and copy</sub>
+    </td>
+    <td width="50%"></td>
+  </tr>
+</table>
+
+</details>
+
+<sub>Screenshots use mock data showing Creative Commons Attribution works: films by the Blender Foundation (Big Buck Bunny, Cosmos Laundromat, Caminandes 3, Glass Half, HERO, The Daily Dweebs) and music by Kevin MacLeod (incompetech.com).</sub>
 
 ## Features
 
-### Download & Resolve
+### Downloading
 
-- **YouTube Downloads** - Paste a link or search YouTube right from the URL bar (no API key)
-- **Videos, Playlists & Channels** - Smart URL detection: a `watch?v=…&list=…` link prompts you to grab just the video or the whole list, while `playlist?list=…`, channels, and Mixes resolve as collections; full or partial selection with "load more" paging past the fetch limit
-- **Video Formats** - "Best quality (auto)" with automatic video + best-audio merge, or hand-pick a specific resolution / fps / codec from the enumerated format list (up to 4K when available)
-- **Containers** - Output to **MP4** or **MKV**
-- **Audio Extraction** - Pull audio-only as **MP3**, **M4A**, **Opus**, **FLAC**, or **WAV** with selectable bitrate (320K / 256K / 192K / 128K / 96K)
-- **6 Quick Presets** - Best MP4, 1080p MP4, 720p MP4, Best MKV, Audio MP3, and Audio FLAC - one click applies format, container, and resolution cap
-- **Playlist Picker** - Per-item checkboxes with toggle-all; only the selected subset is downloaded
-- **Search** - Type keywords to search YouTube via `ytsearch` and resolve any result with a click (thumbnail, title, duration)
-- **In-App Video Preview** - Click any thumbnail (resolved video, playlist item, or search result) to watch it in a built-in player modal before committing to a download
+- **Links or search:** videos, playlists, channels, and Mixes from a link, or search YouTube by keyword with no API key. A link that points at one video inside a playlist asks whether you want the video or the whole list.
+- **Presets or exact formats:** six one-click presets, or a specific resolution, frame rate, and codec (H.264, VP9, AV1) up to 4K, always merged with the best audio.
+- **Video or audio:** MP4 or MKV video; MP3, M4A, Opus, FLAC, or WAV audio at 96 to 320 kbps.
+- **Playlist picker:** choose items one by one and load more past the fetch limit.
+- **Post-processing:** embed the thumbnail, metadata, and chapters; download subtitles; cut sponsor, self-promotion, intro, outro, and other non-content segments with SponsorBlock; skip files you already have with a download archive.
+- **Sign-in when needed:** import cookies from your browser for age-restricted, private, or members-only videos. Downloads retry with cookies when YouTube asks for sign-in.
+- **Queue and history:** up to 8 downloads at once with live speed and ETA, desktop notifications, and a history you can replay or open in its folder.
+- **Preview:** watch any result in the app before you download it.
 
-### Post-Processing
+### Runs itself
 
-- **Embed Thumbnail** - Cover art written into the output file
-- **Embed Metadata** - Title, uploader, and date written to file tags
-- **Embed Chapters** - YouTube chapter markers preserved
-- **Subtitles** - Optionally download subtitle files with configurable language codes
-- **SponsorBlock** - Automatically strip sponsor / intro / outro segments
-- **Download Archive** - Skip already-downloaded items on re-run via an archive file
-- **Cookie Support** - Import cookies from your browser (auto-detect or pick one) for age-gated, private, or members-only content, with automatic retry on auth failures
+- **Guided setup and self-tests:** use the app's copies of yt-dlp and FFmpeg or ones already on your computer. Every copy is self-tested before use and after each update.
+- **Verified yt-dlp updates:** checked once a day or on demand. A release installs only after it matches the checksums signed by the yt-dlp release key, and never while a download or playback is using yt-dlp.
+- **Pinned FFmpeg:** each app version pins exact FFmpeg builds by size and SHA-256 (from BtbN, with Gyan.dev and Martin Riedl as fallbacks on Windows and Linux, and from Martin Riedl on macOS), so every install runs the tested build.
+- **Quick Actions:** a compact always-on-top window, in three sizes, for downloads and bot control.
+- **Stays out of the way:** close to the tray, launch at login on Windows, macOS, or Linux, and start minimized.
+- **Themes:** System, Dark, or Light.
+- **Private:** no account and no telemetry. The app only talks to YouTube, GitHub (for app and yt-dlp updates), the FFmpeg download host, SponsorBlock when you turn it on, and Discord while the bot is connected.
 
-### Queue, Progress & History
+## Discord music bot
 
-- **Concurrent Queue** - Configurable 1–8 simultaneous downloads with per-job cancellation and de-duplication of identical requests
-- **Live Progress** - Real-time percent, speed, and ETA per download with desktop notifications on completion or failure
-- **History** - Persistent record of every download (title, kind, URL, status, output path, timestamp) with one-click "Show in folder" and clear controls
-- **Logs** - Filterable real-time log viewer (debug / info / warn / error) with tail-follow and copy-all
+The app can also run your own music bot for your Discord servers. It plays through the same yt-dlp and FFmpeg pipeline on your computer, so it is free and has no subscription. Slash commands in Discord and the controls in the app drive the same player and stay in sync.
 
-### Discord Music Bot
+**What you need**
 
-- **Self-Hosted Bot** - Connect your own bot token (stored locally and encrypted via the OS keychain) and the app becomes a personal Discord music bot; a one-click OAuth invite link adds it to your servers. Free, no subscriptions - the in-app guide walks through the current Developer Portal flow (New Application → Bot tab → Reset Token)
-- **Voice Playback** - Stream YouTube audio - single videos or whole playlists - into voice channels through the same yt-dlp + FFmpeg pipeline, including the automatic cookie fallback for age-gated content. Native Opus encoding, generous stream buffering, and automatic voice reconnection keep playback smooth even when the host machine is under load
-- **Play Your Downloads** - Send any completed download to a server's queue right from the Downloads or History list; local files play straight from disk with no re-streaming
-- **Import Local Audio** - Drag audio files onto the dashboard (or browse for them), preview them with a built-in mini player, and queue them on the bot - MP3, M4A, FLAC, WAV, Opus, OGG, and more
-- **In-App Control** - Search or paste links, manage the queue, and drive playback: play / pause / skip / stop, a live seek bar with elapsed time, shuffle, loop (off / track / queue), play-next / reorder, and a per-server volume that's remembered
-- **Audio Effects & EQ** - A per-server effects popup with playback speed and pitch (independent, Lavalink-style timescale), a bass / mid / treble equalizer with clip-protection limiting, fun filters (8D rotation, karaoke vocal cut, tremolo, vibrato, echo), and one-tap presets like Nightcore, Slowed, and Bass Boost - applied live through the FFmpeg pipeline
-- **Slash Commands** - `/play`, `/search`, `/queue`, `/skip`, `/volume`, `/loop`, and more, registered per-server for instant use; slash commands and the desktop UI drive the **same** player and stay in sync live
-- **Multiple Servers** - Manage several servers at once with a Discord-style server rail and an independent queue per server
-- **Role Gating** - Optionally restrict slash-command playback to a chosen role (the host app always stays in control)
-- **Audit Log** - Persistent, per-server activity feed of who did what - from the app or from Discord - stored locally on your machine
+- A bot token from the [Discord Developer Portal](https://discord.com/developers/applications). The app walks you through creating one.
+- Permission to add a bot to your server. The invite link asks only for View Channels, Send Messages, Embed Links, Connect, and Speak, and the bot needs no privileged intents.
+- Your computer on and the app running while people listen. Launch at login and close to tray keep it online.
 
-### App & UI
+**What it does**
 
-- **Guided Setup** - On first launch, setup finds any yt-dlp or FFmpeg already on your PATH (and in Homebrew's folders on macOS) and offers it beside the app's own verified copies, with live download progress for whatever you pick
-- **Self-Tests** - Every yt-dlp and FFmpeg is self-tested before use and after each update: the yt-dlp version, the YouTube challenge solver and its JavaScript runtime, and every FFmpeg component the app relies on, including a real run of the Discord audio and effects chain. Run a test or reopen setup any time from Settings
-- **Verified yt-dlp Updates** - yt-dlp's stable channel is checked once a day (or on demand from Settings). A release is installed only after it matches the SHA2-256SUMS that the yt-dlp signing key signs and reports its version, and it replaces the current copy only once no download or playback is using it
-- **Pinned FFmpeg** - Each app release pins exact FFmpeg builds by size and SHA-256 (BtbN, with Gyan.dev and Martin Riedl fallbacks), so every install runs the same tested build. A newer pin installs in the background while the current build keeps working
-- **Auto-Updater** - Check / download / install app updates straight from GitHub Releases with live progress
-- **Launch on Startup** - Optionally start the app at login on Windows, macOS, or Linux to keep the bot online, with a "start minimized to tray" option
-- **Single Instance** - Only one copy runs per machine; launching it again focuses the existing window
-- **System Tray** - Live download count and average progress in the tooltip; optional close-to-tray
-- **Quick Actions Window** - Pin a compact always-on-top companion window (three sizes) with instant downloads, Discord search and queueing, playback transport, and one-tap server/channel switching - no window juggling
-- **Frameless UI** - Custom titlebar, native right-click context menu, and a polished animated empty state
-- **Themes** - System, Dark, or Light
-- **Desktop Notifications** - Click-to-focus alerts when a download finishes
+- Plays YouTube links and playlists, your finished downloads, and audio files you add from your computer.
+- Queue control from the app or Discord: play next, reorder, seek, shuffle, loop, and a volume remembered per server.
+- Audio effects per server: speed, pitch, a bass, mid, and treble equalizer, character effects (karaoke, tremolo, vibrato, 8D, echo), and presets such as Nightcore, Slowed, and Bass Boost. Changing an effect restarts the current track at the same position.
+- Several servers at once, each with its own queue, plus an optional role that limits who can use slash commands.
+- An activity log per server, and an option to leave voice when the queue ends.
+- Supports Discord's end-to-end encrypted voice (DAVE).
 
----
+The token is encrypted with your operating system's secure storage (Keychain on macOS, DPAPI on Windows, the Secret Service on Linux). On Linux without a keyring service it is stored unencrypted in the app's settings file.
 
-## Install
+<details>
+<summary><b>Slash commands</b></summary>
+<br/>
 
-Grab the latest release for your platform:
+| Command            | What it does                                              |
+| ------------------ | --------------------------------------------------------- |
+| `/play query`      | Play a song or playlist (YouTube link or search text)     |
+| `/search query`    | Search YouTube and pick one of the top 5 results to queue |
+| `/skip`            | Skip the current track                                    |
+| `/stop`            | Stop playback and clear the queue                         |
+| `/pause`           | Pause playback                                            |
+| `/resume`          | Resume playback                                           |
+| `/queue`           | Show the current queue                                    |
+| `/nowplaying`      | Show the current track                                    |
+| `/shuffle`         | Shuffle the upcoming queue                                |
+| `/clear`           | Clear the upcoming queue                                  |
+| `/join`            | Join your voice channel                                   |
+| `/leave`           | Leave the voice channel                                   |
+| `/loop mode`       | Set the loop mode (off, track, or queue)                  |
+| `/volume percent`  | Set playback volume (0-100)                               |
+| `/remove position` | Remove a track from the queue by position                 |
 
-| Platform | Download | Format |
-|----------|----------|--------|
-| **Windows** | [Latest Release](https://github.com/molexxxx/youtube-downloader/releases/latest) | `.exe` (NSIS installer) |
-| **macOS** | [Latest Release](https://github.com/molexxxx/youtube-downloader/releases/latest) | `.dmg` installer (Intel & Apple Silicon) |
-| **Linux** | [Latest Release](https://github.com/molexxxx/youtube-downloader/releases/latest) | `.deb` / `.rpm` installer |
+</details>
 
-> yt-dlp and FFmpeg are downloaded automatically on first launch - no manual setup required.
+## Troubleshooting
 
----
+- **"Sign in to confirm your age" or "confirm you're not a bot":** open **Settings**, then **Cookies**, and import cookies from the browser you are signed in with. Close that browser completely first; a running browser locks its cookie database.
+- **"Windows protected your PC":** choose **More info**, then **Run anyway**. The Windows installer is not code-signed yet.
+- **A download fails:** open **Logs** from the title bar to see yt-dlp's message. YouTube changes often; **Settings**, then **yt-dlp & FFmpeg**, then **Check now** installs the latest yt-dlp.
+- **The bot is online but silent:** make sure it has the Connect and Speak permissions in that voice channel, then join a channel from the app or with `/join`.
+- **Something else:** [open an issue](https://github.com/molexxxx/youtube-downloader/issues/new/choose) and include what **Logs** shows.
 
-## Quick Start
+## Build from source
+
+You need [Node.js](https://nodejs.org) 22 and npm.
 
 ```bash
-# Clone & install
 git clone https://github.com/molexxxx/youtube-downloader.git
 cd youtube-downloader
-npm install
+npm ci --legacy-peer-deps
 
-# Development (hot-reload)
-npm run dev
-
-# Run tests
+npm run dev            # Run with hot reload
+npm run typecheck      # Type-check main, preload, and renderer
+npm run lint
 npm test
 
-# Build for production
-npm run build
-
-# Package for distribution
-npm run package          # Current platform
-npm run package:win      # Windows
-npm run package:mac      # macOS
-npm run package:linux    # Linux
+npm run package:win    # Or package:mac, package:linux
 ```
 
----
-
-## Tech Stack
-
-- **Electron** - Cross-platform desktop framework
-- **React 19** - UI with functional components and hooks
-- **TypeScript** - Full type safety across main and renderer
-- **electron-vite** - Vite build tooling for main / preload / renderer
-- **Tailwind CSS v4** - Utility-first styling
-- **Zustand** - Lightweight state management
-- **Lucide React** - Icon library
-- **electron-store** - Persistent configuration
-- **electron-updater** - App auto-update from GitHub Releases
-- **electron-builder** - Packaging & distribution
-- **youtube-dl-exec** - yt-dlp wrapper for resolving and downloading
-- **discord.js / @discordjs/voice** - Discord gateway client and voice playback for the music bot
-- **libsodium-wrappers / opusscript** - Pure-JS voice encryption and Opus encoding (no native build step)
-- **Vitest** - Unit and integration testing
-
----
-
-## Feedback & Issues
-
-Found a bug or have an idea?
-
-- [**Report a Bug**](https://github.com/molexxxx/youtube-downloader/issues/new) - Something isn't working as expected
-- [**Request a Feature**](https://github.com/molexxxx/youtube-downloader/issues/new) - Suggest a new feature or enhancement
-- [**Browse Open Issues**](https://github.com/molexxxx/youtube-downloader/issues) - See what's already been reported
-
-Please search existing issues before opening a new one to avoid duplicates.
-
----
+Built with Electron, React 19, TypeScript, electron-vite, Tailwind CSS 4, and Zustand. Downloads go through yt-dlp (via youtube-dl-exec) and FFmpeg; the bot uses discord.js and @discordjs/voice with native Opus (@discordjs/opus) and sodium-native encryption. Tests run on Vitest, and electron-builder packages the installers.
 
 ## Contributing
 
-Contributions are welcome! Fork the repo, create a feature branch, and open a pull request. Run `npm run lint`, `npm test`, and `npm run build` before submitting.
+Contributions are welcome. Fork the repo, create a branch, and open a pull request. Before you open it, run `npm run typecheck`, `npm run lint`, and `npm test`.
 
----
+Found a bug or have an idea? [Report a bug](https://github.com/molexxxx/youtube-downloader/issues/new?template=bug_report.yml) or [request a feature](https://github.com/molexxxx/youtube-downloader/issues/new?template=feature_request.yml). Please search [open issues](https://github.com/molexxxx/youtube-downloader/issues) first.
 
 ## License
 
-[MIT](LICENSE) - build cool things with it.
+[MIT](LICENSE)
 
----
-
-<div align="center">
-<sub>Downloads are your responsibility - respect the terms of service of the sites you use and the rights of content creators.</sub>
-</div>
+<sub>Downloads are your responsibility. Respect the terms of service of the sites you use and the rights of content creators.</sub>
