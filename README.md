@@ -39,11 +39,11 @@ The app sets up and updates its own copies of [yt-dlp](https://github.com/yt-dlp
 
 Download the file for your system from the **[latest release](https://github.com/molexxxx/youtube-downloader/releases/latest)**:
 
-| System      | File to download                                             | Requirements                                   |
-| ----------- | ------------------------------------------------------------ | ---------------------------------------------- |
-| **Windows** | `YouTube-Downloader-<version>-Windows-Setup.exe`             | Windows 10 or 11, 64-bit (x64)                 |
-| **macOS**   | `YouTube-Downloader-<version>-macOS-Installer.dmg`           | Apple Silicon (M1 or later), macOS 13 or later |
-| **Linux**   | `YouTube-Downloader-<version>-Linux-Installer.deb` or `.rpm` | 64-bit (x64)                                   |
+| System      | File name ends in               | Requirements                                   |
+| ----------- | ------------------------------- | ---------------------------------------------- |
+| **Windows** | `Windows-Setup.exe`             | Windows 10 or 11, 64-bit (x64)                 |
+| **macOS**   | `macOS-Installer.dmg`           | Apple Silicon (M1 or later), macOS 13 or later |
+| **Linux**   | `Linux-Installer.deb` or `.rpm` | 64-bit (x64)                                   |
 
 The other files on the release page (`.yml` files and the macOS `Updater.zip`) are used by the built-in updater; you do not need them.
 
