@@ -79,6 +79,30 @@ describe('buildArgs', () => {
     expect(args[mergeIdx + 1]).toBe('mp4')
   })
 
+  it('caps the height when a preset resolution applies without a format id', () => {
+    const args = buildArgs({ url: 'https://x', kind: 'video', maxHeight: 720 })
+    expect(args[args.indexOf('--format') + 1]).toBe(
+      'bestvideo[height<=720]+bestaudio/best[height<=720]/best'
+    )
+  })
+
+  it('lets an explicit format id win over a height cap', () => {
+    const args = buildArgs({
+      url: 'https://x',
+      kind: 'video',
+      formatId: '137',
+      maxHeight: 720
+    })
+    expect(args[args.indexOf('--format') + 1]).toBe('137+bestaudio/137/best')
+  })
+
+  it('ignores a height cap that is not a positive integer', () => {
+    for (const maxHeight of [0, -720, 720.5, Number.NaN]) {
+      const args = buildArgs({ url: 'https://x', kind: 'video', maxHeight })
+      expect(args[args.indexOf('--format') + 1]).toBe('bestvideo+bestaudio/best')
+    }
+  })
+
   it('defaults the container to the config value', () => {
     const args = buildArgs({ url: 'https://x', kind: 'video' })
     const mergeIdx = args.indexOf('--merge-output-format')

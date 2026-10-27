@@ -235,6 +235,8 @@ export interface DownloadRequest {
   /** Human-readable title for the queue UI; falls back to the URL when omitted. */
   title?: string
   formatId?: string
+  /** Video height cap applied when no `formatId` is chosen (a preset's resolution on playlist items). */
+  maxHeight?: number
   container?: VideoContainer
   audioFormat?: AudioFormat
   audioBitrate?: number

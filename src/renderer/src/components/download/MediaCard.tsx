@@ -51,6 +51,16 @@ const AUDIO_FORMAT_OPTIONS: SegmentOption<AudioFormat>[] = AUDIO_FORMATS.map((f)
   label: f
 }))
 
+/** Short codec name for a yt-dlp `vcodec` string (`avc1.640028` is H.264), or null when unknown. */
+export function codecLabel(vcodec: string | null | undefined): string | null {
+  const v = (vcodec ?? '').toLowerCase()
+  if (v.startsWith('avc')) return 'H.264'
+  if (v.startsWith('vp09') || v.startsWith('vp9')) return 'VP9'
+  if (v.startsWith('av01')) return 'AV1'
+  if (v.startsWith('hev') || v.startsWith('hvc')) return 'HEVC'
+  return null
+}
+
 function formatHeight(format: VideoFormat): number {
   const res = format.resolution ?? ''
   const fromX = res.includes('x')
@@ -71,6 +81,9 @@ export function MediaCard(): React.JSX.Element | null {
     config?.videoContainer ?? 'mp4'
   )
   const [presetId, setPresetId] = useState<string>(config?.defaultPreset ?? 'best-mp4')
+  const [maxHeight, setMaxHeight] = useState<number | null>(
+    getPreset(config?.defaultPreset ?? 'best-mp4')?.maxHeight ?? null
+  )
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set())
   const [audioBitrate, setAudioBitrate] = useState<number>(320)
   const [showOptions, setShowOptions] = useState(false)
@@ -124,7 +137,9 @@ export function MediaCard(): React.JSX.Element | null {
       opts.push({
         value: f.formatId,
         label: `${f.resolution}${f.fps ? `@${f.fps}` : ''}`,
-        hint: `${f.ext} · ${formatBytes(f.filesize)} · + audio`
+        hint: [codecLabel(f.vcodec), f.ext, formatBytes(f.filesize), '+ audio']
+          .filter(Boolean)
+          .join(' · ')
       })
     }
     return opts
@@ -140,6 +155,7 @@ export function MediaCard(): React.JSX.Element | null {
       return
     }
     if (preset.container) setContainer(preset.container)
+    setMaxHeight(preset.maxHeight ?? null)
     if (preset.maxHeight == null) {
       setFormatId('')
     } else {
@@ -215,6 +231,7 @@ export function MediaCard(): React.JSX.Element | null {
     const sharedOpts = {
       kind,
       formatId: kind === 'video' ? formatId || undefined : undefined,
+      maxHeight: kind === 'video' && !formatId ? (maxHeight ?? undefined) : undefined,
       container: kind === 'video' ? container : undefined,
       audioFormat: kind === 'audio' ? audioFormat : undefined,
       audioBitrate: kind === 'audio' ? audioBitrate : undefined,
@@ -275,7 +292,10 @@ export function MediaCard(): React.JSX.Element | null {
         <div className="flex flex-col gap-2.5">
           <Select
             value={formatId}
-            onChange={manual(formatId, setFormatId)}
+            onChange={manual(formatId, (value) => {
+              setFormatId(value)
+              setMaxHeight(null)
+            })}
             options={formatOptions}
           />
           <p className="flex items-center gap-1.5 text-[13px] text-[var(--t-dim)]">

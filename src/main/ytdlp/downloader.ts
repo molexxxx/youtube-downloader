@@ -44,6 +44,7 @@ function sameRequest(a: DownloadRequest, b: DownloadRequest): boolean {
     a.url === b.url &&
     a.kind === b.kind &&
     a.formatId === b.formatId &&
+    a.maxHeight === b.maxHeight &&
     a.container === b.container &&
     a.audioFormat === b.audioFormat &&
     a.audioBitrate === b.audioBitrate &&
@@ -94,9 +95,13 @@ export function buildArgs(
     // metadata/thumbnail embedding, unlike webm. A chosen video-only format is
     // paired with the best audio so the result always has sound.
     const container = req.container ?? cfg.videoContainer
+    const cap =
+      Number.isInteger(req.maxHeight) && (req.maxHeight ?? 0) > 0 ? req.maxHeight : null
     const format = req.formatId
       ? `${req.formatId}+bestaudio/${req.formatId}/best`
-      : 'bestvideo+bestaudio/best'
+      : cap
+        ? `bestvideo[height<=${cap}]+bestaudio/best[height<=${cap}]/best`
+        : 'bestvideo+bestaudio/best'
     args.push(
       '--format',
       format,

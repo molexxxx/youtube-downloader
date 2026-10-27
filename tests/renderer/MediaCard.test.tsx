@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react'
-import { MediaCard } from '@renderer/components/download/MediaCard'
+import { MediaCard, codecLabel } from '@renderer/components/download/MediaCard'
 import { useAppStore } from '@renderer/stores/appStore'
 import type { MediaInfo, PlaylistEntry, VideoFormat } from '@shared/types'
 import { installMockApi } from './helpers/mockApi'
@@ -221,6 +221,51 @@ describe('MediaCard', () => {
       container: 'mp4',
       formatId: '136'
     })
+  })
+
+  it('caps the height of every playlist item with a resolution preset', async () => {
+    useAppStore.setState({ info: playlist(2, { formats: [] }) })
+    render(<MediaCard />)
+    fireEvent.click(screen.getByText('720p MP4'))
+    fireEvent.click(screen.getByText('Download 2 items'))
+    await waitFor(() => expect(api.download.start).toHaveBeenCalledTimes(2))
+    for (const [request] of api.download.start.mock.calls) {
+      expect(request).toMatchObject({ kind: 'video', maxHeight: 720 })
+      expect(request.formatId).toBeUndefined()
+    }
+  })
+
+  it('applies the default preset cap when no format could be matched', async () => {
+    useAppStore.setState({
+      info: single({ formats: [] }),
+      config: { playlistFetchLimit: 200, defaultPreset: '1080p-mp4' } as never
+    })
+    render(<MediaCard />)
+    fireEvent.click(screen.getByText('Download'))
+    await waitFor(() => expect(api.download.start).toHaveBeenCalled())
+    expect(api.download.start.mock.calls[0][0]).toMatchObject({ maxHeight: 1080 })
+  })
+
+  it('drops the preset cap once a quality is picked by hand', async () => {
+    useAppStore.setState({ info: single() })
+    render(<MediaCard />)
+    fireEvent.click(screen.getByText('720p MP4'))
+    fireEvent.click(screen.getByRole('button', { name: /1280x720@30/ }))
+    fireEvent.click(screen.getByRole('option', { name: /Best quality \(auto\)/ }))
+    fireEvent.click(screen.getByText('Download'))
+    await waitFor(() => expect(api.download.start).toHaveBeenCalled())
+    const request = api.download.start.mock.calls[0][0]
+    expect(request.formatId).toBeUndefined()
+    expect(request.maxHeight).toBeUndefined()
+  })
+
+  it('names the codec of each quality option', () => {
+    expect(codecLabel('avc1.640028')).toBe('H.264')
+    expect(codecLabel('vp09.00.40.08')).toBe('VP9')
+    expect(codecLabel('av01.0.08M.08')).toBe('AV1')
+    expect(codecLabel('hvc1.1.6.L120')).toBe('HEVC')
+    expect(codecLabel('none')).toBeNull()
+    expect(codecLabel(null)).toBeNull()
   })
 
   it('toggles embed options in the more-options panel', async () => {
