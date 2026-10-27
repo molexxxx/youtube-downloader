@@ -4,7 +4,6 @@ import type {
   AppUpdateStatus,
   AuditEntry,
   BinariesStatus,
-  BootstrapProgress,
   DiscordGuild,
   DiscordStatus,
   DownloadJob,
@@ -30,8 +29,9 @@ const MAX_LOGS = 1000
 interface AppState {
   config: AppConfig | null
   binaries: BinariesStatus | null
-  bootstrap: BootstrapProgress | null
   binariesReady: boolean
+  /** Setup reopened from Settings while both binaries are ready. */
+  setupOpen: boolean
   view: AppView
   info: MediaInfo | null
   searchResults: PlaylistEntry[]
@@ -64,7 +64,7 @@ interface AppState {
   setConfig: (config: AppConfig) => void
   patchConfig: (partial: Partial<AppConfig>) => void
   setBinaries: (binaries: BinariesStatus) => void
-  setBootstrap: (progress: BootstrapProgress | null) => void
+  setSetupOpen: (open: boolean) => void
   setView: (view: AppView) => void
   setInfo: (info: MediaInfo | null) => void
   appendEntries: (entries: PlaylistEntry[]) => void
@@ -108,8 +108,8 @@ export function binariesAreReady(binaries: BinariesStatus | null): boolean {
 export const useAppStore = create<AppState>((set) => ({
   config: null,
   binaries: null,
-  bootstrap: null,
   binariesReady: false,
+  setupOpen: false,
   view: 'downloads',
   info: null,
   searchResults: [],
@@ -136,7 +136,7 @@ export const useAppStore = create<AppState>((set) => ({
       config: state.config ? { ...state.config, ...partial } : state.config
     })),
   setBinaries: (binaries) => set({ binaries, binariesReady: binariesAreReady(binaries) }),
-  setBootstrap: (bootstrap) => set({ bootstrap }),
+  setSetupOpen: (setupOpen) => set({ setupOpen }),
   setView: (view) => set({ view }),
   setInfo: (info) => set({ info }),
   appendEntries: (entries) =>

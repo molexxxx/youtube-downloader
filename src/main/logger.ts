@@ -20,9 +20,7 @@ function ensureLogFile(): string {
 }
 
 function write(level: LogEntry['level'], parts: unknown[]): void {
-  const message = parts
-    .map((p) => (typeof p === 'string' ? p : safeStringify(p)))
-    .join(' ')
+  const message = parts.map(formatPart).join(' ')
   const entry: LogEntry = { level, message, timestamp: Date.now() }
 
   ring.push(entry)
@@ -38,6 +36,13 @@ function write(level: LogEntry['level'], parts: unknown[]): void {
   }
 
   for (const listener of listeners) listener(entry)
+}
+
+/** An Error's own fields are not enumerable, so JSON would print it as `{}`. */
+export function formatPart(value: unknown): string {
+  if (typeof value === 'string') return value
+  if (value instanceof Error) return value.message || value.name
+  return safeStringify(value)
 }
 
 function safeStringify(value: unknown): string {

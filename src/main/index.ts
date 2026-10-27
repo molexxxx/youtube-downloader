@@ -4,6 +4,7 @@ import { registerIPC } from './ipc'
 import { createMainWindow, getMainWindow, setQuitting } from './windows'
 import { registerLocalMediaProtocol, registerLocalMediaScheme } from './local-media'
 import { initUpdater } from './updater'
+import { startBinaries, stopBinaries } from './binaries'
 import { initTray, destroyTray } from './tray'
 import { initDownloadObserver } from './download-observer'
 import { initDiscord, shutdownDiscord } from './discord'
@@ -94,6 +95,7 @@ if (!gotInstanceLock) {
     })
 
     applyTheme()
+    startBinaries()
     registerIPC()
     registerLocalMediaProtocol()
     // Tray before window: start-minimized and close-to-tray both check that a
@@ -121,6 +123,7 @@ if (!gotInstanceLock) {
 
   app.on('before-quit', () => {
     setQuitting(true)
+    stopBinaries()
     destroyTray()
     void shutdownDiscord()
   })

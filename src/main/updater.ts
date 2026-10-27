@@ -6,6 +6,9 @@ import { logger } from './logger'
 
 const { autoUpdater } = pkg
 
+/** How often a running app checks again, so an instance left in the tray for days still sees releases. */
+const RECHECK_MS = 6 * 60 * 60 * 1000
+
 let lastStatus: AppUpdateStatus = {
   state: 'idle',
   version: null,
@@ -20,6 +23,11 @@ function broadcast(status: AppUpdateStatus): void {
   }
 }
 
+/** Whether a found update downloads on its own; follows the `autoUpdateApp` setting live. */
+export function setAutoDownload(enabled: boolean): void {
+  autoUpdater.autoDownload = enabled
+}
+
 /**
  * Wire the auto-updater: forward all lifecycle events to the renderer, register
  * IPC for manual check/download/install, and run a non-intrusive check on launch.
@@ -28,7 +36,7 @@ function broadcast(status: AppUpdateStatus): void {
  * so the UI can surface that an update exists even when auto-download is off.
  */
 export function initUpdater(): void {
-  autoUpdater.autoDownload = getConfig().autoUpdateApp
+  setAutoDownload(getConfig().autoUpdateApp)
   autoUpdater.autoInstallOnAppQuit = true
   autoUpdater.allowDowngrade = false
   autoUpdater.logger = null
@@ -110,10 +118,12 @@ export function initUpdater(): void {
     autoUpdater.quitAndInstall(true, true)
   })
 
-  // Check on launch once the window can receive events. Never throws.
-  setTimeout(() => {
+  const backgroundCheck = (): void => {
+    if (lastStatus.state === 'downloading' || lastStatus.state === 'downloaded') return
     autoUpdater.checkForUpdates().catch((err) => {
-      logger.warn('Launch update check failed:', err?.message ?? err)
+      logger.warn('Background update check failed:', err?.message ?? err)
     })
-  }, 4_000)
+  }
+  setTimeout(backgroundCheck, 4_000)
+  setInterval(backgroundCheck, RECHECK_MS)
 }

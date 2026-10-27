@@ -2,13 +2,8 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react'
 import { SettingsScreen } from '@renderer/components/settings/SettingsScreen'
 import { useAppStore } from '@renderer/stores/appStore'
-import type {
-  AppConfig,
-  AppUpdateStatus,
-  BinariesStatus,
-  CookieInfo
-} from '@shared/types'
-import { installMockApi } from './helpers/mockApi'
+import type { AppConfig, AppUpdateStatus, CookieInfo } from '@shared/types'
+import { baseBinaries, installMockApi } from './helpers/mockApi'
 
 let api: ReturnType<typeof installMockApi>
 
@@ -30,16 +25,13 @@ const fullConfig = (overrides: Partial<AppConfig> = {}): AppConfig =>
     useDownloadArchive: false,
     cookiesFromBrowser: null,
     autoUpdateApp: true,
-    autoUpdateBinaries: true,
+    autoUpdateYtdlp: true,
     notifications: true,
     closeToTray: true,
     ...overrides
   }) as AppConfig
 
-const binaries: BinariesStatus = {
-  ytdlp: { name: 'yt-dlp', installed: true, path: '/yt', version: '2024.01' },
-  ffmpeg: { name: 'ffmpeg', installed: true, path: '/ff', version: '6.0' }
-}
+const binaries = baseBinaries()
 
 const cookieInfo = (overrides: Partial<CookieInfo> = {}): CookieInfo =>
   ({
@@ -126,12 +118,51 @@ describe('SettingsScreen', () => {
     await waitFor(() => expect(api.config.set).toHaveBeenCalledWith({ theme: 'light' }))
   })
 
-  it('updates a binary and refreshes status', async () => {
+  it('checks yt-dlp now and stores the status it answers', async () => {
+    const updated = baseBinaries({
+      ytdlp: { state: { kind: 'updated', from: '2026.08.19', to: '2026.10.26' } }
+    })
+    api.binaries.checkYtdlp.mockResolvedValue(updated)
     render(<SettingsScreen />)
-    const updateButtons = screen.getAllByText('Update')
-    fireEvent.click(updateButtons[0])
-    await waitFor(() => expect(api.binaries.update).toHaveBeenCalledWith('yt-dlp'))
-    await waitFor(() => expect(api.binaries.status).toHaveBeenCalled())
+    expect(screen.getByText('2026.10.26')).toBeInTheDocument()
+    expect(screen.getByText('9.0.2')).toBeInTheDocument()
+    expect(screen.getByText('BtbN FFmpeg Builds')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('Check now'))
+    await waitFor(() => expect(api.binaries.checkYtdlp).toHaveBeenCalledTimes(1))
+    await waitFor(() =>
+      expect(screen.getByText('Updated from 2026.08.19')).toBeInTheDocument()
+    )
+  })
+
+  it('toggles automatic yt-dlp updates', async () => {
+    render(<SettingsScreen />)
+    fireEvent.click(screen.getByText('Install new yt-dlp releases automatically'))
+    await waitFor(() =>
+      expect(api.config.set).toHaveBeenCalledWith({ autoUpdateYtdlp: false })
+    )
+  })
+
+  it('shows yt-dlp progress and a failure reason', () => {
+    useAppStore.setState({
+      binaries: baseBinaries({
+        ytdlp: {
+          state: {
+            kind: 'updating',
+            phase: 'downloading',
+            version: '2026.10.26',
+            receivedBytes: 50,
+            totalBytes: 100
+          }
+        },
+        ffmpeg: {
+          state: { kind: 'failed', reason: 'FFmpeg could not be reached', at: 1 }
+        }
+      })
+    })
+    render(<SettingsScreen />)
+    expect(screen.getByText('Downloading 2026.10.26… 50%')).toBeInTheDocument()
+    expect(screen.getByText('FFmpeg could not be reached')).toBeInTheDocument()
+    expect(screen.getByText('Check now').closest('button')).toBeDisabled()
   })
 
   it('resets to defaults', async () => {

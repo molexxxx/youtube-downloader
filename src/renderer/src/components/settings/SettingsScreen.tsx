@@ -12,7 +12,9 @@ import {
   Loader2,
   RefreshCw,
   RotateCcw,
-  Trash2
+  ShieldCheck,
+  Trash2,
+  Wrench
 } from 'lucide-react'
 import { useAppStore } from '../../stores/appStore'
 import { PRESETS } from '@shared/presets'
@@ -20,10 +22,19 @@ import type {
   AppConfig,
   AppUpdateStatus,
   CookieInfo,
+  SelfTestReport,
   Theme,
   VideoContainer
 } from '@shared/types'
 import { Select } from '../shared/Select'
+import {
+  describeFfmpeg,
+  describeYtdlp,
+  selfTestSummary,
+  sourceLabel,
+  type BinaryLine
+} from '../../lib/binaries'
+import { SelfTestList } from '../setup/SelfTestList'
 
 const THEMES: Theme[] = ['system', 'dark', 'light']
 const CONTAINERS: VideoContainer[] = ['mp4', 'mkv']
@@ -44,7 +55,9 @@ export function SettingsScreen(): React.JSX.Element | null {
   const binaries = useAppStore((s) => s.binaries)
   const setBinaries = useAppStore((s) => s.setBinaries)
   const appUpdate = useAppStore((s) => s.appUpdate)
-  const [updating, setUpdating] = useState<'yt-dlp' | 'ffmpeg' | 'all' | null>(null)
+  const setSetupOpen = useAppStore((s) => s.setSetupOpen)
+  const [checkingYtdlp, setCheckingYtdlp] = useState(false)
+  const [testing, setTesting] = useState<'ytdlp' | 'ffmpeg' | null>(null)
   const [cookies, setCookies] = useState<CookieInfo | null>(null)
   const [cookieBusy, setCookieBusy] = useState(false)
   const [cookieFailed, setCookieFailed] = useState(false)
@@ -75,13 +88,21 @@ export function SettingsScreen(): React.JSX.Element | null {
     setCookies(await window.api.cookies.info())
   }
 
-  async function updateBinary(which: 'yt-dlp' | 'ffmpeg' | 'all'): Promise<void> {
-    setUpdating(which)
+  async function checkYtdlp(): Promise<void> {
+    setCheckingYtdlp(true)
     try {
-      await window.api.binaries.update(which)
-      setBinaries(await window.api.binaries.status())
+      setBinaries(await window.api.binaries.checkYtdlp())
     } finally {
-      setUpdating(null)
+      setCheckingYtdlp(false)
+    }
+  }
+
+  async function runSelfTest(which: 'ytdlp' | 'ffmpeg'): Promise<void> {
+    setTesting(which)
+    try {
+      setBinaries(await window.api.binaries.selfTest(which))
+    } finally {
+      setTesting(null)
     }
   }
 
@@ -345,11 +366,6 @@ export function SettingsScreen(): React.JSX.Element | null {
           onChange={(v) => update({ autoUpdateApp: v })}
         />
         <Check
-          label="Auto-update yt-dlp / ffmpeg"
-          checked={config.autoUpdateBinaries}
-          onChange={(v) => update({ autoUpdateBinaries: v })}
-        />
-        <Check
           label="Desktop notification when a download finishes"
           checked={config.notifications}
           onChange={(v) => update({ notifications: v })}
@@ -375,19 +391,78 @@ export function SettingsScreen(): React.JSX.Element | null {
         )}
       </Section>
 
-      <Section title="Binaries">
-        <BinaryRow
-          name="yt-dlp"
-          version={binaries?.ytdlp.version ?? null}
-          busy={updating === 'yt-dlp' || updating === 'all'}
-          onUpdate={() => updateBinary('yt-dlp')}
-        />
-        <BinaryRow
-          name="ffmpeg"
-          version={binaries?.ffmpeg.version ?? null}
-          busy={updating === 'ffmpeg' || updating === 'all'}
-          onUpdate={() => updateBinary('ffmpeg')}
-        />
+      <Section title="yt-dlp & FFmpeg">
+        {binaries && (
+          <>
+            <BinaryRow
+              name="yt-dlp"
+              version={binaries.ytdlp.version}
+              detail={sourceLabel(binaries.ytdlp.source)}
+              line={describeYtdlp(binaries.ytdlp)}
+              action={
+                binaries.ytdlp.source !== 'system' && (
+                  <button
+                    onClick={checkYtdlp}
+                    disabled={checkingYtdlp || describeYtdlp(binaries.ytdlp).busy}
+                    title="Look for a new stable yt-dlp release and install it"
+                    className="btn btn-ghost shrink-0 px-3 py-1.5 text-xs"
+                  >
+                    <RefreshCw
+                      size={13}
+                      className={checkingYtdlp ? 'animate-spin' : ''}
+                    />
+                    Check now
+                  </button>
+                )
+              }
+            />
+            <SelfTestRow
+              report={binaries.ytdlp.selfTest}
+              installed={binaries.ytdlp.installed}
+              busy={testing === 'ytdlp'}
+              onRun={() => runSelfTest('ytdlp')}
+            />
+            {binaries.ytdlp.source !== 'system' && (
+              <Check
+                label="Install new yt-dlp releases automatically"
+                description="Checked once a day. A release is installed only after it matches the checksums the yt-dlp signing key vouches for."
+                checked={config.autoUpdateYtdlp}
+                onChange={(v) => update({ autoUpdateYtdlp: v })}
+              />
+            )}
+            <BinaryRow
+              name="FFmpeg"
+              version={
+                binaries.ffmpeg.version ??
+                (binaries.ffmpeg.installed ? 'earlier download' : null)
+              }
+              detail={
+                binaries.ffmpeg.source === 'system'
+                  ? sourceLabel('system')
+                  : binaries.ffmpeg.pinned?.publisher
+              }
+              line={describeFfmpeg(binaries.ffmpeg)}
+            />
+            <SelfTestRow
+              report={binaries.ffmpeg.selfTest}
+              installed={binaries.ffmpeg.installed}
+              busy={testing === 'ffmpeg'}
+              onRun={() => runSelfTest('ffmpeg')}
+            />
+            <div className="flex items-center justify-between gap-3 border-t border-white/5 pt-3">
+              <p className="text-xs text-white/35">
+                {"Switch between the app's copies and ones on this computer."}
+              </p>
+              <button
+                onClick={() => setSetupOpen(true)}
+                className="btn btn-ghost shrink-0 px-3 py-1.5 text-xs"
+              >
+                <Wrench size={13} />
+                Run setup again
+              </button>
+            </div>
+          </>
+        )}
       </Section>
 
       <Section title="App update">
@@ -551,31 +626,116 @@ function Slider({
   )
 }
 
+const LINE_TONES: Record<BinaryLine['tone'], string> = {
+  muted: 'text-white/40',
+  busy: 'text-white/60',
+  ok: 'text-emerald-300',
+  warn: 'text-amber-300',
+  error: 'text-red-300'
+}
+
 function BinaryRow({
   name,
   version,
-  busy,
-  onUpdate
+  detail,
+  line,
+  action
 }: {
   name: string
   version: string | null
-  busy: boolean
-  onUpdate: () => void
+  detail?: string
+  line: BinaryLine
+  action?: React.ReactNode
 }): React.JSX.Element {
   return (
-    <div className="flex items-center justify-between">
-      <div className="text-sm">
-        <span className="font-medium">{name}</span>
-        <span className="ml-2 text-white/40">{version ?? 'not installed'}</span>
+    <div className="space-y-2">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 text-sm">
+          <div>
+            <span className="font-medium">{name}</span>
+            <span className="ml-2 font-mono text-xs text-white/50">
+              {version ?? 'not installed'}
+            </span>
+            {detail && <span className="ml-2 text-xs text-white/30">{detail}</span>}
+          </div>
+          <p
+            className={`mt-0.5 flex items-center gap-1.5 text-xs ${LINE_TONES[line.tone]}`}
+          >
+            {line.busy && <Loader2 size={12} className="shrink-0 animate-spin" />}
+            {line.tone === 'error' && <AlertTriangle size={12} className="shrink-0" />}
+            <span>{line.text}</span>
+          </p>
+        </div>
+        {action}
       </div>
-      <button
-        onClick={onUpdate}
-        disabled={busy}
-        className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs text-white/70 hover:border-white/20 disabled:opacity-50"
-      >
-        <RefreshCw size={13} className={busy ? 'animate-spin' : ''} />
-        {busy ? 'Updating…' : 'Update'}
-      </button>
+      {line.busy && (
+        <div className="h-1 overflow-hidden rounded-full bg-white/5">
+          {line.percent === null ? (
+            <div className="progress-indeterminate h-full rounded-full bg-red-500/70" />
+          ) : (
+            <div
+              className="h-full rounded-full bg-red-500 transition-[width] duration-200"
+              style={{ width: `${line.percent}%` }}
+            />
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const SUMMARY_TONES = {
+  muted: 'text-white/40',
+  ok: 'text-emerald-300',
+  warn: 'text-amber-300',
+  error: 'text-red-300'
+} as const
+
+function SelfTestRow({
+  report,
+  installed,
+  busy,
+  onRun
+}: {
+  report: SelfTestReport | null
+  installed: boolean
+  busy: boolean
+  onRun: () => void
+}): React.JSX.Element | null {
+  const [open, setOpen] = useState(false)
+  if (!installed) return null
+  const summary = selfTestSummary(report)
+  return (
+    <div className="space-y-2 pl-1">
+      <div className="flex items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          disabled={report === null}
+          aria-expanded={open}
+          className={`flex items-center gap-1.5 text-xs disabled:cursor-default ${SUMMARY_TONES[summary.tone]}`}
+        >
+          <ShieldCheck size={13} className="shrink-0" />
+          {summary.text}
+          {report && (
+            <span className="text-white/30"> · {open ? 'hide' : 'show'} checks</span>
+          )}
+        </button>
+        <button
+          onClick={onRun}
+          disabled={busy}
+          title="Check that it provides everything the app uses"
+          className="btn btn-ghost shrink-0 px-3 py-1.5 text-xs"
+        >
+          {busy ? (
+            <Loader2 size={13} className="animate-spin" />
+          ) : (
+            <ShieldCheck size={13} />
+          )}
+          {busy ? 'Testing…' : 'Self-test'}
+        </button>
+      </div>
+      {open && report && <SelfTestList report={report} />}
     </div>
   )
 }

@@ -6,7 +6,14 @@ const { engineMock } = vi.hoisted(() => ({ engineMock: vi.fn(() => Promise.resol
 vi.mock('electron', () => ({ app: { getPath: () => '/userdata' } }))
 vi.mock('youtube-dl-exec', () => ({ create: () => engineMock }))
 vi.mock('@main/binaries/ffmpeg-binary', () => ({ ffmpegDir: () => '/bin' }))
-vi.mock('@main/binaries/ytdlp-binary', () => ({ ytdlpPath: () => '/bin/yt-dlp' }))
+vi.mock('@main/binaries/ytdlp-binary', () => ({
+  ytdlpPath: () => '/bin/yt-dlp',
+  trackYtdlp: <T>(child: T): T => child,
+  managedEngine: <T>(engine: T): T => engine,
+  ytdlpRuntimeArgs: () => ['--js-runtimes', 'node:/electron'],
+  ytdlpRuntimeFlags: () => ({ jsRuntimes: 'node:/electron' }),
+  ytdlpEnv: () => ({ ELECTRON_RUN_AS_NODE: '1' })
+}))
 vi.mock('fs', () => ({
   existsSync: vi.fn(() => false),
   statSync: vi.fn(() => {

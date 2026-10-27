@@ -6,8 +6,8 @@ import {
   type AppUpdateStatus,
   type AudioEffects,
   type AuditEntry,
+  type BinariesScan,
   type BinariesStatus,
-  type BootstrapProgress,
   type CookieInfo,
   type DiscordGuild,
   type DiscordStatus,
@@ -42,9 +42,12 @@ const api = {
   binaries: {
     status: (): Promise<BinariesStatus> => ipcRenderer.invoke(IPC.binaries.status),
     bootstrap: (): Promise<BinariesStatus> => ipcRenderer.invoke(IPC.binaries.bootstrap),
-    update: (which: 'yt-dlp' | 'ffmpeg' | 'all'): Promise<Partial<BinariesStatus>> =>
-      ipcRenderer.invoke(IPC.binaries.update, which),
-    onProgress: (cb: (p: BootstrapProgress) => void) => on(IPC.binaries.onProgress, cb)
+    checkYtdlp: (): Promise<BinariesStatus> =>
+      ipcRenderer.invoke(IPC.binaries.checkYtdlp),
+    scan: (): Promise<BinariesScan> => ipcRenderer.invoke(IPC.binaries.scan),
+    selfTest: (which: 'ytdlp' | 'ffmpeg'): Promise<BinariesStatus> =>
+      ipcRenderer.invoke(IPC.binaries.selfTest, which),
+    onStatus: (cb: (status: BinariesStatus) => void) => on(IPC.binaries.onStatus, cb)
   },
   extract: {
     info: (url: string, forcePlaylist?: boolean): Promise<MediaInfo> =>

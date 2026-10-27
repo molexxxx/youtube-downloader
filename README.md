@@ -140,8 +140,10 @@
 
 ### App & UI
 
-- **Zero Setup** - yt-dlp and FFmpeg are downloaded automatically on first launch, with a guided bootstrap (checking → downloading → extracting → verifying)
-- **Binary Manager** - View yt-dlp / FFmpeg versions and update them on demand, or let them auto-update on launch
+- **Guided Setup** - On first launch, setup finds any yt-dlp or FFmpeg already on your PATH (and in Homebrew's folders on macOS) and offers it beside the app's own verified copies, with live download progress for whatever you pick
+- **Self-Tests** - Every yt-dlp and FFmpeg is self-tested before use and after each update: the yt-dlp version, the YouTube challenge solver and its JavaScript runtime, and every FFmpeg component the app relies on, including a real run of the Discord audio and effects chain. Run a test or reopen setup any time from Settings
+- **Verified yt-dlp Updates** - yt-dlp's stable channel is checked once a day (or on demand from Settings). A release is installed only after it matches the SHA2-256SUMS that the yt-dlp signing key signs and reports its version, and it replaces the current copy only once no download or playback is using it
+- **Pinned FFmpeg** - Each app release pins exact FFmpeg builds by size and SHA-256 (BtbN, with Gyan.dev and Martin Riedl fallbacks), so every install runs the same tested build. A newer pin installs in the background while the current build keeps working
 - **Auto-Updater** - Check / download / install app updates straight from GitHub Releases with live progress
 - **Launch on Startup** - Optionally start the app at login on Windows, macOS, or Linux to keep the bot online, with a "start minimized to tray" option
 - **Single Instance** - Only one copy runs per machine; launching it again focuses the existing window

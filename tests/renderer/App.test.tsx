@@ -2,15 +2,14 @@ import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react'
 import App from '@renderer/App'
 import { useAppStore } from '@renderer/stores/appStore'
-import type { BinariesStatus } from '@shared/types'
-import { installMockApi } from './helpers/mockApi'
+import { baseBinaries, installMockApi } from './helpers/mockApi'
 
 let api: ReturnType<typeof installMockApi>
 
-const notReady: BinariesStatus = {
-  ytdlp: { name: 'yt-dlp', installed: false, path: null, version: null },
-  ffmpeg: { name: 'ffmpeg', installed: false, path: null, version: null }
-}
+const notReady = baseBinaries({
+  ytdlp: { installed: false, path: null, version: null },
+  ffmpeg: { installed: false, path: null, version: null, build: null }
+})
 
 beforeEach(() => {
   api = installMockApi()
@@ -50,6 +49,7 @@ describe('App', () => {
     expect(api.history.onChange).toHaveBeenCalled()
     expect(api.logs.onEntry).toHaveBeenCalled()
     expect(api.appUpdate.onStatus).toHaveBeenCalled()
+    expect(api.binaries.onStatus).toHaveBeenCalled()
     expect(() => unmount()).not.toThrow()
   })
 
@@ -57,7 +57,7 @@ describe('App', () => {
     api.binaries.status.mockResolvedValue(notReady)
     api.binaries.bootstrap.mockResolvedValue(notReady)
     render(<App />)
-    expect(await screen.findByText('Setting things up')).toBeInTheDocument()
+    expect(await screen.findByText('Set up yt-dlp and FFmpeg')).toBeInTheDocument()
   })
 
   it('renders the downloads view with an empty state when ready', async () => {

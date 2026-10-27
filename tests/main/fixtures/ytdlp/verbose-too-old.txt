@@ -1,0 +1,5 @@
+[debug] Command-line config: ['--ignore-config', '-v', '--js-runtimes', 'node:node_modules\\electron\\dist\\electron.exe']
+
+Usage: yt-dlp [OPTIONS] URL [URL...]
+
+yt-dlp: error: no such option: --js-runtimes

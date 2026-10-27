@@ -1,50 +1,34 @@
 import { BrowserWindow, ipcMain } from 'electron'
-import { IPC, type BootstrapProgress } from '@shared/types'
-import { ensureYtdlp, updateYtdlp, ytdlpStatus } from '../binaries/ytdlp-binary'
-import { ensureFfmpeg, ffmpegStatus, updateFfmpeg } from '../binaries/ffmpeg-binary'
+import { IPC, type BinariesStatus } from '@shared/types'
+import {
+  binariesStatus,
+  bootstrapBinaries,
+  onBinariesStatus,
+  runSelfTest,
+  scanBinaries,
+  ytdlpUpdater
+} from '../binaries'
 
-function broadcast(progress: BootstrapProgress): void {
+function broadcast(status: BinariesStatus): void {
   for (const win of BrowserWindow.getAllWindows()) {
-    win.webContents.send(IPC.binaries.onProgress, progress)
+    win.webContents.send(IPC.binaries.onStatus, status)
   }
 }
 
-// Shared in-flight bootstrap so concurrent callers (e.g. StrictMode double-mount
-// or rapid retries) never race on the same binary files.
-let bootstrapInFlight: Promise<{
-  ytdlp: Awaited<ReturnType<typeof ensureYtdlp>>
-  ffmpeg: Awaited<ReturnType<typeof ensureFfmpeg>>
-}> | null = null
-
-async function runBootstrap() {
-  const ytdlp = await ensureYtdlp(broadcast)
-  const ffmpeg = await ensureFfmpeg(broadcast)
-  return { ytdlp, ffmpeg }
-}
-
 export function registerBinariesIPC(): void {
-  ipcMain.handle(IPC.binaries.status, async () => {
-    // Run both version probes concurrently - each spawns the binary and can
-    // take a moment, so serial awaits noticeably delayed the UI unlock.
-    const [ytdlp, ffmpeg] = await Promise.all([ytdlpStatus(), ffmpegStatus()])
-    return { ytdlp, ffmpeg }
+  ipcMain.handle(IPC.binaries.status, () => binariesStatus())
+  ipcMain.handle(IPC.binaries.bootstrap, () => bootstrapBinaries())
+  ipcMain.handle(IPC.binaries.checkYtdlp, async () => {
+    await ytdlpUpdater().check()
+    return binariesStatus()
   })
-
-  ipcMain.handle(IPC.binaries.bootstrap, async () => {
-    if (!bootstrapInFlight) {
-      bootstrapInFlight = runBootstrap().finally(() => {
-        bootstrapInFlight = null
-      })
+  ipcMain.handle(IPC.binaries.scan, () => scanBinaries())
+  ipcMain.handle(IPC.binaries.selfTest, async (_e, which: unknown) => {
+    if (which !== 'ytdlp' && which !== 'ffmpeg') {
+      throw new Error(`Unknown binary to self-test: ${String(which)}`)
     }
-    return bootstrapInFlight
+    await runSelfTest(which)
+    return binariesStatus()
   })
-
-  ipcMain.handle(IPC.binaries.update, async (_e, which: 'yt-dlp' | 'ffmpeg' | 'all') => {
-    if (which === 'yt-dlp') return { ytdlp: await updateYtdlp(broadcast) }
-    if (which === 'ffmpeg') return { ffmpeg: await updateFfmpeg(broadcast) }
-    return {
-      ytdlp: await updateYtdlp(broadcast),
-      ffmpeg: await updateFfmpeg(broadcast)
-    }
-  })
+  onBinariesStatus(broadcast)
 }

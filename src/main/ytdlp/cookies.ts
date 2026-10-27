@@ -16,7 +16,7 @@ import type { AppConfig, CookieInfo, DetectedBrowser } from '@shared/types'
 import { getConfig } from '../config'
 import { logger } from '../logger'
 import { ffmpegDir } from '../binaries/ffmpeg-binary'
-import { ytdlpPath } from '../binaries/ytdlp-binary'
+import { managedEngine, ytdlpPath, ytdlpRuntimeFlags } from '../binaries/ytdlp-binary'
 
 /** Per-platform browser → data-directory probes. */
 const BROWSER_PATHS: Record<string, Record<string, () => string>> = {
@@ -129,14 +129,14 @@ let lastExportAttempt = 0
 function exportCookies(browser: string): Promise<boolean> {
   if (exportInFlight) return exportInFlight
   const file = cookiesFilePath()
-  const engine = createYtDlp(ytdlpPath())
+  const engine = managedEngine(createYtDlp(ytdlpPath()))
   exportInFlight = engine('https://www.youtube.com/watch?v=jNQXAC9IVRw', {
     cookiesFromBrowser: browser,
     cookies: file,
     skipDownload: true,
     noWarnings: true,
-    noCheckCertificates: true,
-    ffmpegLocation: ffmpegDir()
+    ffmpegLocation: ffmpegDir(),
+    ...ytdlpRuntimeFlags()
   } as never)
     .then(() => {
       logger.info('Exported cookies from', browser)

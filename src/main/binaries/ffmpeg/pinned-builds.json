@@ -1,0 +1,144 @@
+{
+  "id": "9.0.2-2026-09-30",
+  "version": "9.0.2",
+  "fetched": "2026-10-27",
+  "platforms": {
+    "win32-x64": {
+      "primary": [
+        {
+          "build": "btbn-n9.0.2-17-g2a571b6068",
+          "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-09-30-13-08/ffmpeg-n9.0.2-17-g2a571b6068-win64-gpl-9.0.zip",
+          "bytes": 194034585,
+          "sha256": "a0e45723c72141975f51d8666302e614711745f3102b704ca3f82c897a58d278",
+          "kind": "zip",
+          "contains": ["ffmpeg", "ffprobe"]
+        }
+      ],
+      "fallback": [
+        {
+          "build": "gyan-9.0.2-full",
+          "url": "https://github.com/GyanD/codexffmpeg/releases/download/9.0.2/ffmpeg-9.0.2-full_build.zip",
+          "bytes": 257736868,
+          "sha256": "759d0a9831c436a0eb331ad36f236c06cb04aaa0005da46571f0e9d3d9206f6b",
+          "kind": "zip",
+          "contains": ["ffmpeg", "ffprobe"]
+        }
+      ]
+    },
+    "win32-arm64": {
+      "primary": [
+        {
+          "build": "btbn-n9.0.2-17-g2a571b6068",
+          "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-09-30-13-08/ffmpeg-n9.0.2-17-g2a571b6068-winarm64-gpl-9.0.zip",
+          "bytes": 135510041,
+          "sha256": "6dcd0626f9f6d6c7323565e57410e9f37ed14a85946ec9ea9caff294ca32f5c0",
+          "kind": "zip",
+          "contains": ["ffmpeg", "ffprobe"]
+        }
+      ],
+      "fallback": []
+    },
+    "linux-x64": {
+      "primary": [
+        {
+          "build": "btbn-n9.0.2-17-g2a571b6068",
+          "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-09-30-13-08/ffmpeg-n9.0.2-17-g2a571b6068-linux64-gpl-9.0.tar.xz",
+          "bytes": 151017172,
+          "sha256": "68ee646831adaae2495618346f3bba94ff207ff83bbd34d643e7004730d66269",
+          "kind": "tar.xz",
+          "contains": ["ffmpeg", "ffprobe"]
+        }
+      ],
+      "fallback": [
+        {
+          "build": "mriedl-9.0.2",
+          "url": "https://ffmpeg.martin-riedl.de/download/linux/amd64/1789931100_9.0.2/ffmpeg.zip",
+          "bytes": 33326445,
+          "sha256": "fa8ecf4abbd290d98f7d188b8649cc6b391ae209a98452be955a15aab1909d7f",
+          "kind": "zip",
+          "contains": ["ffmpeg"]
+        },
+        {
+          "build": "mriedl-9.0.2",
+          "url": "https://ffmpeg.martin-riedl.de/download/linux/amd64/1789931100_9.0.2/ffprobe.zip",
+          "bytes": 33223234,
+          "sha256": "3f428c49070be3d24ec338602b76d412e401ffcb8a5641ef0e729181a232fc32",
+          "kind": "zip",
+          "contains": ["ffprobe"]
+        }
+      ]
+    },
+    "linux-arm64": {
+      "primary": [
+        {
+          "build": "btbn-n9.0.2-17-g2a571b6068",
+          "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-09-30-13-08/ffmpeg-n9.0.2-17-g2a571b6068-linuxarm64-gpl-9.0.tar.xz",
+          "bytes": 127445692,
+          "sha256": "91afcd7695d4bbbb9e0057aa10baaf9875ec4e1a97303f9059ec971336a2ab46",
+          "kind": "tar.xz",
+          "contains": ["ffmpeg", "ffprobe"]
+        }
+      ],
+      "fallback": [
+        {
+          "build": "mriedl-9.0.2",
+          "url": "https://ffmpeg.martin-riedl.de/download/linux/arm64/1789931697_9.0.2/ffmpeg.zip",
+          "bytes": 28753826,
+          "sha256": "93a76ae90db5474eecdf951a729857c64f3de23567228d6a7d5e6e8e3cd1021b",
+          "kind": "zip",
+          "contains": ["ffmpeg"]
+        },
+        {
+          "build": "mriedl-9.0.2",
+          "url": "https://ffmpeg.martin-riedl.de/download/linux/arm64/1789931697_9.0.2/ffprobe.zip",
+          "bytes": 28655683,
+          "sha256": "bcbe80fb741c180083327afaf5434812e006b33cacde2016b9aeaf6936128330",
+          "kind": "zip",
+          "contains": ["ffprobe"]
+        }
+      ]
+    },
+    "darwin-arm64": {
+      "primary": [
+        {
+          "build": "mriedl-9.0.2",
+          "url": "https://ffmpeg.martin-riedl.de/download/macos/arm64/1789931890_9.0.2/ffmpeg.zip",
+          "bytes": 28395699,
+          "sha256": "c8ed4c4e6978a03c485edbfe4e0a5dc2380f8a30bba5150531b31b094492d924",
+          "kind": "zip",
+          "contains": ["ffmpeg"]
+        },
+        {
+          "build": "mriedl-9.0.2",
+          "url": "https://ffmpeg.martin-riedl.de/download/macos/arm64/1789931890_9.0.2/ffprobe.zip",
+          "bytes": 28317701,
+          "sha256": "fcbe839537485eaee7a7a8bc5cbc0f90d53617e80943e8a5b2e31cb851197ea6",
+          "kind": "zip",
+          "contains": ["ffprobe"]
+        }
+      ],
+      "fallback": []
+    },
+    "darwin-x64": {
+      "primary": [
+        {
+          "build": "mriedl-9.0.2",
+          "url": "https://ffmpeg.martin-riedl.de/download/macos/amd64/1789931006_9.0.2/ffmpeg.zip",
+          "bytes": 33816391,
+          "sha256": "7c6b4125b191cbf773832dc51f424cf2b6bb7da43007d1e066f95909e47cacd4",
+          "kind": "zip",
+          "contains": ["ffmpeg"]
+        },
+        {
+          "build": "mriedl-9.0.2",
+          "url": "https://ffmpeg.martin-riedl.de/download/macos/amd64/1789931006_9.0.2/ffprobe.zip",
+          "bytes": 33719233,
+          "sha256": "2322438ed2f6319a691291b247d09c69dcaa3a982460d1f269a7e1af335cfdfd",
+          "kind": "zip",
+          "contains": ["ffprobe"]
+        }
+      ],
+      "fallback": []
+    }
+  }
+}

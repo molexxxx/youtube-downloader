@@ -29,7 +29,14 @@ export interface AppConfig {
   // lists can run into the hundreds and paginate slowly; 0 means no limit.
   playlistFetchLimit: number
   autoUpdateApp: boolean
-  autoUpdateBinaries: boolean
+  /** Install new stable yt-dlp releases automatically. FFmpeg is pinned to the app version. */
+  autoUpdateYtdlp: boolean
+  /** Run the app's own yt-dlp, or the one found on PATH (which pip, Homebrew, or winget keeps updated). */
+  ytdlpSource: BinarySource
+  /** Run the app's pinned FFmpeg build, or the ffmpeg and ffprobe found on PATH. */
+  ffmpegSource: BinarySource
+  /** True once first-run setup finished; setup shows again only when a binary goes missing. */
+  setupComplete: boolean
   notifications: boolean
   closeToTray: boolean
   /** Start the app automatically when the user logs in (keeps the bot online). */
@@ -55,35 +62,134 @@ export const DEFAULT_CONFIG: AppConfig = {
   outputTemplate: '%(title)s [%(id)s].%(ext)s',
   playlistFetchLimit: 200,
   autoUpdateApp: true,
-  autoUpdateBinaries: true,
+  autoUpdateYtdlp: true,
+  ytdlpSource: 'app',
+  ffmpegSource: 'app',
+  setupComplete: false,
   notifications: true,
   closeToTray: false,
   launchOnStartup: false,
   startMinimized: false
 }
 
-/** Stages reported while acquiring a managed binary. */
-export type BootstrapStage =
-  'checking' | 'downloading' | 'extracting' | 'verifying' | 'complete' | 'error'
+/** Why a yt-dlp check or update did not finish. */
+export type YtdlpProblem =
+  | 'offline'
+  | 'rate-limited'
+  | 'server'
+  | 'no-build'
+  | 'checksum'
+  | 'signature'
+  | 'not-starting'
+  | 'in-use'
+  | 'disk'
+  | 'unknown'
 
-export interface BootstrapProgress {
-  binary: 'yt-dlp' | 'ffmpeg'
-  stage: BootstrapStage
-  /** 0-100 when known, otherwise null for indeterminate. */
-  percent: number | null
-  message?: string
+/** What the yt-dlp updater is doing, or last did. */
+export type YtdlpUpdateState =
+  | { kind: 'idle' }
+  | { kind: 'checking' }
+  | { kind: 'up-to-date' }
+  | {
+      kind: 'updating'
+      phase: 'downloading' | 'verifying' | 'waiting'
+      version: string
+      receivedBytes: number
+      totalBytes: number | null
+    }
+  | { kind: 'updated'; from: string | null; to: string }
+  | { kind: 'failed'; problem: YtdlpProblem; reason: string; at: number }
+
+/** Where a binary in use comes from: the app's own verified copy, or one found on this computer. */
+export type BinarySource = 'app' | 'system'
+
+/** One self-test check: what it proves, whether the app cannot work without it, and what it found. */
+export interface SelfTestCheck {
+  id: string
+  label: string
+  required: boolean
+  ok: boolean
+  detail: string
 }
 
-export interface BinaryStatus {
-  name: 'yt-dlp' | 'ffmpeg'
-  installed: boolean
-  path: string | null
+/** A self-test run against one binary. `passed` means every required check passed. */
+export interface SelfTestReport {
+  path: string
   version: string | null
+  at: number
+  passed: boolean
+  checks: SelfTestCheck[]
+}
+
+/** A copy found on this computer, self-tested before it is offered. */
+export interface SystemCopy {
+  path: string
+  version: string | null
+  report: SelfTestReport
+}
+
+/** What setup found: copies on this computer, and the yt-dlp release the app would download. */
+export interface BinariesScan {
+  ytdlp: SystemCopy | null
+  ffmpeg: SystemCopy | null
+  ytdlpRelease: { version: string; bytes: number | null } | null
+}
+
+/** The yt-dlp in use: the app's managed copy and its updater, or a copy on this computer. */
+export interface YtdlpStatus {
+  installed: boolean
+  version: string | null
+  path: string | null
+  source: BinarySource | null
+  /** The last self-test of the copy in use, or null when it has not been tested since it changed. */
+  selfTest: SelfTestReport | null
+  autoUpdate: boolean
+  /** When a check last reached GitHub, in epoch milliseconds. */
+  lastCheckAt: number | null
+  /** The newest stable release the last check found this session. */
+  latest: { version: string; bytes: number | null } | null
+  state: YtdlpUpdateState
+}
+
+/** What the FFmpeg installer is doing, or last did. */
+export type FfmpegInstallState =
+  | { kind: 'idle' }
+  | {
+      kind: 'installing'
+      phase: 'downloading' | 'extracting' | 'verifying'
+      version: string
+      receivedBytes: number
+      totalBytes: number
+    }
+  | { kind: 'failed'; reason: string; at: number }
+
+/** The FFmpeg build this app version pins for this computer. */
+export interface FfmpegPinnedBuild {
+  version: string
+  build: string
+  /** Download size of every archive of the build together. */
+  bytes: number
+  publisher: string
+}
+
+/** The FFmpeg in use: a pinned build the app installed, or a build on this computer. */
+export interface FfmpegStatus {
+  installed: boolean
+  /** The FFmpeg release of the build in use, such as 9.0.2. */
+  version: string | null
+  /** The install folder name of the build in use, such as btbn-n9.0.2-17-g2a571b6068. */
+  build: string | null
+  path: string | null
+  source: BinarySource | null
+  /** The last self-test of the build in use, or null when it has not been tested since it changed. */
+  selfTest: SelfTestReport | null
+  pinned: FfmpegPinnedBuild | null
+  state: FfmpegInstallState
 }
 
 export interface BinariesStatus {
-  ytdlp: BinaryStatus
-  ffmpeg: BinaryStatus
+  ytdlp: YtdlpStatus
+  ffmpeg: FfmpegStatus
 }
 
 export interface VideoFormat {
@@ -428,8 +534,10 @@ export const IPC = {
   binaries: {
     status: 'binaries:status',
     bootstrap: 'binaries:bootstrap',
-    update: 'binaries:update',
-    onProgress: 'binaries:progress'
+    checkYtdlp: 'binaries:checkYtdlp',
+    scan: 'binaries:scan',
+    selfTest: 'binaries:selfTest',
+    onStatus: 'binaries:status-changed'
   },
   extract: {
     info: 'extract:info',

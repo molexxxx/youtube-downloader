@@ -3,7 +3,7 @@ import type { MediaInfo, PlaylistEntry, VideoFormat } from '@shared/types'
 import { getConfig } from '../config'
 import { logger } from '../logger'
 import { ffmpegDir } from '../binaries/ffmpeg-binary'
-import { ytdlpPath } from '../binaries/ytdlp-binary'
+import { managedEngine, ytdlpPath, ytdlpRuntimeFlags } from '../binaries/ytdlp-binary'
 import { cookieFlags, cookiesEnabled, isAuthRequiredError } from './cookies'
 
 type YtDlpEngine = ReturnType<Create>
@@ -12,7 +12,7 @@ let engine: YtDlpEngine | null = null
 
 export function ytdlp(): YtDlpEngine {
   if (!engine) {
-    engine = createYtDlp(ytdlpPath())
+    engine = managedEngine(createYtDlp(ytdlpPath()))
   }
   return engine
 }
@@ -23,8 +23,8 @@ export function baseFlags(includeCookies = true): Record<string, unknown> {
   const flags: Record<string, unknown> = {
     ignoreConfig: true,
     noWarnings: true,
-    noCheckCertificates: true,
-    ffmpegLocation: ffmpegDir()
+    ffmpegLocation: ffmpegDir(),
+    ...ytdlpRuntimeFlags()
   }
   return includeCookies ? { ...flags, ...cookieFlags(cfg) } : flags
 }
@@ -46,6 +46,8 @@ interface RawFormat {
 
 interface RawInfo {
   id?: string
+  ie_key?: string
+  extractor_key?: string
   title?: string
   uploader?: string
   channel?: string
@@ -95,6 +97,26 @@ function pickThumbnail(raw: RawInfo): string | null {
   return null
 }
 
+const ENTRY_THUMBNAIL_WIDTH = 320
+
+/**
+ * Thumbnail for a search result or playlist row, which the UI shows at most a few
+ * hundred pixels wide. For YouTube this is the static 320x180 `mqdefault.jpg`: the
+ * signed `hq720` URLs in flat results are resized on request and several times larger,
+ * which made result lists slow to fill in. Other sites get their smallest thumbnail
+ * that is still at least that wide.
+ */
+function entryThumbnail(raw: RawInfo): string | null {
+  const extractor = raw.ie_key ?? raw.extractor_key
+  if (extractor === 'Youtube' && raw.id && /^[\w-]{11}$/.test(raw.id)) {
+    return `https://i.ytimg.com/vi/${raw.id}/mqdefault.jpg`
+  }
+  const fitting = (raw.thumbnails ?? [])
+    .filter((t) => t.url && (t.width ?? 0) >= ENTRY_THUMBNAIL_WIDTH)
+    .sort((a, b) => a.width! - b.width!)[0]
+  return fitting?.url ?? pickThumbnail(raw)
+}
+
 function mapEntry(raw: RawInfo): PlaylistEntry {
   return {
     id: raw.id ?? '',
@@ -104,7 +126,7 @@ function mapEntry(raw: RawInfo): PlaylistEntry {
     // carries a real URL.
     url: raw.webpage_url || raw.url || raw.original_url || '',
     duration: raw.duration ?? null,
-    thumbnail: pickThumbnail(raw),
+    thumbnail: entryThumbnail(raw),
     uploader: raw.uploader ?? raw.channel ?? null
   }
 }

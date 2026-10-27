@@ -1,0 +1,2 @@
+# Test fixtures are byte-exact captures (signed checksums, real binary output); never convert their line endings.
+tests/main/fixtures/** -text

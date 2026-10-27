@@ -1,125 +1,38 @@
-import { execFile } from 'child_process'
-import { chmod, stat } from 'fs/promises'
-import { join } from 'path'
-import { promisify } from 'util'
-import type { BinaryStatus, BootstrapProgress } from '@shared/types'
-import { logger } from '../logger'
-import { binDir, currentPlatform, downloadFile, ensureBinDir } from './net'
+import type { ChildProcess, SpawnOptions } from 'child_process'
+import type { Create } from 'youtube-dl-exec'
+import { ytdlpUpdater } from '.'
+import { ytdlpEnv } from './runtime'
 
-const execFileAsync = promisify(execFile)
+type Engine = ReturnType<Create>
 
-const RELEASE_BASE = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download'
-
-function assetName(): string {
-  switch (currentPlatform()) {
-    case 'win32':
-      return 'yt-dlp.exe'
-    case 'darwin':
-      return 'yt-dlp_macos'
-    default:
-      return 'yt-dlp'
-  }
-}
-
+/** The yt-dlp the app runs. */
 export function ytdlpPath(): string {
-  return join(binDir(), assetName())
+  return ytdlpUpdater().path()
 }
 
-async function fileExists(path: string): Promise<boolean> {
-  try {
-    await stat(path)
-    return true
-  } catch {
-    return false
-  }
-}
+export { ytdlpEnv, ytdlpRuntimeArgs, ytdlpRuntimeFlags } from './runtime'
 
-export async function ytdlpVersion(path: string): Promise<string | null> {
-  try {
-    const { stdout } = await execFileAsync(path, ['--version'], { timeout: 15_000 })
-    return stdout.trim() || null
-  } catch (err) {
-    logger.warn('Failed to read yt-dlp version:', err)
-    return null
-  }
-}
-
-export async function ytdlpStatus(): Promise<BinaryStatus> {
-  const path = ytdlpPath()
-  const installed = await fileExists(path)
-  return {
-    name: 'yt-dlp',
-    installed,
-    path: installed ? path : null,
-    version: installed ? await ytdlpVersion(path) : null
-  }
-}
-
-export async function ensureYtdlp(
-  onProgress?: (p: BootstrapProgress) => void
-): Promise<BinaryStatus> {
-  const path = ytdlpPath()
-
-  onProgress?.({ binary: 'yt-dlp', stage: 'checking', percent: null })
-  if (await fileExists(path)) {
-    const version = await ytdlpVersion(path)
-    onProgress?.({ binary: 'yt-dlp', stage: 'complete', percent: 100 })
-    return { name: 'yt-dlp', installed: true, path, version }
-  }
-
-  await ensureBinDir()
-  const url = `${RELEASE_BASE}/${assetName()}`
-  logger.info('Downloading yt-dlp from', url)
-
-  await downloadFile(url, path, (downloaded, total) => {
-    const percent = total ? Math.round((downloaded / total) * 100) : null
-    onProgress?.({ binary: 'yt-dlp', stage: 'downloading', percent })
-  })
-
-  if (currentPlatform() !== 'win32') {
-    await chmod(path, 0o755)
-  }
-
-  onProgress?.({ binary: 'yt-dlp', stage: 'verifying', percent: null })
-  const version = await ytdlpVersion(path)
-  if (!version) {
-    onProgress?.({
-      binary: 'yt-dlp',
-      stage: 'error',
-      percent: null,
-      message: 'yt-dlp failed verification'
+/** Counts a spawned yt-dlp until it exits, so an update never replaces the binary under a running process. */
+export function trackYtdlp<T extends ChildProcess>(child: T): T {
+  ytdlpUpdater().track(
+    new Promise<void>((resolve) => {
+      child.once('close', () => resolve())
+      child.once('error', () => resolve())
     })
-    throw new Error('yt-dlp downloaded but failed to report a version')
-  }
-
-  onProgress?.({ binary: 'yt-dlp', stage: 'complete', percent: 100 })
-  logger.info('yt-dlp ready, version', version)
-  return { name: 'yt-dlp', installed: true, path, version }
+  )
+  return child
 }
 
-/** Update yt-dlp via its built-in self-updater. */
-export async function updateYtdlp(
-  onProgress?: (p: BootstrapProgress) => void
-): Promise<BinaryStatus> {
-  const path = ytdlpPath()
-  if (!(await fileExists(path))) {
-    return ensureYtdlp(onProgress)
-  }
-
-  onProgress?.({
-    binary: 'yt-dlp',
-    stage: 'downloading',
-    percent: null,
-    message: 'Updating'
+/** A youtube-dl-exec engine whose runs get {@link ytdlpEnv} and are counted like {@link trackYtdlp}. */
+export function managedEngine(inner: Engine): Engine {
+  const updater = ytdlpUpdater()
+  const withEnv = (options?: SpawnOptions): SpawnOptions => ({
+    ...options,
+    env: { ...ytdlpEnv(), ...options?.env }
   })
-  try {
-    await execFileAsync(path, ['-U'], { timeout: 120_000 })
-  } catch (err) {
-    logger.warn('yt-dlp self-update failed, re-downloading:', err)
-    await downloadFile(`${RELEASE_BASE}/${assetName()}`, path)
-    if (currentPlatform() !== 'win32') await chmod(path, 0o755)
-  }
-
-  onProgress?.({ binary: 'yt-dlp', stage: 'complete', percent: 100 })
-  return ytdlpStatus()
+  const run = ((url: string, flags?: Parameters<Engine>[1], options?: SpawnOptions) =>
+    updater.track(inner(url, flags, withEnv(options)))) as Engine
+  run.exec = (url, flags, options) =>
+    updater.track(inner.exec(url, flags, withEnv(options)))
+  return run
 }

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { join } from 'path'
 import { IPC } from '@shared/types'
 
 const {
@@ -8,6 +9,7 @@ const {
   dialogMock,
   appMock,
   existsSyncMock,
+  readdirSyncMock,
   getConfigMock
 } = vi.hoisted(() => ({
   handlers: new Map<string, (...args: unknown[]) => unknown>(),
@@ -17,9 +19,10 @@ const {
     showItemInFolder: vi.fn(),
     openExternal: vi.fn(() => Promise.resolve())
   },
-  dialogMock: { showOpenDialog: vi.fn() },
+  dialogMock: { showOpenDialog: vi.fn(), showMessageBox: vi.fn() },
   appMock: { getVersion: vi.fn(() => '9.9.9') },
   existsSyncMock: vi.fn((_p: string) => true),
+  readdirSyncMock: vi.fn((_p: string): string[] => []),
   getConfigMock: vi.fn(() => ({ downloadDir: '/downloads' }))
 }))
 
@@ -34,9 +37,9 @@ vi.mock('electron', () => ({
   shell: shellMock,
   app: appMock
 }))
-vi.mock('fs', () => ({ existsSync: existsSyncMock }))
+vi.mock('fs', () => ({ existsSync: existsSyncMock, readdirSync: readdirSyncMock }))
 vi.mock('@main/config', () => ({ getConfig: getConfigMock }))
-vi.mock('@main/logger', () => ({ logger: { debug: vi.fn() } }))
+vi.mock('@main/logger', () => ({ logger: { debug: vi.fn(), warn: vi.fn() } }))
 
 import { registerSystemIPC } from '@main/ipc/system'
 
@@ -46,6 +49,8 @@ beforeEach(() => {
   handlers.clear()
   vi.clearAllMocks()
   existsSyncMock.mockReturnValue(true)
+  readdirSyncMock.mockReturnValue([])
+  dialogMock.showMessageBox.mockResolvedValue({ response: 1 })
   getConfigMock.mockReturnValue({ downloadDir: '/downloads' })
   registerSystemIPC()
 })
@@ -100,9 +105,68 @@ describe('registerSystemIPC', () => {
     expect(win.close).toHaveBeenCalled()
   })
 
-  it('openPath delegates to shell', () => {
-    handlers.get(IPC.system.openPath)!({}, '/some/file')
+  it('openPath delegates to shell', async () => {
+    const result = await handlers.get(IPC.system.openPath)!({ sender }, '/some/file')
     expect(shellMock.openPath).toHaveBeenCalledWith('/some/file')
+    expect(result).toBe('')
+    expect(dialogMock.showMessageBox).not.toHaveBeenCalled()
+  })
+
+  it('openPath finds a download recorded under a mangled name by its id', async () => {
+    const dir = join('/downloads')
+    existsSyncMock.mockImplementation((p: string): boolean => p === dir)
+    readdirSyncMock.mockReturnValue([
+      'OP… (VV：Ultimatum) [2BY9zc7XE08].mp3',
+      'Other [aUUSz54G6jc].mp4'
+    ])
+    await handlers.get(IPC.system.openPath)!(
+      { sender },
+      join(dir, 'OP� (VV Ultimatum) [2BY9zc7XE08].mp3')
+    )
+    expect(shellMock.openPath).toHaveBeenCalledWith(
+      join(dir, 'OP… (VV：Ultimatum) [2BY9zc7XE08].mp3')
+    )
+  })
+
+  it('openPath explains a missing file instead of doing nothing', async () => {
+    const win = {}
+    fromWebContentsMock.mockReturnValue(win)
+    existsSyncMock.mockImplementation((p: string): boolean => p === join('/downloads'))
+    dialogMock.showMessageBox.mockResolvedValue({ response: 0 })
+    const result = await handlers.get(IPC.system.openPath)!(
+      { sender },
+      join('/downloads', 'gone [aUUSz54G6jc].mp3')
+    )
+    expect(result).toBe('File not found')
+    expect(dialogMock.showMessageBox).toHaveBeenCalledWith(
+      win,
+      expect.objectContaining({ message: 'File not found' })
+    )
+    expect(shellMock.openPath).toHaveBeenCalledWith(join('/downloads'))
+  })
+
+  it('openPath shows the reason when the file exists but cannot be opened', async () => {
+    fromWebContentsMock.mockReturnValue(null)
+    shellMock.openPath.mockResolvedValueOnce('No application is associated')
+    const result = await handlers.get(IPC.system.openPath)!({ sender }, '/some/file.xyz')
+    expect(result).toBe('No application is associated')
+    expect(dialogMock.showMessageBox).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: 'Could not open this file',
+        detail: expect.stringContaining('No application is associated')
+      })
+    )
+    expect(shellMock.openPath).toHaveBeenCalledTimes(1)
+  })
+
+  it('showItem highlights a download recorded under a mangled name', () => {
+    const dir = join('/downloads')
+    existsSyncMock.mockImplementation((p: string): boolean => p === dir)
+    readdirSyncMock.mockReturnValue(['OP… [2BY9zc7XE08].mp3'])
+    handlers.get(IPC.system.showItem)!({}, join(dir, 'OP� [2BY9zc7XE08].mp3'))
+    expect(shellMock.showItemInFolder).toHaveBeenCalledWith(
+      join(dir, 'OP… [2BY9zc7XE08].mp3')
+    )
   })
 
   it('showItem highlights an existing file', () => {

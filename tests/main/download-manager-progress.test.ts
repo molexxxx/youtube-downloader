@@ -4,9 +4,11 @@ import type { DownloadJob } from '@shared/types'
 const { spawnMock, children, maxRef } = vi.hoisted(() => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { EventEmitter } = require('events')
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { PassThrough } = require('stream')
   class FakeChild extends EventEmitter {
-    stdout = new EventEmitter()
-    stderr = new EventEmitter()
+    stdout = new PassThrough()
+    stderr = new PassThrough()
     kill = vi.fn(function (this: { emit: (e: string, c: number) => void }) {
       // Emulate yt-dlp exiting after a kill signal.
       this.emit('close', 1)
@@ -39,7 +41,14 @@ vi.mock('@main/config', () => ({
   })
 }))
 vi.mock('@main/binaries/ffmpeg-binary', () => ({ ffmpegDir: () => '/bin' }))
-vi.mock('@main/binaries/ytdlp-binary', () => ({ ytdlpPath: () => '/bin/yt-dlp' }))
+vi.mock('@main/binaries/ytdlp-binary', () => ({
+  ytdlpPath: () => '/bin/yt-dlp',
+  trackYtdlp: <T>(child: T): T => child,
+  managedEngine: <T>(engine: T): T => engine,
+  ytdlpRuntimeArgs: () => ['--js-runtimes', 'node:/electron'],
+  ytdlpRuntimeFlags: () => ({ jsRuntimes: 'node:/electron' }),
+  ytdlpEnv: () => ({ ELECTRON_RUN_AS_NODE: '1' })
+}))
 
 import { DownloadManager } from '@main/ytdlp/downloader'
 
@@ -62,7 +71,7 @@ describe('DownloadManager progress', () => {
     const job = manager.enqueue({ url: 'https://x', kind: 'video' })
     latestChild().stdout.emit(
       'data',
-      Buffer.from('progress:{"percent":"42.5%","speed":"1.2MiB/s","eta":"00:30"}\n')
+      'progress:{"percent":"42.5%","speed":"1.2MiB/s","eta":"00:30"}\n'
     )
 
     const last = manager.list().find((j) => j.id === job.id)!
@@ -76,7 +85,7 @@ describe('DownloadManager progress', () => {
     const job = manager.enqueue({ url: 'https://x', kind: 'video' })
     latestChild().stdout.emit(
       'data',
-      Buffer.from('progress:{"percent":"5%","speed":"NA","eta":"NA"}\n')
+      'progress:{"percent":"5%","speed":"NA","eta":"NA"}\n'
     )
     const last = manager.list().find((j) => j.id === job.id)!
     expect(last.speed).toBeNull()
@@ -86,7 +95,7 @@ describe('DownloadManager progress', () => {
   it('ignores malformed progress lines', () => {
     const manager = new DownloadManager()
     const job = manager.enqueue({ url: 'https://x', kind: 'video' })
-    latestChild().stdout.emit('data', Buffer.from('progress:{not json}\n'))
+    latestChild().stdout.emit('data', 'progress:{not json}\n')
     const last = manager.list().find((j) => j.id === job.id)!
     expect(last.percent).toBe(0)
   })
@@ -96,8 +105,8 @@ describe('DownloadManager progress', () => {
     const job = manager.enqueue({ url: 'https://x', kind: 'video' })
     const child = latestChild()
     // Node delivers stdout in arbitrary chunks; a line can arrive in pieces.
-    child.stdout.emit('data', Buffer.from('progress:{"percent":"63.0%","spe'))
-    child.stdout.emit('data', Buffer.from('ed":"2.0MiB/s","eta":"00:10"}\n'))
+    child.stdout.emit('data', 'progress:{"percent":"63.0%","spe')
+    child.stdout.emit('data', 'ed":"2.0MiB/s","eta":"00:10"}\n')
     const last = manager.list().find((j) => j.id === job.id)!
     expect(last.percent).toBeCloseTo(63)
     expect(last.speed).toBe('2.0MiB/s')
@@ -109,10 +118,8 @@ describe('DownloadManager progress', () => {
     const job = manager.enqueue({ url: 'https://x', kind: 'video' })
     latestChild().stdout.emit(
       'data',
-      Buffer.from(
-        'progress:{"percent":"10%","speed":"1MiB/s","eta":"00:50"}\n' +
-          'progress:{"percent":"20%","speed":"1MiB/s","eta":"00:40"}\n'
-      )
+      'progress:{"percent":"10%","speed":"1MiB/s","eta":"00:50"}\n' +
+        'progress:{"percent":"20%","speed":"1MiB/s","eta":"00:40"}\n'
     )
     const last = manager.list().find((j) => j.id === job.id)!
     expect(last.percent).toBeCloseTo(20)
@@ -122,11 +129,8 @@ describe('DownloadManager progress', () => {
     const manager = new DownloadManager()
     const job = manager.enqueue({ url: 'https://x', kind: 'video' })
     const child = latestChild()
-    child.stdout.emit(
-      'data',
-      Buffer.from('[download] Destination: /downloads/clip.mp4\n')
-    )
-    child.stdout.emit('data', Buffer.from('[Merger] Merging formats\n'))
+    child.stdout.emit('data', '[download] Destination: /downloads/clip.mp4\n')
+    child.stdout.emit('data', '[Merger] Merging formats\n')
     const last = manager.list().find((j) => j.id === job.id)!
     expect(last.outputPath).toBe('/downloads/clip.mp4')
     expect(last.state).toBe('processing')
@@ -137,14 +141,8 @@ describe('DownloadManager progress', () => {
     const job = manager.enqueue({ url: 'https://x', kind: 'video' })
     const child = latestChild()
     // The per-stream destination is an intermediate file deleted after merge.
-    child.stdout.emit(
-      'data',
-      Buffer.from('[download] Destination: /downloads/clip.f401.mp4\n')
-    )
-    child.stdout.emit(
-      'data',
-      Buffer.from('[Merger] Merging formats into "/downloads/clip.mp4"\n')
-    )
+    child.stdout.emit('data', '[download] Destination: /downloads/clip.f401.mp4\n')
+    child.stdout.emit('data', '[Merger] Merging formats into "/downloads/clip.mp4"\n')
     const last = manager.list().find((j) => j.id === job.id)!
     expect(last.outputPath).toBe('/downloads/clip.mp4')
     expect(last.state).toBe('processing')
@@ -154,17 +152,37 @@ describe('DownloadManager progress', () => {
     const manager = new DownloadManager()
     const job = manager.enqueue({ url: 'https://x', kind: 'audio' })
     const child = latestChild()
-    child.stdout.emit(
-      'data',
-      Buffer.from('[download] Destination: /downloads/song.webm\n')
-    )
-    child.stdout.emit(
-      'data',
-      Buffer.from('[ExtractAudio] Destination: /downloads/song.mp3\n')
-    )
+    child.stdout.emit('data', '[download] Destination: /downloads/song.webm\n')
+    child.stdout.emit('data', '[ExtractAudio] Destination: /downloads/song.mp3\n')
     const last = manager.list().find((j) => j.id === job.id)!
     expect(last.outputPath).toBe('/downloads/song.mp3')
     expect(last.state).toBe('processing')
+  })
+
+  it('records the path from the after_move print when the file already existed', () => {
+    const manager = new DownloadManager()
+    const job = manager.enqueue({ url: 'https://x', kind: 'audio' })
+    const child = latestChild()
+    child.stdout.emit(
+      'data',
+      '[download] /downloads/song.mp3 has already been downloaded\n'
+    )
+    child.stdout.emit('data', 'filepath:/downloads/song.mp3\n')
+    const last = manager.list().find((j) => j.id === job.id)!
+    expect(last.outputPath).toBe('/downloads/song.mp3')
+  })
+
+  it('keeps a non-ASCII file name intact when a character is split across chunks', async () => {
+    const manager = new DownloadManager()
+    const job = manager.enqueue({ url: 'https://x', kind: 'audio' })
+    const child = latestChild()
+    const line = Buffer.from('filepath:/downloads/OP… (VV：Ultimatum) é.mp3\n')
+    const cut = line.indexOf(0xe2) + 1
+    child.stdout.write(line.subarray(0, cut))
+    child.stdout.write(line.subarray(cut))
+    await new Promise((resolve) => setImmediate(resolve))
+    const last = manager.list().find((j) => j.id === job.id)!
+    expect(last.outputPath).toBe('/downloads/OP… (VV：Ultimatum) é.mp3')
   })
 })
 
@@ -182,7 +200,7 @@ describe('DownloadManager completion + errors', () => {
     const manager = new DownloadManager()
     const job = manager.enqueue({ url: 'https://x', kind: 'video' })
     const child = latestChild()
-    child.stderr.emit('data', Buffer.from('ERROR: Video unavailable\n'))
+    child.stderr.emit('data', 'ERROR: Video unavailable\n')
     child.emit('close', 1)
     const last = manager.list().find((j) => j.id === job.id)!
     expect(last.state).toBe('error')
@@ -256,7 +274,7 @@ describe('DownloadManager concurrent correctness', () => {
     // Job B progresses, then finishes first - job A must stay downloading.
     childB.stdout.emit(
       'data',
-      Buffer.from('progress:{"percent":"50%","speed":"1MiB/s","eta":"00:10"}\n')
+      'progress:{"percent":"50%","speed":"1MiB/s","eta":"00:10"}\n'
     )
     childB.emit('close', 0)
 
@@ -270,7 +288,7 @@ describe('DownloadManager concurrent correctness', () => {
     // Job A progresses and finishes afterwards - B stays completed, unaffected.
     childA.stdout.emit(
       'data',
-      Buffer.from('progress:{"percent":"75%","speed":"2MiB/s","eta":"00:05"}\n')
+      'progress:{"percent":"75%","speed":"2MiB/s","eta":"00:05"}\n'
     )
     childA.emit('close', 0)
 
@@ -289,7 +307,7 @@ describe('DownloadManager concurrent correctness', () => {
     // A stray buffered progress line must not revive a finished job.
     child.stdout.emit(
       'data',
-      Buffer.from('progress:{"percent":"30%","speed":"1MiB/s","eta":"00:20"}\n')
+      'progress:{"percent":"30%","speed":"1MiB/s","eta":"00:20"}\n'
     )
     const last = manager.list().find((j) => j.id === job.id)!
     expect(last.state).toBe('completed')

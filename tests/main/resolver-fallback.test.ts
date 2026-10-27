@@ -11,7 +11,14 @@ const { engineMock, cookieFlagsMock, cookiesEnabledMock, loggerMock } = vi.hoist
 
 vi.mock('@main/config', () => ({ getConfig: () => ({ cookiesFromBrowser: 'auto' }) }))
 vi.mock('@main/binaries/ffmpeg-binary', () => ({ ffmpegDir: () => '/bin' }))
-vi.mock('@main/binaries/ytdlp-binary', () => ({ ytdlpPath: () => '/bin/yt-dlp' }))
+vi.mock('@main/binaries/ytdlp-binary', () => ({
+  ytdlpPath: () => '/bin/yt-dlp',
+  trackYtdlp: <T>(child: T): T => child,
+  managedEngine: <T>(engine: T): T => engine,
+  ytdlpRuntimeArgs: () => ['--js-runtimes', 'node:/electron'],
+  ytdlpRuntimeFlags: () => ({ jsRuntimes: 'node:/electron' }),
+  ytdlpEnv: () => ({ ELECTRON_RUN_AS_NODE: '1' })
+}))
 vi.mock('@main/logger', () => ({ logger: loggerMock }))
 vi.mock('@main/ytdlp/cookies', () => ({
   cookieFlags: cookieFlagsMock,

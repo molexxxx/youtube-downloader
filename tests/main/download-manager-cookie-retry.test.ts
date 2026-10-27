@@ -4,9 +4,11 @@ import type { DownloadJob } from '@shared/types'
 const { spawnMock, children, cookiesEnabledMock, loggerMock } = vi.hoisted(() => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { EventEmitter } = require('events')
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { PassThrough } = require('stream')
   class FakeChild extends EventEmitter {
-    stdout = new EventEmitter()
-    stderr = new EventEmitter()
+    stdout = new PassThrough()
+    stderr = new PassThrough()
     kill = vi.fn()
   }
   const children: InstanceType<typeof FakeChild>[] = []
@@ -41,7 +43,14 @@ vi.mock('@main/config', () => ({
   })
 }))
 vi.mock('@main/binaries/ffmpeg-binary', () => ({ ffmpegDir: () => '/bin' }))
-vi.mock('@main/binaries/ytdlp-binary', () => ({ ytdlpPath: () => '/bin/yt-dlp' }))
+vi.mock('@main/binaries/ytdlp-binary', () => ({
+  ytdlpPath: () => '/bin/yt-dlp',
+  trackYtdlp: <T>(child: T): T => child,
+  managedEngine: <T>(engine: T): T => engine,
+  ytdlpRuntimeArgs: () => ['--js-runtimes', 'node:/electron'],
+  ytdlpRuntimeFlags: () => ({ jsRuntimes: 'node:/electron' }),
+  ytdlpEnv: () => ({ ELECTRON_RUN_AS_NODE: '1' })
+}))
 vi.mock('@main/logger', () => ({ logger: loggerMock }))
 vi.mock('@main/ytdlp/cookies', () => ({
   cookieArgs: () => ['--cookies', '/userdata/cookies.txt'],
@@ -74,7 +83,7 @@ describe('DownloadManager cookie retry', () => {
     const manager = new DownloadManager()
     const job = manager.enqueue({ url: 'https://x', kind: 'video' })
     const first = children[0]
-    first.stderr.emit('data', Buffer.from('ERROR: Sign in to confirm your age\n'))
+    first.stderr.emit('data', 'ERROR: Sign in to confirm your age\n')
     first.emit('close', 1)
 
     expect(spawnMock).toHaveBeenCalledTimes(2)
@@ -92,7 +101,7 @@ describe('DownloadManager cookie retry', () => {
     const manager = new DownloadManager()
     const job = manager.enqueue({ url: 'https://x', kind: 'video' })
     const child = children[0]
-    child.stderr.emit('data', Buffer.from('ERROR: Video unavailable\n'))
+    child.stderr.emit('data', 'ERROR: Video unavailable\n')
     child.emit('close', 1)
 
     expect(spawnMock).toHaveBeenCalledTimes(1)
@@ -103,12 +112,12 @@ describe('DownloadManager cookie retry', () => {
   it('does not retry twice', () => {
     const manager = new DownloadManager()
     const job = manager.enqueue({ url: 'https://x', kind: 'video' })
-    children[0].stderr.emit('data', Buffer.from('ERROR: Private video\n'))
+    children[0].stderr.emit('data', 'ERROR: Private video\n')
     children[0].emit('close', 1)
     expect(spawnMock).toHaveBeenCalledTimes(2)
 
     // The cookie retry also fails with an auth error → no third attempt.
-    children[1].stderr.emit('data', Buffer.from('ERROR: Private video\n'))
+    children[1].stderr.emit('data', 'ERROR: Private video\n')
     children[1].emit('close', 1)
     expect(spawnMock).toHaveBeenCalledTimes(2)
     const last = manager.list().find((j) => j.id === job.id)!

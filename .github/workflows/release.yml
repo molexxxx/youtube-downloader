@@ -299,32 +299,9 @@ jobs:
       - name: Compose release notes
         run: |
           set -euo pipefail
-          tag="${{ github.ref_name }}"
-
-          # A tag pushed by check-binary-updates.yml carries an "## Automated
-          # binary update" section in its annotated message naming the tool that
-          # moved. An annotated tag points at a tag object holding the message;
-          # a lightweight (manually pushed) tag points at a commit and has none.
-          message=""
-          ref=$(gh api "repos/${{ github.repository }}/git/ref/tags/$tag" \
-            --jq '.object.type + " " + .object.sha' 2>/dev/null || true)
-          if [[ "${ref%% *}" == "tag" ]]; then
-            message=$(gh api "repos/${{ github.repository }}/git/tags/${ref##* }" \
-              --jq '.message' 2>/dev/null || true)
-          fi
-          header=$(printf '%s\n' "$message" | awk '/^## Automated binary update/{f=1} f')
-
-          generated=$(gh api --method POST \
+          gh api --method POST \
             "repos/${{ github.repository }}/releases/generate-notes" \
-            -f tag_name="$tag" --jq '.body')
-
-          if [[ -n "$header" ]]; then
-            printf '%s\n\n%s\n' "$header" "$generated" > release-notes.md
-            echo "Binary-update section found for $tag; prepended to generated notes."
-          else
-            printf '%s\n' "$generated" > release-notes.md
-            echo "No binary-update section on $tag; using generated notes alone."
-          fi
+            -f tag_name="${{ github.ref_name }}" --jq '.body' > release-notes.md
 
       - name: Publish the release
         run: |

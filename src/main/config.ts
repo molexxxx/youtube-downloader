@@ -9,6 +9,11 @@ const StoreCtor = ((ElectronStore as unknown as { default?: typeof ElectronStore
 
 let store: ElectronStore<AppConfig> | null = null
 
+/** Settings a release renamed: the stored value moves to the new key once, then the old key is dropped. */
+const RENAMED: ReadonlyArray<[string, keyof AppConfig]> = [
+  ['autoUpdateBinaries', 'autoUpdateYtdlp']
+]
+
 function getStore(): ElectronStore<AppConfig> {
   if (!store) {
     store = new StoreCtor<AppConfig>({
@@ -18,8 +23,23 @@ function getStore(): ElectronStore<AppConfig> {
         downloadDir: app.getPath('downloads')
       }
     })
+    migrateRenamed(store)
   }
   return store
+}
+
+function migrateRenamed(s: ElectronStore<AppConfig>): void {
+  const raw = s as unknown as {
+    has(key: string): boolean
+    get(key: string): unknown
+    delete(key: string): void
+  }
+  for (const [from, to] of RENAMED) {
+    if (!raw.has(from)) continue
+    const value = raw.get(from)
+    if (typeof value === typeof DEFAULT_CONFIG[to]) s.set(to, value as never)
+    raw.delete(from)
+  }
 }
 
 export function getConfig(): AppConfig {

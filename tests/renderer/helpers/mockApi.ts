@@ -3,18 +3,21 @@ import type {
   AppConfig,
   AppUpdateStatus,
   AuditEntry,
+  BinariesScan,
   BinariesStatus,
   CookieInfo,
   DiscordGuild,
   DiscordStatus,
   DownloadJob,
   DownloadRequest,
+  FfmpegStatus,
   GuildPlayerState,
   GuildSettings,
   HistoryEntry,
   LogEntry,
   MediaInfo,
-  PlaylistEntry
+  PlaylistEntry,
+  YtdlpStatus
 } from '@shared/types'
 
 /**
@@ -28,22 +31,25 @@ export function installMockApi() {
   const api = {
     config: {
       get: vi.fn(async (): Promise<AppConfig> => baseConfig()),
-      set: vi.fn(
-        async (partial: Partial<AppConfig>): Promise<AppConfig> => ({
-          ...baseConfig(),
-          ...partial
-        })
-      ),
+      set: vi.fn(async (partial: Partial<AppConfig>): Promise<AppConfig> => ({
+        ...baseConfig(),
+        ...partial
+      })),
       reset: vi.fn(async (): Promise<AppConfig> => baseConfig())
     },
     binaries: {
       status: vi.fn(async (): Promise<BinariesStatus> => baseBinaries()),
       bootstrap: vi.fn(async (): Promise<BinariesStatus> => baseBinaries()),
-      update: vi.fn(
-        async (_which: 'yt-dlp' | 'ffmpeg' | 'all'): Promise<Partial<BinariesStatus>> =>
-          baseBinaries()
+      checkYtdlp: vi.fn(async (): Promise<BinariesStatus> => baseBinaries()),
+      scan: vi.fn(async (): Promise<BinariesScan> => ({
+        ytdlp: null,
+        ffmpeg: null,
+        ytdlpRelease: null
+      })),
+      selfTest: vi.fn(async (_which: 'ytdlp' | 'ffmpeg'): Promise<BinariesStatus> =>
+        baseBinaries()
       ),
-      onProgress: vi.fn(() => unsub)
+      onStatus: vi.fn((_cb: (status: BinariesStatus) => void) => unsub)
     },
     extract: {
       info: vi.fn(
@@ -81,9 +87,9 @@ export function installMockApi() {
           version: null
         })
       ),
-      download: vi.fn(
-        async (): Promise<{ ok: boolean; error?: string }> => ({ ok: true })
-      ),
+      download: vi.fn(async (): Promise<{ ok: boolean; error?: string }> => ({
+        ok: true
+      })),
       install: vi.fn(async (): Promise<void> => {}),
       onStatus: vi.fn(() => unsub)
     },
@@ -116,8 +122,8 @@ export function installMockApi() {
     discord: {
       status: vi.fn(async (): Promise<DiscordStatus> => baseDiscordStatus()),
       guilds: vi.fn(async (): Promise<DiscordGuild[]> => []),
-      setToken: vi.fn(
-        async (_token: string): Promise<DiscordStatus> => baseDiscordStatus()
+      setToken: vi.fn(async (_token: string): Promise<DiscordStatus> =>
+        baseDiscordStatus()
       ),
       clearToken: vi.fn(async (): Promise<DiscordStatus> => baseDiscordStatus()),
       connect: vi.fn(async (): Promise<DiscordStatus> => baseDiscordStatus()),
@@ -132,8 +138,8 @@ export function installMockApi() {
       seek: vi.fn(async (): Promise<void> => {}),
       removeTrack: vi.fn(async (): Promise<void> => {}),
       moveTrack: vi.fn(async (): Promise<void> => {}),
-      getSettings: vi.fn(
-        async (_guildId: string): Promise<GuildSettings> => baseGuildSettings()
+      getSettings: vi.fn(async (_guildId: string): Promise<GuildSettings> =>
+        baseGuildSettings()
       ),
       setSettings: vi.fn(async (): Promise<GuildSettings> => baseGuildSettings()),
       auditList: vi.fn(async (_guildId?: string): Promise<AuditEntry[]> => []),
@@ -178,11 +184,40 @@ function baseConfig(): AppConfig {
   } as unknown as AppConfig
 }
 
-function baseBinaries(): BinariesStatus {
+/** A ready yt-dlp and FFmpeg, with any part replaced for a test. */
+export function baseBinaries(
+  overrides: { ytdlp?: Partial<YtdlpStatus>; ffmpeg?: Partial<FfmpegStatus> } = {}
+): BinariesStatus {
   return {
-    ytdlp: { name: 'yt-dlp', installed: true, path: '/yt', version: '2024' },
-    ffmpeg: { name: 'ffmpeg', installed: true, path: '/ff', version: '6' }
-  } as unknown as BinariesStatus
+    ytdlp: {
+      installed: true,
+      version: '2026.10.26',
+      path: '/yt',
+      source: 'app',
+      selfTest: null,
+      autoUpdate: true,
+      lastCheckAt: null,
+      latest: null,
+      state: { kind: 'idle' },
+      ...overrides.ytdlp
+    },
+    ffmpeg: {
+      installed: true,
+      version: '9.0.2',
+      build: 'btbn-n9.0.2-17-g2a571b6068',
+      path: '/ff',
+      source: 'app',
+      selfTest: null,
+      pinned: {
+        version: '9.0.2',
+        build: 'btbn-n9.0.2-17-g2a571b6068',
+        bytes: 194034585,
+        publisher: 'BtbN FFmpeg Builds'
+      },
+      state: { kind: 'idle' },
+      ...overrides.ffmpeg
+    }
+  }
 }
 
 function baseCookies(): CookieInfo {

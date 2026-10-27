@@ -1,0 +1,42 @@
+name: FFmpeg pin
+
+# Checks that every FFmpeg build in src/main/binaries/ffmpeg/pinned-builds.json is
+# still published with the size and SHA-256 the app verifies downloads against.
+# A vanished or changed asset fails the run, so a broken first-run download is
+# caught before users hit it. This never changes the pin or cuts a release:
+# bumping FFmpeg is a deliberate source change made with
+# `node scripts/update-ffmpeg-pin.mjs`, shipped in the next app release.
+
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  push:
+    branches: [main]
+    paths:
+      - src/main/binaries/ffmpeg/pinned-builds.json
+      - scripts/update-ffmpeg-pin.mjs
+      - .github/workflows/ffmpeg-pin.yml
+  pull_request:
+    paths:
+      - src/main/binaries/ffmpeg/pinned-builds.json
+      - scripts/update-ffmpeg-pin.mjs
+      - .github/workflows/ffmpeg-pin.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Verify every pinned asset against its source
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/update-ffmpeg-pin.mjs --check

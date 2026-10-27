@@ -1,15 +1,22 @@
 import { spawn } from 'child_process'
+import { join } from 'path'
 import { randomUUID } from 'crypto'
 import { EventEmitter } from 'events'
 import type { DownloadJob, DownloadRequest } from '@shared/types'
 import { getConfig } from '../config'
 import { logger } from '../logger'
 import { ffmpegDir } from '../binaries/ffmpeg-binary'
-import { ytdlpPath } from '../binaries/ytdlp-binary'
+import {
+  trackYtdlp,
+  ytdlpEnv,
+  ytdlpPath,
+  ytdlpRuntimeArgs
+} from '../binaries/ytdlp-binary'
 import { cookieArgs, cookiesEnabled, isAuthRequiredError } from './cookies'
 
 const PROGRESS_TEMPLATE =
   'download:progress:{"percent":"%(progress._percent_str)s","speed":"%(progress._speed_str)s","eta":"%(progress._eta_str)s"}'
+const FILEPATH_PREFIX = 'filepath:'
 
 interface RunningJob {
   job: DownloadJob
@@ -47,6 +54,11 @@ function sameRequest(a: DownloadRequest, b: DownloadRequest): boolean {
 
 /**
  * Builds the yt-dlp argument list for a download request. Pure function - unit tested.
+ *
+ * Output is forced to UTF-8 because yt-dlp otherwise writes the Windows ANSI code page
+ * to a pipe, which mangles or drops non-ASCII characters in file names. The final file
+ * path comes from an `after_move` print, which yt-dlp emits even when the file already
+ * existed and no `Destination` line was logged.
  */
 export function buildArgs(
   req: DownloadRequest,
@@ -57,12 +69,17 @@ export function buildArgs(
     req.url,
     '--ignore-config',
     '--no-warnings',
-    '--no-check-certificates',
+    '--encoding',
+    'utf-8',
+    ...ytdlpRuntimeArgs(),
     '--ffmpeg-location',
     ffmpegDir(),
     '--newline',
     '--progress-template',
     PROGRESS_TEMPLATE,
+    '--print',
+    `after_move:${FILEPATH_PREFIX}%(filepath)s`,
+    '--no-quiet',
     '--paths',
     cfg.downloadDir,
     '--output',
@@ -115,7 +132,7 @@ export function buildArgs(
   }
   if (sponsorBlock) args.push('--sponsorblock-remove', 'default')
   if (cfg.useDownloadArchive) {
-    args.push('--download-archive', 'archive.txt')
+    args.push('--download-archive', join(cfg.downloadDir, 'archive.txt'))
   }
   if (includeCookies) args.push(...cookieArgs(cfg))
 
@@ -226,16 +243,16 @@ export class DownloadManager extends EventEmitter {
     )
     this.patch(id, { state: 'downloading' })
 
-    const child = spawn(ytdlpPath(), args, {
-      env: { ...process.env, FFMPEG_LOCATION: ffmpegDir() }
-    })
+    const child = trackYtdlp(spawn(ytdlpPath(), args, { env: ytdlpEnv() }))
 
     this.running.set(id, { job: this.jobs.get(id)!, kill: () => child.kill() })
     this.stdoutBuffers.set(id, '')
 
-    child.stdout.on('data', (buf: Buffer) => this.handleChunk(id, buf.toString()))
-    child.stderr.on('data', (buf: Buffer) => {
-      const text = buf.toString().trim()
+    child.stdout.setEncoding('utf8')
+    child.stderr.setEncoding('utf8')
+    child.stdout.on('data', (chunk: string) => this.handleChunk(id, chunk))
+    child.stderr.on('data', (chunk: string) => {
+      const text = chunk.trim()
       logger.debug('yt-dlp', text)
       // Capture the most recent ERROR line so the UI can show a real reason
       // instead of a bare exit code.
@@ -320,6 +337,10 @@ export class DownloadManager extends EventEmitter {
       } catch {
         // ignore malformed progress lines
       }
+      return
+    }
+    if (trimmed.startsWith(FILEPATH_PREFIX)) {
+      this.patch(id, { outputPath: trimmed.slice(FILEPATH_PREFIX.length) })
       return
     }
     // The merged/extracted file is the real artifact. Capture its final path

@@ -38,7 +38,14 @@ vi.mock('@discordjs/voice', () => ({
 }))
 vi.mock('@main/config', () => ({ getConfig: () => ({}) }))
 vi.mock('@main/binaries/ffmpeg-binary', () => ({ ffmpegPath: () => '/bin/ffmpeg' }))
-vi.mock('@main/binaries/ytdlp-binary', () => ({ ytdlpPath: () => '/bin/yt-dlp' }))
+vi.mock('@main/binaries/ytdlp-binary', () => ({
+  ytdlpPath: () => '/bin/yt-dlp',
+  trackYtdlp: <T>(child: T): T => child,
+  managedEngine: <T>(engine: T): T => engine,
+  ytdlpRuntimeArgs: () => ['--js-runtimes', 'node:/electron'],
+  ytdlpRuntimeFlags: () => ({ jsRuntimes: 'node:/electron' }),
+  ytdlpEnv: () => ({ ELECTRON_RUN_AS_NODE: '1' })
+}))
 vi.mock('@main/ytdlp/cookies', () => ({
   cookieArgs: () => ['--cookies', '/cache/cookies.txt'],
   cookiesEnabled: () => true,
@@ -69,6 +76,12 @@ describe('buildStreamArgs', () => {
     expect(args[outIdx + 1]).toBe('-')
   })
 
+  it('names the JavaScript runtime yt-dlp needs for YouTube and keeps TLS validation on', () => {
+    const args = buildStreamArgs('https://x', false)
+    expect(args[args.indexOf('--js-runtimes') + 1]).toBe('node:/electron')
+    expect(args).not.toContain('--no-check-certificates')
+  })
+
   it('omits cookies on the first (cookie-free) attempt', () => {
     expect(buildStreamArgs('https://x', false)).not.toContain('--cookies')
   })
@@ -83,8 +96,10 @@ describe('buildStreamArgs', () => {
 describe('buildResolveUrlArgs', () => {
   it('asks for the direct media URL instead of piping bytes', () => {
     const args = buildResolveUrlArgs('https://x', false)
-    expect(args).toContain('-g')
+    expect(args[args.indexOf('--print') + 1]).toBe('urls')
+    expect(args).not.toContain('-g')
     expect(args).not.toContain('-o')
+    expect(args).toContain('--js-runtimes')
     const fmtIdx = args.indexOf('-f')
     expect(args[fmtIdx + 1]).toBe('bestaudio/best')
   })
@@ -98,25 +113,30 @@ describe('buildResolveUrlArgs', () => {
 describe('buildFfmpegArgs', () => {
   it('transcodes stdin to 48kHz stereo raw PCM for streamed tracks', () => {
     const args = buildFfmpegArgs('pipe:0')
-    expect(args[0]).toBe('-i')
-    expect(args[1]).toBe('pipe:0')
+    expect(args.slice(0, 3)).toEqual(['-hide_banner', '-i', 'pipe:0'])
+    expect(args).not.toContain('-nostdin')
     expect(args).toContain('s16le')
     expect(args[args.length - 1]).toBe('pipe:1')
   })
 
   it('reads a local file directly for downloaded tracks', () => {
     const args = buildFfmpegArgs('C:\\media\\song.m4a')
-    expect(args[1]).toBe('C:\\media\\song.m4a')
+    expect(args.slice(0, 4)).toEqual([
+      '-hide_banner',
+      '-nostdin',
+      '-i',
+      'C:\\media\\song.m4a'
+    ])
   })
 
   it('applies a seek offset as an input option for seekable files', () => {
     const args = buildFfmpegArgs('C:\\media\\song.m4a', 90)
-    expect(args.slice(0, 4)).toEqual(['-ss', '90', '-i', 'C:\\media\\song.m4a'])
+    expect(args.slice(2, 6)).toEqual(['-ss', '90', '-i', 'C:\\media\\song.m4a'])
   })
 
   it('applies a seek offset after the input for pipes (not input-seekable)', () => {
     const args = buildFfmpegArgs('pipe:0', 90)
-    expect(args.slice(0, 4)).toEqual(['-i', 'pipe:0', '-ss', '90'])
+    expect(args.slice(1, 5)).toEqual(['-i', 'pipe:0', '-ss', '90'])
   })
 
   it('omits the seek flag at position zero', () => {
@@ -132,6 +152,8 @@ describe('buildFfmpegArgs', () => {
     const args = buildFfmpegArgs('https://cdn.example/audio', 90)
     // Input options: reconnect flags and -ss must precede -i for URLs.
     expect(args.indexOf('-reconnect')).toBeGreaterThanOrEqual(0)
+    expect(args[args.indexOf('-reconnect_on_network_error') + 1]).toBe('1')
+    expect(args).toContain('-nostdin')
     expect(args.indexOf('-ss')).toBeLessThan(args.indexOf('-i'))
     expect(args[args.indexOf('-i') + 1]).toBe('https://cdn.example/audio')
   })
@@ -164,14 +186,19 @@ describe('buildAudioFilterChain', () => {
   it('compensates tempo when shifting pitch, so speed stays independent', () => {
     // asetrate raises tempo by 1.25 too; atempo must counter it back to 1x.
     expect(buildAudioFilterChain({ ...DEFAULT_AUDIO_EFFECTS, pitch: 1.25 })).toBe(
-      `asetrate=60000,aresample=48000,atempo=${(1 / 1.25).toFixed(4)}`
+      `aresample=48000,asetrate=60000,aresample=48000,atempo=${(1 / 1.25).toFixed(4)}`
     )
+  })
+
+  it('resamples to 48kHz before asetrate, so a 44.1kHz source shifts by the asked amount', () => {
+    const chain = buildAudioFilterChain({ ...DEFAULT_AUDIO_EFFECTS, pitch: 1.5 })!
+    expect(chain.split(',').slice(0, 2)).toEqual(['aresample=48000', 'asetrate=72000'])
   })
 
   it('nightcore (speed == pitch) needs no atempo correction', () => {
     expect(
       buildAudioFilterChain({ ...DEFAULT_AUDIO_EFFECTS, speed: 1.25, pitch: 1.25 })
-    ).toBe('asetrate=60000,aresample=48000')
+    ).toBe('aresample=48000,asetrate=60000,aresample=48000')
   })
 
   it('splits atempo corrections outside the 0.5-2 per-instance range', () => {
@@ -192,7 +219,7 @@ describe('buildAudioFilterChain', () => {
       trebleGain: 2
     })
     expect(chain).toBe(
-      'bass=g=9,equalizer=f=1000:t=q:w=1:g=-3,treble=g=2,alimiter=limit=0.97'
+      'bass=g=9,equalizer=f=1000:t=q:w=1:g=-3,treble=g=2,alimiter=limit=0.97:level=disabled:latency=1'
     )
   })
 

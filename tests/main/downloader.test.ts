@@ -18,8 +18,17 @@ vi.mock('@main/config', () => ({
 }))
 
 vi.mock('@main/binaries/ffmpeg-binary', () => ({ ffmpegDir: () => '/bin' }))
-vi.mock('@main/binaries/ytdlp-binary', () => ({ ytdlpPath: () => '/bin/yt-dlp' }))
+vi.mock('@main/binaries/ytdlp-binary', () => ({
+  ytdlpPath: () => '/bin/yt-dlp',
+  trackYtdlp: <T>(child: T): T => child,
+  managedEngine: <T>(engine: T): T => engine,
+  ytdlpRuntimeArgs: () => ['--js-runtimes', 'node:/electron'],
+  ytdlpRuntimeFlags: () => ({ jsRuntimes: 'node:/electron' }),
+  ytdlpEnv: () => ({ ELECTRON_RUN_AS_NODE: '1' })
+}))
 
+import { join } from 'path'
+import { getConfig } from '@main/config'
 import { buildArgs } from '@main/ytdlp/downloader'
 
 describe('buildArgs', () => {
@@ -34,6 +43,32 @@ describe('buildArgs', () => {
   it('runs hermetically by ignoring any global yt-dlp config', () => {
     const args = buildArgs({ url: 'https://x', kind: 'video' })
     expect(args).toContain('--ignore-config')
+  })
+
+  it('names the JavaScript runtime for YouTube and keeps TLS validation on', () => {
+    const args = buildArgs({ url: 'https://x', kind: 'video' })
+    expect(args[args.indexOf('--js-runtimes') + 1]).toBe('node:/electron')
+    expect(args).not.toContain('--no-check-certificates')
+  })
+
+  it('asks yt-dlp for UTF-8 output and the final file path without going quiet', () => {
+    const args = buildArgs({ url: 'https://x', kind: 'audio' })
+    expect(args[args.indexOf('--encoding') + 1]).toBe('utf-8')
+    expect(args[args.indexOf('--print') + 1]).toBe('after_move:filepath:%(filepath)s')
+    expect(args).toContain('--no-quiet')
+  })
+
+  it('keeps the download archive in the download folder, not the process working directory', () => {
+    const args = buildArgs(
+      { url: 'https://x', kind: 'video' },
+      {
+        ...getConfig(),
+        useDownloadArchive: true
+      }
+    )
+    expect(args[args.indexOf('--download-archive') + 1]).toBe(
+      join('/downloads', 'archive.txt')
+    )
   })
 
   it('uses an explicit format id paired with best audio and mp4 merge', () => {

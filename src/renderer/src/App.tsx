@@ -18,6 +18,8 @@ import { DiscordScreen } from './components/discord/DiscordScreen'
 function App(): React.JSX.Element {
   const binariesReady = useAppStore((s) => s.binariesReady)
   const binaries = useAppStore((s) => s.binaries)
+  const setupOpen = useAppStore((s) => s.setupOpen)
+  const setupComplete = useAppStore((s) => s.config?.setupComplete)
   const view = useAppStore((s) => s.view)
   const error = useAppStore((s) => s.error)
   const info = useAppStore((s) => s.info)
@@ -26,7 +28,6 @@ function App(): React.JSX.Element {
   const theme = useAppStore((s) => s.config?.theme)
   const setConfig = useAppStore((s) => s.setConfig)
   const setBinaries = useAppStore((s) => s.setBinaries)
-  const setBootstrap = useAppStore((s) => s.setBootstrap)
   const upsertJob = useAppStore((s) => s.upsertJob)
   const setJobs = useAppStore((s) => s.setJobs)
   const setHistory = useAppStore((s) => s.setHistory)
@@ -74,12 +75,7 @@ function App(): React.JSX.Element {
       seedDiscord(discordStatus, discordGuilds)
     })()
 
-    const offProgress = window.api.binaries.onProgress((p) => {
-      setBootstrap(p)
-      if (p.stage === 'complete') {
-        void window.api.binaries.status().then(setBinaries)
-      }
-    })
+    const offBinaries = window.api.binaries.onStatus(setBinaries)
     const offJob = window.api.download.onUpdate(upsertJob)
     const offHistory = window.api.history.onChange(setHistory)
     const offLog = window.api.logs.onEntry(appendLog)
@@ -90,7 +86,7 @@ function App(): React.JSX.Element {
     const offAudit = window.api.discord.onAudit(setAudit)
 
     return () => {
-      offProgress()
+      offBinaries()
       offJob()
       offHistory()
       offLog()
@@ -103,7 +99,6 @@ function App(): React.JSX.Element {
   }, [
     setConfig,
     setBinaries,
-    setBootstrap,
     upsertJob,
     setJobs,
     setHistory,
@@ -126,7 +121,7 @@ function App(): React.JSX.Element {
       <TitleBar />
       <UpdateToast />
       <VideoPreviewModal />
-      {!binariesReady && binaries !== null ? (
+      {binaries !== null && (!binariesReady || setupOpen || setupComplete === false) ? (
         <SetupGate />
       ) : view === 'settings' ? (
         <main className="flex-1 overflow-y-auto p-5">

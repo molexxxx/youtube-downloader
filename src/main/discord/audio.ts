@@ -6,9 +6,17 @@ import { DEFAULT_AUDIO_EFFECTS, type AudioEffects, type Track } from '@shared/ty
 import { getConfig } from '../config'
 import { logger } from '../logger'
 import { ffmpegPath } from '../binaries/ffmpeg-binary'
-import { ytdlpPath } from '../binaries/ytdlp-binary'
+import {
+  trackYtdlp,
+  ytdlpEnv,
+  ytdlpPath,
+  ytdlpRuntimeArgs
+} from '../binaries/ytdlp-binary'
 import { cookieArgs, cookiesEnabled, isAuthRequiredError } from '../ytdlp/cookies'
 import { boostProcessPriority } from './windows-tuning'
+import { buildAudioFilterChain } from './filters'
+
+export { buildAudioFilterChain, effectsActive, sanitizeEffects } from './filters'
 
 /**
  * yt-dlp args to stream a single track's best audio to stdout. Pure function -
@@ -21,7 +29,7 @@ export function buildStreamArgs(url: string, withCookies: boolean): string[] {
     url,
     '--ignore-config',
     '--no-warnings',
-    '--no-check-certificates',
+    ...ytdlpRuntimeArgs(),
     '--no-playlist',
     '-f',
     'bestaudio/best',
@@ -34,8 +42,8 @@ export function buildStreamArgs(url: string, withCookies: boolean): string[] {
 }
 
 /**
- * yt-dlp args to print the track's direct media URL (`-g`) instead of piping
- * the bytes. Used for mid-track restarts (seek, effects changes): ffmpeg can
+ * yt-dlp args to print the track's direct media URL (`--print urls`) instead of
+ * piping the bytes. Used for mid-track restarts (seek, effects changes): ffmpeg can
  * input-seek an HTTP URL with a range request in ~a second, while seeking the
  * piped stream means re-downloading and decoding everything up to the target.
  * Pure function - unit tested.
@@ -45,98 +53,15 @@ export function buildResolveUrlArgs(url: string, withCookies: boolean): string[]
     url,
     '--ignore-config',
     '--no-warnings',
-    '--no-check-certificates',
+    ...ytdlpRuntimeArgs(),
     '--no-playlist',
     '-f',
     'bestaudio/best',
-    '-g',
-    '--quiet'
+    '--print',
+    'urls'
   ]
   if (withCookies) args.push(...cookieArgs(getConfig()))
   return args
-}
-
-/** Discord voice sample rate; the pitch shifter resamples back to this. */
-const SAMPLE_RATE = 48_000
-
-/** Fixed parameters for the mutually exclusive character effects. Frequencies
- * and depths follow ffmpeg defaults and Lavalink's Discord-bot conventions
- * (tremolo/vibrato ~depth 0.5, rotation a slow 0.15 Hz stereo sweep). */
-const EFFECT_FILTERS: Record<Exclude<AudioEffects['mode'], 'none'>, string> = {
-  tremolo: 'tremolo=f=4:d=0.6',
-  vibrato: 'vibrato=f=5:d=0.5',
-  rotate: 'apulsator=hz=0.15',
-  // Out-of-phase channel subtraction cancels center-panned vocals.
-  karaoke: 'pan=stereo|c0=0.6*c0+-0.6*c1|c1=0.6*c1+-0.6*c0',
-  echo: 'aecho=0.8:0.55:220:0.35'
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value))
-}
-
-/** Sanitize renderer-supplied effects: clamp knobs, drop unknown modes. */
-export function sanitizeEffects(effects: Partial<AudioEffects> | null): AudioEffects {
-  const base = { ...DEFAULT_AUDIO_EFFECTS, ...effects }
-  const num = (v: unknown, fallback: number): number =>
-    typeof v === 'number' && Number.isFinite(v) ? v : fallback
-  return {
-    speed: clamp(num(base.speed, 1), 0.5, 2),
-    pitch: clamp(num(base.pitch, 1), 0.5, 2),
-    bassGain: clamp(num(base.bassGain, 0), -12, 12),
-    midGain: clamp(num(base.midGain, 0), -12, 12),
-    trebleGain: clamp(num(base.trebleGain, 0), -12, 12),
-    mode: base.mode in EFFECT_FILTERS ? base.mode : 'none'
-  }
-}
-
-export function effectsActive(effects: AudioEffects): boolean {
-  return (
-    effects.speed !== 1 ||
-    effects.pitch !== 1 ||
-    effects.bassGain !== 0 ||
-    effects.midGain !== 0 ||
-    effects.trebleGain !== 0 ||
-    effects.mode !== 'none'
-  )
-}
-
-/** atempo only accepts 0.5-2 per instance; split larger corrections in two. */
-function atempoChain(factor: number): string[] {
-  if (Math.abs(factor - 1) < 1e-3) return []
-  if (factor >= 0.5 && factor <= 2) return [`atempo=${factor.toFixed(4)}`]
-  const half = Math.sqrt(factor)
-  return [`atempo=${half.toFixed(4)}`, `atempo=${half.toFixed(4)}`]
-}
-
-/**
- * ffmpeg `-af` chain for the given effects, or null when everything is at its
- * default. Pure function - unit tested. Order: pitch (asetrate + resample back
- * to 48kHz) -> tempo compensation -> tone (bass/mid/treble) -> character
- * effect -> limiter (only when boosting, to keep s16 output from clipping).
- */
-export function buildAudioFilterChain(effects: AudioEffects): string | null {
-  const fx = sanitizeEffects(effects)
-  if (!effectsActive(fx)) return null
-
-  const chain: string[] = []
-  if (fx.pitch !== 1) {
-    chain.push(
-      `asetrate=${Math.round(SAMPLE_RATE * fx.pitch)}`,
-      `aresample=${SAMPLE_RATE}`
-    )
-  }
-  // asetrate already scales tempo by `pitch`; atempo covers the remainder so
-  // the perceived speed always equals `speed` regardless of pitch.
-  chain.push(...atempoChain(fx.speed / fx.pitch))
-  if (fx.bassGain !== 0) chain.push(`bass=g=${fx.bassGain}`)
-  if (fx.midGain !== 0) chain.push(`equalizer=f=1000:t=q:w=1:g=${fx.midGain}`)
-  if (fx.trebleGain !== 0) chain.push(`treble=g=${fx.trebleGain}`)
-  if (fx.mode !== 'none') chain.push(EFFECT_FILTERS[fx.mode])
-  if (fx.bassGain > 0 || fx.midGain > 0 || fx.trebleGain > 0) {
-    chain.push('alimiter=limit=0.97')
-  }
-  return chain.length > 0 ? chain.join(',') : null
 }
 
 /**
@@ -149,6 +74,9 @@ export function buildAudioFilterChain(effects: AudioEffects): string | null {
  * keyframe / range-request seek). Piped input is NOT seekable - input-side
  * `-ss` on a pipe corrupts the decode for some containers - so pipes seek as
  * an output option, decoding and discarding up to the target instead.
+ *
+ * `-nostdin` keeps ffmpeg from reading interactive keys from stdin, which it
+ * only skips on its own when stdin is the input.
  */
 export function buildFfmpegArgs(
   input: string,
@@ -160,9 +88,20 @@ export function buildFfmpegArgs(
   const seek = seekSeconds > 0 ? ['-ss', String(seekSeconds)] : []
   const filterChain = buildAudioFilterChain(effects)
   return [
+    '-hide_banner',
+    ...(seekable ? ['-nostdin'] : []),
     // Survive transient CDN drops instead of ending the track early.
     ...(isHttp
-      ? ['-reconnect', '1', '-reconnect_streamed', '1', '-reconnect_delay_max', '4']
+      ? [
+          '-reconnect',
+          '1',
+          '-reconnect_streamed',
+          '1',
+          '-reconnect_on_network_error',
+          '1',
+          '-reconnect_delay_max',
+          '4'
+        ]
       : []),
     ...(seekable ? seek : []),
     '-i',
@@ -367,7 +306,9 @@ export function createTrackResource(
 
   const startStream = (withCookies: boolean): void => {
     let alive = true
-    const ytdlp = spawn(ytdlpPath(), buildStreamArgs(track.url, withCookies))
+    const ytdlp = trackYtdlp(
+      spawn(ytdlpPath(), buildStreamArgs(track.url, withCookies), { env: ytdlpEnv() })
+    )
     const ffmpeg = spawn(ffmpegPath(), buildFfmpegArgs('pipe:0', seekSeconds, effects))
     ytdlp.stdout.pipe(ffmpeg.stdin)
     // yt-dlp dying first closes ffmpeg's stdin; ignore the resulting EPIPE.
@@ -431,7 +372,9 @@ export function createTrackResource(
    */
   const startStreamAtPosition = (withCookies: boolean): void => {
     let alive = true
-    const resolver = spawn(ytdlpPath(), buildResolveUrlArgs(track.url, withCookies))
+    const resolver = trackYtdlp(
+      spawn(ytdlpPath(), buildResolveUrlArgs(track.url, withCookies), { env: ytdlpEnv() })
+    )
     let out = ''
     let err = ''
     resolver.stdout.on('data', (b: Buffer) => {

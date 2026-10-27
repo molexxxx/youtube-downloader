@@ -2,7 +2,14 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@main/config', () => ({ getConfig: () => ({ cookiesFromBrowser: null }) }))
 vi.mock('@main/binaries/ffmpeg-binary', () => ({ ffmpegDir: () => '/bin' }))
-vi.mock('@main/binaries/ytdlp-binary', () => ({ ytdlpPath: () => '/bin/yt-dlp' }))
+vi.mock('@main/binaries/ytdlp-binary', () => ({
+  ytdlpPath: () => '/bin/yt-dlp',
+  trackYtdlp: <T>(child: T): T => child,
+  managedEngine: <T>(engine: T): T => engine,
+  ytdlpRuntimeArgs: () => ['--js-runtimes', 'node:/electron'],
+  ytdlpRuntimeFlags: () => ({ jsRuntimes: 'node:/electron' }),
+  ytdlpEnv: () => ({ ELECTRON_RUN_AS_NODE: '1' })
+}))
 vi.mock('youtube-dl-exec', () => ({ create: () => vi.fn() }))
 
 import { mapFormat, mapInfo } from '@main/ytdlp/resolver'
@@ -60,5 +67,63 @@ describe('mapInfo', () => {
     expect(info.isPlaylist).toBe(true)
     expect(info.playlistCount).toBe(2)
     expect(info.entries[0].title).toBe('One')
+  })
+})
+
+describe('result thumbnails', () => {
+  const HQ720 = 'https://i.ytimg.com/vi/2BY9zc7XE08/hq720.jpg?sqp=a&rs=b'
+
+  function entryThumbnail(entry: Record<string, unknown>): string | null {
+    return mapInfo({ _type: 'playlist', entries: [entry] }).entries[0].thumbnail
+  }
+
+  it('uses the static medium thumbnail for YouTube results instead of the resized hq720', () => {
+    const thumbnail = entryThumbnail({
+      _type: 'url',
+      ie_key: 'Youtube',
+      id: '2BY9zc7XE08',
+      url: 'https://www.youtube.com/watch?v=2BY9zc7XE08',
+      thumbnails: [
+        { url: HQ720, width: 360, height: 202 },
+        { url: `${HQ720}2`, width: 720, height: 404 }
+      ]
+    })
+    expect(thumbnail).toBe('https://i.ytimg.com/vi/2BY9zc7XE08/mqdefault.jpg')
+  })
+
+  it('picks the smallest thumbnail that is still wide enough for other sites', () => {
+    const thumbnail = entryThumbnail({
+      ie_key: 'Vimeo',
+      id: '76979871',
+      thumbnails: [
+        { url: 'https://v/100.jpg', width: 100 },
+        { url: 'https://v/1280.jpg', width: 1280 },
+        { url: 'https://v/640.jpg', width: 640 }
+      ]
+    })
+    expect(thumbnail).toBe('https://v/640.jpg')
+  })
+
+  it('falls back to the largest thumbnail when none is wide enough', () => {
+    const thumbnail = entryThumbnail({
+      ie_key: 'Vimeo',
+      id: '76979871',
+      thumbnails: [
+        { url: 'https://v/100.jpg', width: 100 },
+        { url: 'https://v/200.jpg', width: 200 }
+      ]
+    })
+    expect(thumbnail).toBe('https://v/200.jpg')
+  })
+
+  it('keeps the full-size thumbnail for a single video', () => {
+    const info = mapInfo({
+      id: '2BY9zc7XE08',
+      extractor_key: 'Youtube',
+      thumbnail: 'https://i.ytimg.com/vi_webp/2BY9zc7XE08/maxresdefault.webp'
+    })
+    expect(info.thumbnail).toBe(
+      'https://i.ytimg.com/vi_webp/2BY9zc7XE08/maxresdefault.webp'
+    )
   })
 })

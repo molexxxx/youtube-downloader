@@ -3,10 +3,12 @@ import { describe, expect, it, vi } from 'vitest'
 const { spawnMock } = vi.hoisted(() => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { EventEmitter } = require('events')
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { PassThrough } = require('stream')
   // Fake child process that stays "running" so enqueued jobs remain active.
   class FakeChild extends EventEmitter {
-    stdout = new EventEmitter()
-    stderr = new EventEmitter()
+    stdout = new PassThrough()
+    stderr = new PassThrough()
     kill = vi.fn()
   }
   return { spawnMock: vi.fn(() => new FakeChild()) }
@@ -30,7 +32,14 @@ vi.mock('@main/config', () => ({
   })
 }))
 vi.mock('@main/binaries/ffmpeg-binary', () => ({ ffmpegDir: () => '/bin' }))
-vi.mock('@main/binaries/ytdlp-binary', () => ({ ytdlpPath: () => '/bin/yt-dlp' }))
+vi.mock('@main/binaries/ytdlp-binary', () => ({
+  ytdlpPath: () => '/bin/yt-dlp',
+  trackYtdlp: <T>(child: T): T => child,
+  managedEngine: <T>(engine: T): T => engine,
+  ytdlpRuntimeArgs: () => ['--js-runtimes', 'node:/electron'],
+  ytdlpRuntimeFlags: () => ({ jsRuntimes: 'node:/electron' }),
+  ytdlpEnv: () => ({ ELECTRON_RUN_AS_NODE: '1' })
+}))
 
 import { DownloadManager } from '@main/ytdlp/downloader'
 

@@ -3,7 +3,6 @@ import { useAppStore } from '@renderer/stores/appStore'
 import type {
   AppConfig,
   AppUpdateStatus,
-  BootstrapProgress,
   DownloadJob,
   HistoryEntry,
   MediaInfo,
@@ -38,7 +37,6 @@ const job = (id: string, state: DownloadJob['state']): DownloadJob =>
 beforeEach(() => {
   useAppStore.setState({
     config: null,
-    bootstrap: null,
     view: 'downloads',
     info: null,
     searchResults: [],
@@ -60,12 +58,6 @@ describe('appStore additional setters', () => {
     useAppStore.getState().setConfig(baseConfig())
     useAppStore.getState().patchConfig({ theme: 'light' })
     expect(useAppStore.getState().config?.theme).toBe('light')
-  })
-
-  it('setBootstrap stores progress', () => {
-    const progress = { stage: 'ffmpeg', percent: 30 } as unknown as BootstrapProgress
-    useAppStore.getState().setBootstrap(progress)
-    expect(useAppStore.getState().bootstrap).toBe(progress)
   })
 
   it('setView switches the active view', () => {

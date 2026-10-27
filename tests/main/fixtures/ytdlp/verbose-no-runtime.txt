@@ -1,0 +1,15 @@
+[debug] Encodings: locale cp1252, fs utf-8, pref cp1252, out cp1252 (No ANSI), error cp1252 (No ANSI), screen cp1252 (No ANSI)
+[debug] yt-dlp version stable@2026.10.26 from yt-dlp/yt-dlp [c91f8de0b] (win_exe)
+[debug] Python 3.14.10 (CPython AMD64 64bit) - Windows-11-10.0.26200-SP0 (OpenSSL 3.5.9 29 Sep 2026)
+[debug] exe versions: none
+[debug] Optional libraries: Cryptodome-3.24.1, brotli-1.2.1, certifi-2026.10.23, curl_cffi-0.17.0, mutagen-1.48.1, requests-2.34.2, sqlite3-3.50.4, urllib3-2.8.0, websockets-17.3, yt_dlp_ejs-0.8.0
+[debug] JS runtimes: none
+[debug] Proxy map: {}
+[debug] Request Handlers: urllib, requests, websockets, curl_cffi
+[debug] Plugin directories: none
+[debug] Loaded 1747 extractors
+
+Usage: yt-dlp.exe [OPTIONS] URL [URL...]
+
+yt-dlp.exe: error: You must provide at least one URL.
+Type yt-dlp --help to see a list of all options.

@@ -7,12 +7,13 @@ import type {
   MediaInfo,
   PlaylistEntry
 } from '@shared/types'
+import { baseBinaries } from './helpers/mockApi'
 
 function status(ytInstalled: boolean, ffInstalled: boolean): BinariesStatus {
-  return {
-    ytdlp: { name: 'yt-dlp', installed: ytInstalled, path: null, version: null },
-    ffmpeg: { name: 'ffmpeg', installed: ffInstalled, path: null, version: null }
-  }
+  return baseBinaries({
+    ytdlp: { installed: ytInstalled },
+    ffmpeg: { installed: ffInstalled }
+  })
 }
 
 describe('binariesAreReady', () => {
