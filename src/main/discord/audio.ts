@@ -265,9 +265,16 @@ export function createTrackResource(
 
   const localFile = track.filePath && existsSync(track.filePath) ? track.filePath : null
 
+  /**
+   * Feed an ffmpeg's PCM into the shared output. With `endWhenEmpty` false, a
+   * stdout that ends without producing audio leaves the output open: stdout
+   * `end` fires before the process `close`, and the close handler still has to
+   * decide whether a fallback pipeline takes over.
+   */
   const wireFfmpegOutput = (
     ffmpeg: ChildProcessWithoutNullStreams,
-    isAlive: () => boolean
+    isAlive: () => boolean,
+    endWhenEmpty = true
   ): void => {
     boostProcessPriority(ffmpeg.pid)
     sourceStdout = ffmpeg.stdout
@@ -277,7 +284,7 @@ export function createTrackResource(
       steadyOutput.write(chunk)
     })
     ffmpeg.stdout.on('end', () => {
-      if (isAlive()) steadyOutput.end()
+      if (isAlive() && (bytesSeen > 0 || endWhenEmpty)) steadyOutput.end()
     })
   }
 
@@ -412,19 +419,28 @@ export function createTrackResource(
       const ffmpeg = spawn(ffmpegPath(), buildFfmpegArgs(directUrl, seekSeconds, effects))
       ffmpeg.on('error', (e) => logger.warn('ffmpeg stream failed to start:', e.message))
       watchDuration(ffmpeg)
-      ffmpeg.stderr.on('data', () => {})
+      let ffmpegErr = ''
+      ffmpeg.stderr.on('data', (b: Buffer) => {
+        ffmpegErr = (ffmpegErr + b.toString()).slice(-600)
+      })
       ffmpeg.on('close', (ffmpegCode) => {
-        if (!alive || ffmpegCode === 0) return
+        if (!alive || bytesSeen > 0) return
         // Direct URL rejected (expired signature, IP-locked, 403): retry once
         // through the piped path, which handles auth via the cookie fallback.
-        if (bytesSeen === 0 && !directFellBack) {
+        if (ffmpegCode !== 0 && !directFellBack) {
           directFellBack = true
           alive = false
-          logger.warn('Direct stream produced no audio, using piped seek:', track.title)
+          logger.warn(
+            'Direct stream produced no audio, using piped seek:',
+            track.title,
+            ffmpegErr.trim().split(/\r?\n/).slice(-2).join(' | ')
+          )
           startStream(withCookies)
+          return
         }
+        steadyOutput.end()
       })
-      wireFfmpegOutput(ffmpeg, () => alive)
+      wireFfmpegOutput(ffmpeg, () => alive, false)
       active = {
         destroy: () => {
           alive = false
