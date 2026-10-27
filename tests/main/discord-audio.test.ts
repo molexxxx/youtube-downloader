@@ -58,7 +58,10 @@ import {
   buildResolveUrlArgs,
   buildStreamArgs,
   createSteadyPcmChunker,
+  availabilityDelayMs,
+  ffmpegFailureReason,
   parseFfmpegDuration,
+  parseResolvedStream,
   sanitizeEffects
 } from '@main/discord/audio'
 import { GuildMusicPlayer } from '@main/discord/player'
@@ -94,9 +97,10 @@ describe('buildStreamArgs', () => {
 })
 
 describe('buildResolveUrlArgs', () => {
-  it('asks for the direct media URL instead of piping bytes', () => {
+  it('asks for the direct media URL and when it is served instead of piping bytes', () => {
     const args = buildResolveUrlArgs('https://x', false)
     expect(args[args.indexOf('--print') + 1]).toBe('urls')
+    expect(args[args.lastIndexOf('--print') + 1]).toBe('%(available_at)s')
     expect(args).not.toContain('-g')
     expect(args).not.toContain('-o')
     expect(args).toContain('--js-runtimes')
@@ -107,6 +111,69 @@ describe('buildResolveUrlArgs', () => {
   it('toggles cookies like the streaming args', () => {
     expect(buildResolveUrlArgs('https://x', false)).not.toContain('--cookies')
     expect(buildResolveUrlArgs('https://x', true)).toContain('--cookies')
+  })
+})
+
+describe('parseResolvedStream', () => {
+  it('reads the media URL and when YouTube starts serving it', () => {
+    const out = 'https://rr1.googlevideo.com/videoplayback?c=TVHTML5\r\n1793132378\r\n'
+    expect(parseResolvedStream(out)).toEqual({
+      url: 'https://rr1.googlevideo.com/videoplayback?c=TVHTML5',
+      availableAt: 1793132378
+    })
+  })
+
+  it('treats a missing or NA timestamp as available now', () => {
+    expect(parseResolvedStream('https://cdn/a\n')).toEqual({
+      url: 'https://cdn/a',
+      availableAt: null
+    })
+    expect(parseResolvedStream('https://cdn/a\nNA\n')?.availableAt).toBeNull()
+  })
+
+  it('returns null when no URL was printed', () => {
+    expect(parseResolvedStream('')).toBeNull()
+    expect(parseResolvedStream('1793132378\n')).toBeNull()
+  })
+})
+
+describe('availabilityDelayMs', () => {
+  const now = 1_793_132_374_000
+
+  it('does not wait without a timestamp or once it has passed', () => {
+    expect(availabilityDelayMs(null, now)).toBe(0)
+    expect(availabilityDelayMs(now / 1000 - 5, now)).toBe(0)
+  })
+
+  it('waits until the URL is served, plus a small margin', () => {
+    expect(availabilityDelayMs(now / 1000 + 4, now)).toBe(4250)
+  })
+
+  it('caps the wait so a bad timestamp cannot stall playback', () => {
+    expect(availabilityDelayMs(now / 1000 + 600, now)).toBe(20_000)
+  })
+})
+
+describe('ffmpegFailureReason', () => {
+  it('reports the HTTP status a server refused the input with', () => {
+    const stderr =
+      'fexp=51565116&c=TVHTML5&sig=AE0s2JYw: Server returned 403 Forbidden (access denied)\n' +
+      'Error opening input files: Server returned 403 Forbidden (access denied)\n'
+    expect(ffmpegFailureReason(stderr)).toBe(
+      'Server returned 403 Forbidden (access denied)'
+    )
+  })
+
+  it('falls back to the last line with URLs elided', () => {
+    const stderr =
+      'Input #0\n[in#0] Error opening input https://rr1.googlevideo.com/x?sig=1: Invalid data\n'
+    expect(ffmpegFailureReason(stderr)).toBe(
+      '[in#0] Error opening input <url> Invalid data'
+    )
+  })
+
+  it('is empty for an empty stderr', () => {
+    expect(ffmpegFailureReason('')).toBe('')
   })
 })
 

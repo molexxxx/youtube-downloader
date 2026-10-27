@@ -72,13 +72,23 @@ async function startRestart(): Promise<{ output: PassThrough; direct: FakeChild 
   const resolver = spawned[0]
   expect(resolver.cmd).toBe('/bin/yt-dlp')
   expect(resolver.args).toContain('--print')
-  resolver.child.stdout.end('https://cdn.example/audio\n')
+  resolver.child.stdout.end('https://cdn.example/audio\nNA\n')
   resolver.child.emit('close', 0)
   const direct = spawned[1]
   expect(direct.cmd).toBe('/bin/ffmpeg')
   expect(direct.args).toContain('https://cdn.example/audio')
   return { output, direct: direct.child }
 }
+
+/** Resolves the restart with a URL YouTube only serves `leadMs` from now. */
+function resolveServedLater(leadMs: number): void {
+  const servedAt = (Date.now() + leadMs) / 1000
+  spawned[0].child.stdout.end(`https://cdn.example/audio\n${servedAt}\n`)
+  spawned[0].child.emit('close', 0)
+}
+
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms))
 
 beforeEach(() => {
   spawned.length = 0
@@ -124,5 +134,26 @@ describe('createTrackResource mid-track restart', () => {
 
     expect(output.writableEnded).toBe(true)
     expect(spawned).toHaveLength(2)
+  })
+
+  it('waits until YouTube serves the URL before starting ffmpeg', async () => {
+    createTrackResource(TRACK, 120)
+    resolveServedLater(200)
+    await settle()
+    expect(spawned).toHaveLength(1)
+
+    await sleep(700)
+    expect(spawned).toHaveLength(2)
+    expect(spawned[1].cmd).toBe('/bin/ffmpeg')
+    expect(spawned[1].args).toContain('https://cdn.example/audio')
+  })
+
+  it('never starts ffmpeg when the track is torn down during the wait', async () => {
+    const resource = createTrackResource(TRACK, 120)
+    resolveServedLater(200)
+    resource.destroyStream()
+
+    await sleep(700)
+    expect(spawned).toHaveLength(1)
   })
 })

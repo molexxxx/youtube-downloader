@@ -42,10 +42,11 @@ export function buildStreamArgs(url: string, withCookies: boolean): string[] {
 }
 
 /**
- * yt-dlp args to print the track's direct media URL (`--print urls`) instead of
- * piping the bytes. Used for mid-track restarts (seek, effects changes): ffmpeg can
- * input-seek an HTTP URL with a range request in ~a second, while seeking the
- * piped stream means re-downloading and decoding everything up to the target.
+ * yt-dlp args to print the track's direct media URL (`--print urls`) and the
+ * time it becomes fetchable (`%(available_at)s`) instead of piping the bytes.
+ * Used for mid-track restarts (seek, effects changes): ffmpeg can input-seek an
+ * HTTP URL with a range request in ~a second, while seeking the piped stream
+ * means re-downloading and decoding everything up to the target.
  * Pure function - unit tested.
  */
 export function buildResolveUrlArgs(url: string, withCookies: boolean): string[] {
@@ -58,10 +59,68 @@ export function buildResolveUrlArgs(url: string, withCookies: boolean): string[]
     '-f',
     'bestaudio/best',
     '--print',
-    'urls'
+    'urls',
+    '--print',
+    '%(available_at)s'
   ]
   if (withCookies) args.push(...cookieArgs(getConfig()))
   return args
+}
+
+/** A direct media URL and the Unix time (seconds) YouTube starts serving it, if it set one. */
+export interface ResolvedStream {
+  url: string
+  availableAt: number | null
+}
+
+/**
+ * Parse {@link buildResolveUrlArgs} output: the first HTTP(S) line is the media
+ * URL and a numeric line is its `available_at` (yt-dlp prints `NA` when the
+ * format has none). Null when no URL was printed. Pure function - unit tested.
+ */
+export function parseResolvedStream(stdout: string): ResolvedStream | null {
+  const lines = stdout
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+  const url = lines.find((line) => /^https?:\/\//i.test(line))
+  if (!url) return null
+  const stamp = lines.find((line) => /^\d+(\.\d+)?$/.test(line))
+  return { url, availableAt: stamp ? Number(stamp) : null }
+}
+
+/** Margin past `available_at` before fetching, for clock skew with YouTube. */
+const AVAILABILITY_MARGIN_MS = 250
+/** Longest wait for a URL to become available before trying it anyway. */
+const AVAILABILITY_MAX_WAIT_MS = 20_000
+
+/**
+ * How long to hold a direct URL before fetching it. YouTube issues some media
+ * URLs (the TV client's, among others) a few seconds before it serves them and
+ * answers 403 until `available_at`; yt-dlp waits for it, so the direct restart
+ * must too. Pure function - unit tested.
+ */
+export function availabilityDelayMs(availableAt: number | null, nowMs: number): number {
+  if (availableAt == null) return 0
+  const wait = availableAt * 1000 + AVAILABILITY_MARGIN_MS - nowMs
+  return Math.min(Math.max(0, Math.ceil(wait)), AVAILABILITY_MAX_WAIT_MS)
+}
+
+/**
+ * Why an ffmpeg run failed, from the tail of its stderr: the HTTP status when a
+ * server refused the input, else the last line with URLs elided. Pure function -
+ * unit tested.
+ */
+export function ffmpegFailureReason(stderr: string): string {
+  const statuses = [...stderr.matchAll(/Server returned [^\r\n]+/g)]
+  if (statuses.length > 0) return statuses[statuses.length - 1][0].trim()
+  const lines = stderr
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+  return (lines[lines.length - 1] ?? '')
+    .replace(/\S*https?:\/\/\S*/g, '<url>')
+    .slice(0, 200)
 }
 
 /**
@@ -372,10 +431,12 @@ export function createTrackResource(
 
   /**
    * Mid-track restart (seek, effects change): resolve the direct media URL
-   * with `yt-dlp -g`, then let ffmpeg input-seek it over HTTP - audio in ~1-2s.
-   * The piped path would re-download from zero and decode up to the target,
-   * which stalled playback for 20-40s on far seeks. Falls back to the piped
-   * path whenever resolution fails or the direct stream yields no audio.
+   * with yt-dlp, wait for its `available_at` when YouTube set one, then let
+   * ffmpeg input-seek it over HTTP - audio in ~1-2s, or a few seconds more for
+   * URLs YouTube serves late. The piped path would re-download from zero and
+   * decode up to the target, which stalled playback for 20-40s on far seeks.
+   * Falls back to the piped path whenever resolution fails or the direct
+   * stream yields no audio.
    */
   const startStreamAtPosition = (withCookies: boolean): void => {
     let alive = true
@@ -400,22 +461,7 @@ export function createTrackResource(
       }
     }
 
-    resolver.on('close', (code) => {
-      if (!alive) return
-      const directUrl = out
-        .split(/\r?\n/)
-        .map((line) => line.trim())
-        .find((line) => /^https?:\/\//i.test(line))
-      if (code !== 0 || !directUrl) {
-        logger.warn(
-          'Direct URL resolve failed, using piped seek:',
-          track.title,
-          err.slice(-150).trim()
-        )
-        startStream(withCookies)
-        return
-      }
-
+    const startDirect = (directUrl: string): void => {
       const ffmpeg = spawn(ffmpegPath(), buildFfmpegArgs(directUrl, seekSeconds, effects))
       ffmpeg.on('error', (e) => logger.warn('ffmpeg stream failed to start:', e.message))
       watchDuration(ffmpeg)
@@ -433,7 +479,7 @@ export function createTrackResource(
           logger.warn(
             'Direct stream produced no audio, using piped seek:',
             track.title,
-            ffmpegErr.trim().split(/\r?\n/).slice(-2).join(' | ')
+            `(${ffmpegFailureReason(ffmpegErr) || `ffmpeg exit ${ffmpegCode}`})`
           )
           startStream(withCookies)
           return
@@ -445,6 +491,39 @@ export function createTrackResource(
         destroy: () => {
           alive = false
           ffmpeg.kill('SIGKILL')
+        }
+      }
+    }
+
+    resolver.on('close', (code) => {
+      if (!alive) return
+      const resolved = parseResolvedStream(out)
+      if (code !== 0 || !resolved) {
+        logger.warn(
+          'Direct URL resolve failed, using piped seek:',
+          track.title,
+          err.slice(-150).trim()
+        )
+        startStream(withCookies)
+        return
+      }
+
+      const delayMs = availabilityDelayMs(resolved.availableAt, Date.now())
+      if (delayMs === 0) {
+        startDirect(resolved.url)
+        return
+      }
+      logger.debug(
+        `Direct stream served in ${(delayMs / 1000).toFixed(1)}s, waiting:`,
+        track.title
+      )
+      const timer = setTimeout(() => {
+        if (alive) startDirect(resolved.url)
+      }, delayMs)
+      active = {
+        destroy: () => {
+          alive = false
+          clearTimeout(timer)
         }
       }
     })
