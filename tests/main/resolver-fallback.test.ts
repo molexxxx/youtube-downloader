@@ -36,7 +36,12 @@ vi.mock('@main/ytdlp/cookies', () => ({
 }))
 vi.mock('youtube-dl-exec', () => ({ create: () => engineMock }))
 
-import { getInfo, getPlaylistPage, isPlaylistUrl } from '@main/ytdlp/resolver'
+import {
+  channelVideosUrl,
+  getInfo,
+  getPlaylistPage,
+  isPlaylistUrl
+} from '@main/ytdlp/resolver'
 
 beforeEach(() => {
   engineMock.mockReset()
@@ -117,6 +122,58 @@ describe('isPlaylistUrl', () => {
 
   it('returns false for an unparseable string', () => {
     expect(isPlaylistUrl('not a url')).toBe(false)
+  })
+
+  it('treats YouTube channel pages and their tabs as collections', () => {
+    for (const url of [
+      'https://www.youtube.com/@BlenderStudio',
+      'https://www.youtube.com/@BlenderStudio/videos',
+      'https://youtube.com/channel/UCz75RVbH8q2jdBJ4SnwuZZQ',
+      'https://m.youtube.com/c/BlenderFoundation/',
+      'https://www.youtube.com/user/BlenderFoundation/shorts'
+    ]) {
+      expect(isPlaylistUrl(url), url).toBe(true)
+    }
+  })
+
+  it('does not treat channel-like paths on other sites as collections', () => {
+    expect(isPlaylistUrl('https://example.com/@someone')).toBe(false)
+  })
+})
+
+describe('channelVideosUrl', () => {
+  it('points a bare channel link at its Videos tab', () => {
+    expect(channelVideosUrl('https://www.youtube.com/@BlenderStudio')).toBe(
+      'https://www.youtube.com/@BlenderStudio/videos'
+    )
+    expect(
+      channelVideosUrl('https://youtube.com/channel/UCz75RVbH8q2jdBJ4SnwuZZQ/')
+    ).toBe('https://youtube.com/channel/UCz75RVbH8q2jdBJ4SnwuZZQ/videos')
+  })
+
+  it('leaves channel tabs, videos, playlists, and other sites unchanged', () => {
+    for (const url of [
+      'https://www.youtube.com/@BlenderStudio/shorts',
+      'https://www.youtube.com/watch?v=aqz-KE-bpKQ',
+      'https://www.youtube.com/playlist?list=PLUo7r5',
+      'https://example.com/@someone',
+      'not a url'
+    ]) {
+      expect(channelVideosUrl(url)).toBe(url)
+    }
+  })
+
+  it('resolves a bare channel link through its Videos tab', async () => {
+    engineMock.mockResolvedValueOnce({
+      _type: 'playlist',
+      title: 'Blender Studio - Videos',
+      entries: []
+    })
+    await getInfo('https://www.youtube.com/@BlenderStudio')
+    expect(engineMock.mock.calls.at(-1)?.[0]).toBe(
+      'https://www.youtube.com/@BlenderStudio/videos'
+    )
+    expect(engineMock.mock.calls.at(-1)?.[1]).toMatchObject({ flatPlaylist: true })
   })
 })
 

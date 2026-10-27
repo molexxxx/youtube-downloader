@@ -147,6 +147,13 @@ export function mapInfo(raw: RawInfo): MediaInfo {
   }
 }
 
+/** A YouTube channel page: `/@handle`, `/channel/ID`, `/c/name`, or `/user/name`, with an optional tab. */
+const CHANNEL_PATH = /^\/(@[^/]+|channel\/[^/]+|c\/[^/]+|user\/[^/]+)(\/[^/]+)?\/?$/i
+
+function isYoutubeHost(hostname: string): boolean {
+  return /(^|\.)youtube\.com$/i.test(hostname)
+}
+
 /**
  * Whether a URL should be treated as a playlist rather than a single video.
  *
@@ -165,11 +172,32 @@ export function isPlaylistUrl(url: string): boolean {
   // youtu.be/<id> and watch?v=<id> are single videos regardless of any list=.
   if (parsed.searchParams.has('v')) return false
   if (/(^|\.)youtu\.be$/i.test(parsed.hostname)) return false
+  if (isYoutubeHost(parsed.hostname) && CHANNEL_PATH.test(parsed.pathname)) return true
   return parsed.pathname.includes('/playlist') || parsed.searchParams.has('list')
 }
 
+/**
+ * Point a bare YouTube channel link at its Videos tab. yt-dlp expands a channel
+ * page into its tabs (Videos, Live, Shorts) as nested playlists instead of
+ * videos, so the channel itself resolves to its uploads. Channel tabs and every
+ * other URL pass through unchanged.
+ */
+export function channelVideosUrl(url: string): string {
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    return url
+  }
+  const match = isYoutubeHost(parsed.hostname) ? CHANNEL_PATH.exec(parsed.pathname) : null
+  if (!match || match[2]) return url
+  parsed.pathname = `/${match[1]}/videos`
+  return parsed.toString()
+}
+
 /** Probe a URL for metadata and available formats. */
-export async function getInfo(url: string, forcePlaylist = false): Promise<MediaInfo> {
+export async function getInfo(link: string, forcePlaylist = false): Promise<MediaInfo> {
+  const url = channelVideosUrl(link)
   // `forcePlaylist` is set when the user explicitly chose "entire playlist" for a
   // watch?v=...&list=... link. Resolving the original watch URL with playlist
   // mode works for both real playlists and Mix/radio lists, whereas a bare
@@ -227,10 +255,11 @@ export async function getInfo(url: string, forcePlaylist = false): Promise<Media
  * yt-dlp's `--playlist-items START:END` selector.
  */
 export async function getPlaylistPage(
-  url: string,
+  link: string,
   start: number,
   end: number
 ): Promise<PlaylistEntry[]> {
+  const url = channelVideosUrl(link)
   const probe = (includeCookies: boolean): Promise<RawInfo> =>
     ytdlp()(url, {
       ...baseFlags(includeCookies),
