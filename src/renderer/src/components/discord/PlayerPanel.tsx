@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
+  Bot,
   Loader2,
   Music,
   Pause,
@@ -9,6 +10,7 @@ import {
   Shuffle,
   SkipForward,
   Square,
+  User,
   Volume1,
   Volume2,
   VolumeX
@@ -31,9 +33,9 @@ const LOOP_LABEL: Record<LoopMode, string> = {
 }
 
 /**
- * Now-playing hero: artwork, live seekable timeline, transport controls, and a
- * compact volume cluster. Volume changes apply instantly to the current track
- * and are remembered as this server's default.
+ * Now-playing hero, which owns the stage: 16:9 artwork beside a display-size
+ * title, a full-width seek line, the blue play key with the transport, and
+ * volume. Volume changes apply instantly and are remembered per server.
  */
 export function PlayerPanel(): React.JSX.Element | null {
   const guildId = useAppStore((s) => s.activeGuildId)
@@ -77,6 +79,7 @@ export function PlayerPanel(): React.JSX.Element | null {
   const duration = np?.duration ?? null
   const shown = scrub ?? Math.min(position, duration ?? position)
   const progressPct = duration ? Math.min(100, (shown / duration) * 100) : 0
+  const title = np?.title ?? 'Nothing playing yet'
 
   const control = (action: PlayerControl): void => {
     void window.api.discord.control(guildId, action)
@@ -96,39 +99,65 @@ export function PlayerPanel(): React.JSX.Element | null {
 
   return (
     <section
-      className={`shrink-0 rounded-2xl border p-4 transition-colors ${
-        np
-          ? 'border-indigo-500/25 bg-indigo-500/[0.04]'
-          : 'border-white/10 bg-white/[0.02]'
-      }`}
+      aria-label="Now playing"
+      className="flex min-h-0 flex-1 flex-col justify-center"
     >
-      <div className="flex items-center gap-4">
-        <div className="relative h-16 w-28 shrink-0 overflow-hidden rounded-lg bg-white/5">
+      <div className="grid grid-cols-[minmax(240px,0.56fr)_minmax(0,0.44fr)] items-end gap-8">
+        <div className="relative aspect-video overflow-hidden rounded-sm bg-[var(--t-rule)]">
           {np?.thumbnail ? (
             <img src={np.thumbnail} alt="" className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-white/25">
-              <Music size={22} />
+            <div className="flex h-full w-full items-center justify-center text-[var(--t-faint)]">
+              <Music size={40} />
             </div>
           )}
+          {np && (
+            <span
+              className="absolute inset-x-0 bottom-0 h-1 bg-[var(--w-blue)] transition-[width] duration-500 ease-linear"
+              style={{ width: `${progressPct}%` }}
+            />
+          )}
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-white/95">
-            {np?.title ?? 'Nothing playing yet'}
-          </p>
-          <p className="truncate text-xs text-white/55">
-            {np
-              ? [np.uploader, `added by ${np.requestedBy.username}`]
-                  .filter(Boolean)
-                  .join(' · ')
-              : 'Queue a track below, or right from your Downloads.'}
-          </p>
+
+        <div className="min-w-0 pb-1">
+          <h2
+            className={`display line-clamp-3 text-[26px] 2xl:text-[32px] ${
+              np ? '' : 'text-[var(--t-faint)]'
+            }`}
+            title={np?.title}
+          >
+            {title}
+          </h2>
+          {np ? (
+            <p className="mt-4 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[15px] text-[var(--t-dim)]">
+              {np.uploader && (
+                <>
+                  <span className="min-w-0 truncate font-semibold text-[var(--t-fg)]">
+                    {np.uploader}
+                  </span>
+                  <span aria-hidden="true">·</span>
+                </>
+              )}
+              <span className="flex shrink-0 items-center gap-1.5">
+                {np.requestedBy.source === 'discord' ? (
+                  <User size={14} />
+                ) : (
+                  <Bot size={14} />
+                )}
+                added by {np.requestedBy.username}
+              </span>
+              <StatusNote status={status} />
+            </p>
+          ) : (
+            <p className="mt-4 text-[15px] text-[var(--t-dim)]">
+              Search or paste a link above, or send tracks over from your Downloads.
+            </p>
+          )}
         </div>
-        <StatusChip status={status} />
       </div>
 
-      <div className="mt-3.5 flex items-center gap-2.5">
-        <span className="w-10 shrink-0 text-right text-[11px] tabular-nums text-white/45">
+      <div className="mt-8 flex items-center gap-4">
+        <span className="w-11 shrink-0 text-[13px] tabular-nums text-[var(--t-dim)]">
           {formatClock(shown)}
         </span>
         <input
@@ -143,61 +172,65 @@ export function PlayerPanel(): React.JSX.Element | null {
           onKeyDown={(e) => e.key === 'Enter' && commitSeek()}
           onBlur={commitSeek}
           aria-label="Seek"
-          className="slider slider-seek flex-1 disabled:cursor-default"
+          className="line-range flex-1"
           style={{
-            background: `linear-gradient(90deg, rgba(129,140,248,0.9) ${progressPct}%, rgba(255,255,255,0.10) ${progressPct}%)`
+            background: `linear-gradient(90deg, var(--t-accent) ${progressPct}%, var(--t-rule-strong) ${progressPct}%)`
           }}
         />
-        <span className="w-10 shrink-0 text-[11px] tabular-nums text-white/45">
+        <span className="w-11 shrink-0 text-right text-[13px] tabular-nums text-[var(--t-dim)]">
           {duration ? formatClock(duration) : '--:--'}
         </span>
       </div>
 
-      <div className="mt-2.5 flex items-center">
-        <div className="flex flex-1 items-center justify-center gap-1">
-          <IconButton
-            onClick={() => control(playing ? 'pause' : 'resume')}
-            disabled={!np}
-            label={playing ? 'Pause' : 'Resume'}
-            prominent
-          >
-            {playing ? <Pause size={18} /> : <Play size={18} />}
-          </IconButton>
-          <IconButton
-            onClick={() => control('skip')}
-            disabled={!np}
-            label="Skip to next track"
-          >
-            <SkipForward size={17} />
-          </IconButton>
-          <IconButton
-            onClick={() => control('stop')}
-            disabled={!np && !player?.queue.length}
-            label="Stop and clear the queue"
-          >
-            <Square size={15} />
-          </IconButton>
-          <IconButton
-            onClick={() => control('shuffle')}
-            disabled={!player?.queue.length}
-            label="Shuffle the queue"
-          >
-            <Shuffle size={15} />
-          </IconButton>
-          <IconButton
-            onClick={() => void window.api.discord.setLoop(guildId, NEXT_LOOP[loop])}
-            active={loop !== 'off'}
-            label={LOOP_LABEL[loop]}
-          >
-            {loop === 'track' ? <Repeat1 size={15} /> : <Repeat size={15} />}
-          </IconButton>
-          <EffectsPopover />
-        </div>
+      <div className="mt-5 flex items-center gap-2">
+        <button
+          onClick={() => control(playing ? 'pause' : 'resume')}
+          disabled={!np}
+          title={playing ? 'Pause' : 'Resume'}
+          aria-label={playing ? 'Pause' : 'Resume'}
+          className="key key-blue mr-2 h-14 w-14"
+        >
+          {playing ? (
+            <Pause size={20} fill="currentColor" />
+          ) : (
+            <Play size={20} fill="currentColor" className="ml-0.5" />
+          )}
+        </button>
+        <IconButton
+          onClick={() => control('skip')}
+          disabled={!np}
+          label="Skip to next track"
+        >
+          <SkipForward size={17} />
+        </IconButton>
+        <IconButton
+          onClick={() => control('stop')}
+          disabled={!np && !player?.queue.length}
+          label="Stop and clear the queue"
+        >
+          <Square size={15} />
+        </IconButton>
+        <IconButton
+          onClick={() => control('shuffle')}
+          disabled={!player?.queue.length}
+          label="Shuffle the queue"
+        >
+          <Shuffle size={16} />
+        </IconButton>
+        <IconButton
+          onClick={() => void window.api.discord.setLoop(guildId, NEXT_LOOP[loop])}
+          active={loop !== 'off'}
+          label={LOOP_LABEL[loop]}
+        >
+          {loop === 'track' ? <Repeat1 size={16} /> : <Repeat size={16} />}
+        </IconButton>
+        <EffectsPopover />
+
         <div
-          className="flex shrink-0 items-center gap-2"
+          className="ml-auto flex shrink-0 items-center gap-3"
           title="Playback volume (remembered for this server)"
         >
-          <VolumeIcon size={15} className="text-white/40" />
+          <VolumeIcon size={17} className="text-[var(--t-dim)]" />
           <input
             type="range"
             min={0}
@@ -207,12 +240,12 @@ export function PlayerPanel(): React.JSX.Element | null {
             onPointerUp={() => commitVolume(vol)}
             onKeyUp={() => commitVolume(vol)}
             aria-label="Volume"
-            className="slider w-24"
+            className="line-range line-range-thin w-32"
             style={{
-              background: `linear-gradient(90deg, rgba(129,140,248,0.9) ${vol}%, rgba(255,255,255,0.10) ${vol}%)`
+              background: `linear-gradient(90deg, var(--t-accent) ${vol}%, var(--t-rule-strong) ${vol}%)`
             }}
           />
-          <span className="w-7 shrink-0 text-right text-[11px] tabular-nums text-white/45">
+          <span className="w-9 shrink-0 text-right text-[13px] tabular-nums text-[var(--t-dim)]">
             {vol}%
           </span>
         </div>
@@ -221,37 +254,31 @@ export function PlayerPanel(): React.JSX.Element | null {
   )
 }
 
-function StatusChip({ status }: { status: PlayerStatus }): React.JSX.Element {
-  if (status === 'playing') {
-    return (
-      <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-300">
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-        Playing
-      </span>
-    )
-  }
+/** Trailing state in the meta line, shown only when playback is not simply running. */
+function StatusNote({ status }: { status: PlayerStatus }): React.JSX.Element | null {
   if (status === 'paused') {
     return (
-      <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 text-[11px] font-medium text-amber-300">
-        <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-        Paused
-      </span>
+      <>
+        <span aria-hidden="true">·</span>
+        <span className="flex shrink-0 items-center gap-1.5 font-semibold text-[var(--t-fg)]">
+          <Pause size={12} fill="currentColor" />
+          Paused
+        </span>
+      </>
     )
   }
   if (status === 'buffering') {
     return (
-      <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-indigo-500/10 px-2.5 py-1 text-[11px] font-medium text-indigo-300">
-        <Loader2 size={11} className="animate-spin" />
-        Buffering
-      </span>
+      <>
+        <span aria-hidden="true">·</span>
+        <span className="flex shrink-0 items-center gap-1.5">
+          <Loader2 size={13} className="animate-spin text-[var(--t-blue)]" />
+          Buffering
+        </span>
+      </>
     )
   }
-  return (
-    <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/5 px-2.5 py-1 text-[11px] font-medium text-white/40">
-      <span className="h-1.5 w-1.5 rounded-full bg-white/30" />
-      Idle
-    </span>
-  )
+  return null
 }
 
 function IconButton({
@@ -259,15 +286,13 @@ function IconButton({
   children,
   active,
   disabled,
-  label,
-  prominent
+  label
 }: {
   onClick: () => void
   children: React.ReactNode
   active?: boolean
   disabled?: boolean
   label: string
-  prominent?: boolean
 }): React.JSX.Element {
   return (
     <button
@@ -275,12 +300,9 @@ function IconButton({
       disabled={disabled}
       title={label}
       aria-label={label}
-      className={`flex items-center justify-center rounded-full transition-all disabled:cursor-not-allowed disabled:opacity-30 ${
-        prominent
-          ? 'h-10 w-10 bg-indigo-500 text-white shadow-lg shadow-indigo-500/25 hover:bg-indigo-400 active:scale-95'
-          : active
-            ? 'h-9 w-9 bg-indigo-500/20 text-indigo-300'
-            : 'h-9 w-9 text-white/65 hover:bg-white/10 hover:text-white'
+      aria-pressed={active}
+      className={`key key-line h-11 w-11 ${
+        active ? 'border-[var(--w-blue)] text-[var(--t-blue)]' : ''
       }`}
     >
       {children}

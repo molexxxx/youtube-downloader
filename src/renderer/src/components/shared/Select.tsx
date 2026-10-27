@@ -1,4 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Check, ChevronDown } from 'lucide-react'
 
 export interface SelectOption {
@@ -11,10 +12,24 @@ export interface SelectOption {
 const MAX_MENU_HEIGHT = 256
 /** Breathing room kept between the menu and the viewport edge. */
 const VIEWPORT_MARGIN = 8
+/** Gap between the trigger and the menu. */
+const MENU_GAP = 4
+
+/** Viewport-fixed geometry for the open menu, measured from the trigger. */
+interface MenuPlacement {
+  left: number
+  width: number
+  maxHeight: number
+  top?: number
+  bottom?: number
+}
 
 /**
- * Custom dropdown that replaces the native <select>. Styled to match the app,
- * closes on outside click or Escape, and supports basic keyboard navigation.
+ * Custom dropdown that replaces the native <select>: a square ruled trigger
+ * whose border takes the section color while open, over a raised panel menu.
+ * Closes on outside click or Escape and supports basic keyboard navigation.
+ * The menu renders in a portal at a fixed viewport position, so scrolling or
+ * clipped containers (cards, panels with their own scroll) never cut it off.
  */
 export function Select({
   value,
@@ -22,22 +37,23 @@ export function Select({
   options,
   placeholder = 'Select…',
   className = '',
-  accent = 'red'
+  accent = 'red',
+  ariaLabel
 }: {
   value: string
   onChange: (value: string) => void
   options: SelectOption[]
   placeholder?: string
   className?: string
+  /** Color of the selected option; the menu renders in a portal outside the section. */
   accent?: 'red' | 'indigo'
+  ariaLabel?: string
 }): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(0)
-  const [placement, setPlacement] = useState<{ dir: 'down' | 'up'; maxHeight: number }>({
-    dir: 'down',
-    maxHeight: MAX_MENU_HEIGHT
-  })
+  const [placement, setPlacement] = useState<MenuPlacement | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
+  const menuRef = useRef<HTMLUListElement>(null)
   const listId = useId()
 
   const selected = options.find((o) => o.value === value)
@@ -45,7 +61,9 @@ export function Select({
   useEffect(() => {
     if (!open) return
     function onPointer(e: MouseEvent): void {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false)
+      const target = e.target as Node
+      if (rootRef.current?.contains(target) || menuRef.current?.contains(target)) return
+      setOpen(false)
     }
     document.addEventListener('mousedown', onPointer)
     return () => document.removeEventListener('mousedown', onPointer)
@@ -55,7 +73,8 @@ export function Select({
    * Decide whether the menu opens downward or upward based on the space left
    * around the trigger. Opens up only when the space below is too tight AND
    * there is more room above; the menu height is then clamped to whatever the
-   * chosen side can fit so it never spills past the window edge.
+   * chosen side can fit so it never spills past the window edge. Re-measured
+   * on scroll and resize so the fixed menu stays attached to its trigger.
    */
   useLayoutEffect(() => {
     if (!open) return
@@ -63,13 +82,17 @@ export function Select({
       const el = rootRef.current
       if (!el) return
       const rect = el.getBoundingClientRect()
-      const spaceBelow = window.innerHeight - rect.bottom - VIEWPORT_MARGIN
-      const spaceAbove = rect.top - VIEWPORT_MARGIN
+      const spaceBelow = window.innerHeight - rect.bottom - VIEWPORT_MARGIN - MENU_GAP
+      const spaceAbove = rect.top - VIEWPORT_MARGIN - MENU_GAP
       const openUp = spaceBelow < MAX_MENU_HEIGHT && spaceAbove > spaceBelow
       const available = openUp ? spaceAbove : spaceBelow
       setPlacement({
-        dir: openUp ? 'up' : 'down',
-        maxHeight: Math.max(96, Math.min(MAX_MENU_HEIGHT, available))
+        left: rect.left,
+        width: rect.width,
+        maxHeight: Math.max(96, Math.min(MAX_MENU_HEIGHT, available)),
+        ...(openUp
+          ? { bottom: window.innerHeight - rect.top + MENU_GAP }
+          : { top: rect.bottom + MENU_GAP })
       })
     }
     reposition()
@@ -121,54 +144,69 @@ export function Select({
     <div ref={rootRef} className={`relative ${className}`}>
       <button
         type="button"
+        aria-label={ariaLabel}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listId}
         onClick={() => setOpen((o) => !o)}
         onKeyDown={onKeyDown}
-        className={`field ${accent === 'indigo' ? 'field-indigo' : 'field-red'} flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm outline-none`}
+        className={`flex w-full items-center justify-between gap-2 rounded-sm border bg-transparent px-3 py-2.5 text-left text-sm text-[var(--t-fg)] transition-colors ${
+          open
+            ? 'border-[var(--t-accent)]'
+            : 'border-[var(--t-rule-strong)] hover:border-[var(--t-dim)]'
+        }`}
       >
-        <span className={`truncate ${selected ? '' : 'text-white/40'}`}>
+        <span className={`truncate ${selected ? '' : 'text-[var(--t-faint)]'}`}>
           {selected ? selected.label : placeholder}
         </span>
         <ChevronDown
           size={15}
-          className={`shrink-0 text-white/40 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          className={`shrink-0 text-[var(--t-dim)] transition-transform duration-200 ${
+            open ? 'rotate-180' : ''
+          }`}
         />
       </button>
 
-      {open && (
-        <ul
-          id={listId}
-          role="listbox"
-          style={{ maxHeight: placement.maxHeight }}
-          className={`absolute z-50 w-full overflow-auto rounded-lg border border-white/10 bg-[#161a22] p-1 shadow-xl shadow-black/40 ${
-            placement.dir === 'up' ? 'bottom-full mb-1' : 'top-full mt-1'
-          }`}
-        >
-          {options.map((o, i) => {
-            const isSelected = o.value === value
-            return (
-              <li
-                key={o.value}
-                role="option"
-                aria-selected={isSelected}
-                onMouseEnter={() => setActive(i)}
-                onClick={() => commit(i)}
-                className={`flex cursor-pointer items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-sm ${
-                  i === active ? 'bg-white/10' : ''
-                } ${isSelected ? (accent === 'indigo' ? 'text-indigo-300' : 'text-red-300') : 'text-white/80'}`}
-              >
-                <span className="min-w-0 flex-1 truncate">
-                  {o.label}
-                  {o.hint && <span className="ml-2 text-xs text-white/35">{o.hint}</span>}
-                </span>
-                {isSelected && <Check size={14} className="shrink-0" />}
-              </li>
-            )
-          })}
-        </ul>
-      )}
+      {open &&
+        placement &&
+        createPortal(
+          <ul
+            ref={menuRef}
+            id={listId}
+            role="listbox"
+            style={{ position: 'fixed', ...placement }}
+            className="sheet scroll-ink z-[60] overflow-auto rounded-sm border border-[var(--t-rule-strong)] py-1 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.55)]"
+          >
+            {options.map((o, i) => {
+              const isSelected = o.value === value
+              const selectedTone =
+                accent === 'indigo' ? 'text-[var(--t-blue)]' : 'text-[var(--t-red)]'
+              return (
+                <li
+                  key={o.value}
+                  role="option"
+                  aria-selected={isSelected}
+                  onMouseEnter={() => setActive(i)}
+                  onClick={() => commit(i)}
+                  className={`flex cursor-pointer items-center justify-between gap-2 py-2 pl-3 pr-[2px] text-sm ${
+                    i === active ? 'bg-[var(--t-hover)]' : ''
+                  } ${isSelected ? `font-semibold ${selectedTone}` : 'text-[var(--t-fg)]'}`}
+                >
+                  <span className="min-w-0 flex-1 truncate">
+                    {o.label}
+                    {o.hint && (
+                      <span className="ml-2 text-xs font-normal text-[var(--t-dim)]">
+                        {o.hint}
+                      </span>
+                    )}
+                  </span>
+                  {isSelected && <Check size={14} className="shrink-0" />}
+                </li>
+              )
+            })}
+          </ul>,
+          document.body
+        )}
     </div>
   )
 }

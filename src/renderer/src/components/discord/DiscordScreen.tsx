@@ -1,16 +1,6 @@
-import { useEffect, useState } from 'react'
-import {
-  Activity,
-  Bot,
-  Link2,
-  ListMusic,
-  LogOut,
-  Settings2,
-  Slash,
-  Volume2
-} from 'lucide-react'
+import { Fragment, useEffect, useState } from 'react'
+import { Bot, Link2, ListMusic, LogOut, Slash, Volume2 } from 'lucide-react'
 import { useAppStore } from '../../stores/appStore'
-import { DiscordAmbient } from './DiscordAmbient'
 import { DiscordSetup } from './DiscordSetup'
 import { ServerSwitcher } from './ServerSwitcher'
 import { VoiceChannelPicker } from './VoiceChannelPicker'
@@ -20,10 +10,12 @@ import { SearchPanel } from './SearchPanel'
 import { PermissionsPanel } from './PermissionsPanel'
 import { AuditLogPanel } from './AuditLogPanel'
 
+type SheetTab = 'queue' | 'activity' | 'settings'
+
 /**
- * Discord dashboard. Layout mirrors Discord's own mental model: servers on a
- * left rail, everything about what's playing in the center, and where/how it
- * plays (voice channels, settings, activity) in the right sidebar.
+ * Discord dashboard: servers on the floor rail, what is playing on the stage
+ * (search, the now-playing hero, voice channels), and what is lined up on the
+ * raised side panel, with activity and server settings as tabs on its tape strip.
  */
 export function DiscordScreen(): React.JSX.Element {
   const status = useAppStore((s) => s.discordStatus)
@@ -46,21 +38,18 @@ export function DiscordScreen(): React.JSX.Element {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3">
-      <DashboardHeader />
+    <div className="focus-ring-indigo signal-blue flex min-h-0 flex-1 overflow-hidden">
+      <ServerSwitcher />
       {activeGuildId ? (
-        <div className="flex min-h-0 flex-1 gap-3.5">
-          <ServerSwitcher />
-          <div className="flex min-h-0 flex-1 flex-col gap-3">
+        <>
+          <section className="stage flex min-h-0 min-w-0 flex-1 flex-col gap-7 px-10 pb-7 pt-6">
+            <BotBar />
             <SearchPanel />
             <PlayerPanel />
-            <QueueList />
-          </div>
-          <aside className="flex w-80 shrink-0 flex-col gap-3 overflow-hidden">
             <VoiceChannelPicker />
-            <SidebarTabs />
-          </aside>
-        </div>
+          </section>
+          <SheetTabs />
+        </>
       ) : (
         <NoServerState inviteUrl={status.inviteUrl ?? null} />
       )}
@@ -68,8 +57,9 @@ export function DiscordScreen(): React.JSX.Element {
   )
 }
 
-function DashboardHeader(): React.JSX.Element {
+function BotBar(): React.JSX.Element {
   const status = useAppStore((s) => s.discordStatus)
+  const serverCount = useAppStore((s) => s.discordGuilds.length)
   const setDiscordStatus = useAppStore((s) => s.setDiscordStatus)
 
   async function disconnect(): Promise<void> {
@@ -77,28 +67,24 @@ function DashboardHeader(): React.JSX.Element {
   }
 
   return (
-    <div className="flex shrink-0 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-2.5">
+    <div className="flex shrink-0 items-center gap-3 text-sm">
       {status?.botUser?.avatar ? (
-        <img src={status.botUser.avatar} alt="" className="h-8 w-8 rounded-full" />
+        <img src={status.botUser.avatar} alt="" className="h-7 w-7 rounded-sm" />
       ) : (
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-500/15 text-indigo-300">
-          <Bot size={16} />
-        </div>
+        <span className="flex h-7 w-7 items-center justify-center rounded-sm bg-[var(--w-blue)] text-[#fff]">
+          <Bot size={15} />
+        </span>
       )}
-      <div className="min-w-0">
-        <p className="truncate text-sm font-medium text-white/90">
-          {status?.botUser?.username ?? 'Connected'}
-        </p>
-        <p className="flex items-center gap-1.5 text-xs text-emerald-400">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-          Online
-        </p>
-      </div>
+      <span className="font-semibold">{status?.botUser?.username ?? 'Connected'}</span>
+      <span className="flex items-center gap-1.5 text-[var(--t-dim)]">
+        <span className="h-2 w-2 rounded-full bg-[var(--w-live)]" />
+        Online · in {serverCount} {serverCount === 1 ? 'server' : 'servers'}
+      </span>
       <div className="ml-auto flex items-center gap-2">
         {status?.inviteUrl && (
           <button
             onClick={() => void window.api.system.openExternal(status.inviteUrl!)}
-            className="btn btn-indigo px-3 py-1.5 text-xs"
+            className="key key-line h-8 px-3 text-[13px]"
           >
             <Link2 size={14} />
             Invite to a server
@@ -106,7 +92,7 @@ function DashboardHeader(): React.JSX.Element {
         )}
         <button
           onClick={() => void disconnect()}
-          className="flex items-center gap-2 rounded-xl border border-white/10 px-3 py-1.5 text-xs text-white/60 transition-colors hover:border-red-500/40 hover:text-red-300"
+          className="key key-line h-8 px-3 text-[13px] hover:text-[var(--t-red)]"
         >
           <LogOut size={14} />
           Disconnect
@@ -116,120 +102,113 @@ function DashboardHeader(): React.JSX.Element {
   )
 }
 
-function SidebarTabs(): React.JSX.Element {
-  const [tab, setTab] = useState<'settings' | 'activity'>('settings')
+function SheetTabs(): React.JSX.Element {
+  const [tab, setTab] = useState<SheetTab>('queue')
+  const queued = useAppStore((s) => {
+    const player = s.activeGuildId ? s.playerStates[s.activeGuildId] : undefined
+    return player?.queue.length ?? 0
+  })
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02]">
-      <div className="flex shrink-0 border-b border-white/5">
-        <SidebarTab
-          active={tab === 'settings'}
-          onClick={() => setTab('settings')}
-          icon={<Settings2 size={13} />}
-          label="Settings"
-        />
-        <SidebarTab
-          active={tab === 'activity'}
-          onClick={() => setTab('activity')}
-          icon={<Activity size={13} />}
-          label="Activity"
-        />
+    <aside
+      aria-label="Queue and server"
+      className="sheet flex w-[440px] shrink-0 flex-col border-l border-[var(--t-rule)]"
+    >
+      <div
+        role="tablist"
+        aria-label="Sheet"
+        className="tape mx-6 mt-6 flex shrink-0 gap-1 rounded-sm p-1"
+      >
+        <SheetTabButton active={tab === 'queue'} onClick={() => setTab('queue')}>
+          Up next
+          {queued > 0 && (
+            <span className="font-normal tabular-nums text-[var(--t-dim)]">{queued}</span>
+          )}
+        </SheetTabButton>
+        <SheetTabButton active={tab === 'activity'} onClick={() => setTab('activity')}>
+          Activity
+        </SheetTabButton>
+        <SheetTabButton active={tab === 'settings'} onClick={() => setTab('settings')}>
+          Settings
+        </SheetTabButton>
       </div>
-      {tab === 'settings' ? <PermissionsPanel /> : <AuditLogPanel />}
-    </section>
+      {tab === 'queue' ? (
+        <QueueList />
+      ) : tab === 'activity' ? (
+        <AuditLogPanel />
+      ) : (
+        <PermissionsPanel />
+      )}
+    </aside>
   )
 }
 
-function SidebarTab({
+function SheetTabButton({
   active,
   onClick,
-  icon,
-  label
+  children
 }: {
   active: boolean
   onClick: () => void
-  icon: React.ReactNode
-  label: string
+  children: React.ReactNode
 }): React.JSX.Element {
   return (
     <button
       onClick={onClick}
       role="tab"
       aria-selected={active}
-      className={`flex flex-1 items-center justify-center gap-1.5 border-b-2 px-3 py-2 text-xs font-medium transition-colors ${
+      className={`flex flex-1 items-center justify-center gap-1.5 rounded-sm py-2 text-[13px] font-semibold transition-colors ${
         active
-          ? 'border-indigo-400 text-indigo-200'
-          : 'border-transparent text-white/40 hover:text-white/70'
+          ? 'bg-[var(--t-accent-soft)] text-[var(--t-accent-text)] shadow-[inset_0_0_0_1px_var(--t-accent)]'
+          : 'text-[var(--t-dim)] hover:text-[var(--t-fg)]'
       }`}
     >
-      {icon}
-      {label}
+      {children}
     </button>
   )
 }
 
-const NO_SERVER_HINTS = [
-  {
-    icon: Link2,
-    label: 'Invite the bot',
-    hint: 'one click, free, joins with your account'
-  },
-  {
-    icon: Volume2,
-    label: 'Pick a voice channel',
-    hint: 'choose where the music plays'
-  },
-  {
-    icon: ListMusic,
-    label: 'Queue anything',
-    hint: 'search, links, playlists, your downloads'
-  },
-  {
-    icon: Slash,
-    label: 'Control from Discord',
-    hint: '/play, /skip, /queue and more'
-  }
+const AFTER_INVITE = [
+  { icon: Volume2, label: 'Pick a voice channel' },
+  { icon: ListMusic, label: 'Queue anything' },
+  { icon: Slash, label: 'Control it from Discord with /play, /skip and /queue' }
 ] as const
 
 function NoServerState({ inviteUrl }: { inviteUrl: string | null }): React.JSX.Element {
   return (
-    <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-2xl border border-dashed border-white/10 bg-white/[0.015] p-8">
-      <DiscordAmbient />
-      <div className="relative w-full max-w-md text-center">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-500/15 text-indigo-300 ring-1 ring-indigo-500/30">
-          <Bot size={28} />
-        </div>
-        <h3 className="mt-4 text-lg font-semibold text-white/90">Your bot is online</h3>
-        <p className="mx-auto mt-1.5 max-w-xs text-sm text-white/45">
+    <section className="stage flex min-w-0 flex-1 flex-col justify-center px-14 py-10">
+      <div className="max-w-3xl">
+        <h3 className="display text-[30px]">Your bot is online</h3>
+        <p className="mt-4 max-w-md text-[15px] text-[var(--t-dim)]">
           It isn&apos;t in any server yet. Invite it to one you manage and this dashboard
           lights up.
         </p>
         {inviteUrl && (
           <button
             onClick={() => void window.api.system.openExternal(inviteUrl)}
-            className="btn btn-indigo mt-4 px-5 py-2.5 text-sm"
+            className="key key-blue mt-8 h-12 px-6 text-[15px]"
           >
-            <Link2 size={15} />
+            <Link2 size={16} />
             Invite to a server
           </button>
         )}
-        <div className="mt-6 grid grid-cols-2 gap-2.5 text-left">
-          {NO_SERVER_HINTS.map(({ icon: Icon, label, hint }) => (
-            <div
-              key={label}
-              className="flex items-start gap-2.5 rounded-xl border border-white/5 bg-white/[0.02] p-3 backdrop-blur-sm transition-colors hover:border-indigo-500/20 hover:bg-white/[0.04]"
-            >
-              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10">
-                <Icon size={15} className="text-indigo-300/80" />
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-xs font-medium text-white/75">{label}</p>
-                <p className="truncate text-[11px] text-white/35">{hint}</p>
-              </div>
-            </div>
+        <p className="mt-10 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+          <span className="text-[var(--t-dim)]">Once it joins:</span>
+          {AFTER_INVITE.map(({ icon: Icon, label }, i) => (
+            <Fragment key={label}>
+              {i > 0 && (
+                <span aria-hidden="true" className="text-[var(--t-faint)]">
+                  ·
+                </span>
+              )}
+              <span className="flex items-center gap-1.5 font-semibold">
+                <Icon size={14} className="shrink-0 text-[var(--t-blue)]" />
+                {label}
+              </span>
+            </Fragment>
           ))}
-        </div>
+        </p>
       </div>
-    </div>
+    </section>
   )
 }

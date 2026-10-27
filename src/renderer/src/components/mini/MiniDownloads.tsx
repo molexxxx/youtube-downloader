@@ -2,6 +2,7 @@ import { useState } from 'react'
 import {
   AlertCircle,
   CheckCircle2,
+  Clock,
   Download,
   FolderOpen,
   Link2,
@@ -24,8 +25,8 @@ const STATE_PRIORITY: Partial<Record<DownloadState, number>> = {
 
 /**
  * Download quick actions: paste a link, pick video or audio, and it starts
- * immediately with the saved defaults - no resolve step. The compact job list
- * mirrors the main window's queue live.
+ * immediately with the saved defaults - no resolve step. The link entry sits
+ * up top; the job list below a rule mirrors the main window's queue.
  */
 export function MiniDownloads(): React.JSX.Element {
   const jobs = useAppStore((s) => s.jobs)
@@ -57,71 +58,79 @@ export function MiniDownloads(): React.JSX.Element {
 
   return (
     <>
-      <section className="shrink-0 space-y-1.5">
-        <div className="field field-red group flex items-center gap-2 px-3 py-2">
+      <section className="shrink-0 space-y-3 py-4 pl-4 pr-1.5">
+        <div className="line-field line-field-red group pb-2">
           <Link2
-            size={14}
-            className="shrink-0 text-white/40 group-focus-within:text-red-400/80"
+            size={15}
+            className="shrink-0 text-[var(--t-faint)] transition-colors group-focus-within:text-[var(--t-red)]"
           />
           <input
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && void start()}
             placeholder="Paste a video link to download…"
+            aria-label="Video link"
             spellCheck={false}
-            className="min-w-0 flex-1 bg-transparent text-xs text-white/90 outline-none placeholder:text-white/30"
+            className="min-w-0 flex-1 bg-transparent text-sm outline-none"
           />
           {url && (
             <button
               onClick={() => setUrl('')}
               title="Clear"
               aria-label="Clear link"
-              className="shrink-0 rounded p-0.5 text-white/30 transition-colors hover:bg-white/10 hover:text-white/70"
+              className="shrink-0 rounded-sm p-0.5 text-[var(--t-dim)] transition-colors hover:bg-[var(--t-hover)] hover:text-[var(--t-fg)]"
             >
-              <X size={12} />
+              <X size={13} />
             </button>
           )}
         </div>
-        <div className="flex gap-1.5">
+        <div className="flex items-center gap-1.5">
           <KindChip
             active={kind === 'video'}
             onClick={() => setKind('video')}
-            icon={<Video size={12} />}
+            icon={<Video size={13} />}
             label="Video"
           />
           <KindChip
             active={kind === 'audio'}
             onClick={() => setKind('audio')}
-            icon={<Music size={12} />}
+            icon={<Music size={13} />}
             label="Audio"
           />
           <button
             onClick={() => void start()}
             disabled={!valid}
-            className="btn btn-red ml-auto px-3 py-1 text-xs"
+            className="key key-red ml-auto h-9 px-4 text-[13px]"
           >
-            <Download size={13} />
+            <Download size={14} />
             Download
           </button>
         </div>
         {error && (
-          <p className="rounded-lg border border-red-500/25 bg-red-500/10 px-2.5 py-1 text-[11px] text-red-300">
+          <p
+            role="alert"
+            className="flex items-start gap-1.5 text-xs text-[var(--t-red)]"
+          >
+            <AlertCircle size={13} className="mt-px shrink-0" />
             {error}
           </p>
         )}
       </section>
 
-      {sorted.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-white/10 p-5 text-center text-xs text-white/30">
-          No downloads yet
-        </p>
-      ) : (
-        <div className="space-y-1.5">
-          {sorted.map((job) => (
-            <MiniJobRow key={job.id} job={job} />
-          ))}
-        </div>
-      )}
+      <section
+        aria-label="Downloads"
+        className="min-h-[140px] flex-1 border-t border-[var(--t-rule-strong)] py-3 pl-4 pr-1.5"
+      >
+        {sorted.length === 0 ? (
+          <p className="text-sm font-semibold">No downloads yet</p>
+        ) : (
+          <ul className="border-t border-[var(--t-rule-strong)]">
+            {sorted.map((job) => (
+              <MiniJobRow key={job.id} job={job} />
+            ))}
+          </ul>
+        )}
+      </section>
     </>
   )
 }
@@ -141,11 +150,7 @@ function KindChip({
     <button
       onClick={onClick}
       aria-pressed={active}
-      className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] transition-all duration-150 ${
-        active
-          ? 'border-red-500/50 bg-gradient-to-b from-red-500/20 to-red-500/5 text-red-200 shadow-[0_0_12px_-2px_rgba(239,68,68,0.35)]'
-          : 'border-white/10 text-white/50 hover:border-white/25 hover:text-white/80'
-      }`}
+      className="chip flex items-center gap-1.5 px-2.5 py-1.5 text-xs"
     >
       {icon}
       {label}
@@ -160,27 +165,32 @@ function MiniJobRow({ job }: { job: DownloadJob }): React.JSX.Element {
     job.state === 'extracting'
 
   return (
-    <div
-      className={`rounded-lg border p-2 ${
-        isActive ? 'border-red-500/25 bg-red-500/5' : 'border-white/5 bg-white/2'
-      }`}
-    >
+    <li className="border-b border-[var(--t-rule)] py-2">
       <div className="flex items-center gap-2">
         <MiniStateIcon state={job.state} />
         <span
           className={`min-w-0 flex-1 truncate text-xs ${
-            isActive ? 'text-white/90' : 'text-white/70'
+            isActive
+              ? 'font-semibold'
+              : job.state === 'cancelled'
+                ? 'text-[var(--t-faint)] line-through decoration-[var(--t-fg)]'
+                : 'text-[var(--t-dim)]'
           }`}
           title={job.title}
         >
           {job.title}
         </span>
+        {isActive && job.percent > 0 && (
+          <span className="shrink-0 text-[11px] tabular-nums text-[var(--t-dim)]">
+            {job.percent.toFixed(0)}%
+          </span>
+        )}
         {job.state === 'completed' && (
           <>
             <PlayInDiscord title={job.title} url={job.url} filePath={job.outputPath} />
             <button
               onClick={() => window.api.system.showItem(job.outputPath ?? '')}
-              className="rounded p-1 text-white/40 transition-colors hover:text-white"
+              className="rounded-sm p-1 text-[var(--t-dim)] transition-colors hover:bg-[var(--t-hover)] hover:text-[var(--t-fg)]"
               aria-label="Show in folder"
               title="Show in folder"
             >
@@ -191,7 +201,7 @@ function MiniJobRow({ job }: { job: DownloadJob }): React.JSX.Element {
         {isActive && (
           <button
             onClick={() => window.api.download.cancel(job.id)}
-            className="rounded p-1 text-white/40 hover:text-red-400"
+            className="rounded-sm p-1 text-[var(--t-dim)] transition-colors hover:bg-[var(--t-hover)] hover:text-[var(--t-red)]"
             aria-label="Cancel"
             title="Cancel"
           >
@@ -200,32 +210,42 @@ function MiniJobRow({ job }: { job: DownloadJob }): React.JSX.Element {
         )}
       </div>
       {isActive && (
-        <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/5">
+        <div className="mt-1.5 h-1 overflow-hidden bg-[var(--t-rule)]">
           {job.percent > 0 ? (
             <div
-              className="h-full bg-red-500 transition-all"
+              className="h-full bg-[var(--w-red)] transition-[width] duration-300 ease-out"
               style={{ width: `${job.percent}%` }}
             />
           ) : (
-            <div className="progress-indeterminate h-full rounded-full bg-red-500" />
+            <div className="progress-indeterminate h-full bg-[var(--w-red)]" />
           )}
         </div>
       )}
-    </div>
+      {job.state === 'error' && job.error && (
+        <p
+          className="mt-1 truncate pl-5 text-[11px] text-[var(--t-red)]"
+          title={job.error}
+        >
+          {job.error}
+        </p>
+      )}
+    </li>
   )
 }
 
 function MiniStateIcon({ state }: { state: DownloadState }): React.JSX.Element {
   switch (state) {
     case 'completed':
-      return <CheckCircle2 size={13} className="shrink-0 text-emerald-400" />
+      return <CheckCircle2 size={13} className="shrink-0 text-[var(--t-ok)]" />
     case 'error':
-      return <AlertCircle size={13} className="shrink-0 text-red-400" />
+      return <AlertCircle size={13} className="shrink-0 text-[var(--t-red)]" />
     case 'cancelled':
-      return <X size={13} className="shrink-0 text-white/30" />
+      return <X size={13} className="shrink-0 text-[var(--t-faint)]" />
     case 'queued':
-      return <Loader2 size={13} className="shrink-0 animate-spin text-white/30" />
+      return (
+        <Clock size={13} aria-label="Queued" className="shrink-0 text-[var(--t-faint)]" />
+      )
     default:
-      return <Loader2 size={13} className="shrink-0 animate-spin text-red-400" />
+      return <Loader2 size={13} className="shrink-0 animate-spin text-[var(--t-red)]" />
   }
 }

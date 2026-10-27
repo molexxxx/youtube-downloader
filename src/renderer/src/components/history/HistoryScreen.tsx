@@ -1,15 +1,8 @@
-import {
-  CheckCircle2,
-  FolderOpen,
-  Music,
-  Play,
-  Trash2,
-  Video,
-  XCircle
-} from 'lucide-react'
+import { FolderOpen, Music, Play, Trash2, Video } from 'lucide-react'
 import type { HistoryEntry } from '@shared/types'
 import { useAppStore } from '../../stores/appStore'
 import { PlayInDiscord } from '../discord/PlayInDiscord'
+import { MediaThumb } from '../shared/MediaThumb'
 
 function formatWhen(ms: number): string {
   const diff = Date.now() - ms
@@ -30,26 +23,38 @@ export function HistoryScreen(): React.JSX.Element {
   }
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Download history</h1>
+    <div className="flex max-w-5xl flex-col">
+      <div className="flex items-end justify-between gap-4 border-b border-[var(--t-rule-strong)] pb-4">
+        <div>
+          <h1 className="display text-[24px]">Download history</h1>
+          {history.length > 0 && (
+            <p className="mt-2 text-sm tabular-nums text-[var(--t-dim)]">
+              {history.length} {history.length === 1 ? 'download' : 'downloads'}
+            </p>
+          )}
+        </div>
         {history.length > 0 && (
           <button
             onClick={clear}
-            className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs text-white/60 hover:border-red-500/40 hover:text-red-300"
+            className="key key-line h-9 px-3 text-[13px] hover:text-[var(--t-red)]"
           >
-            <Trash2 size={13} />
+            <Trash2 size={14} />
             Clear all
           </button>
         )}
       </div>
 
       {history.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-white/10 p-10 text-center text-sm text-white/30">
-          No downloads yet. Completed downloads will appear here.
+        <div className="pt-6">
+          <p className="text-[15px] font-semibold">
+            No downloads yet. Completed downloads will appear here.
+          </p>
+          <p className="mt-1 text-sm text-[var(--t-dim)]">
+            Everything you download is listed here with a way back to the file.
+          </p>
         </div>
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul>
           {history.map((entry) => (
             <HistoryRow key={entry.id} entry={entry} setHistory={setHistory} />
           ))}
@@ -76,53 +81,85 @@ function HistoryRow({
   }
 
   return (
-    <li className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3">
-      <span className={ok ? 'text-emerald-400' : 'text-red-400'}>
-        {ok ? <CheckCircle2 size={18} /> : <XCircle size={18} />}
-      </span>
-      <span className="text-white/40">
-        {entry.kind === 'audio' ? <Music size={15} /> : <Video size={15} />}
-      </span>
+    <li className="-mx-3 flex items-center gap-5 border-b border-[var(--t-rule)] px-3 py-3 transition-colors hover:bg-[var(--t-hover)]">
+      <MediaThumb
+        url={entry.url}
+        kind={entry.kind}
+        size="lg"
+        status={ok ? undefined : entry.status}
+      />
       <div className="min-w-0 flex-1">
-        <p className="selectable truncate text-sm" title={entry.title}>
+        <p
+          className={`selectable truncate text-[15px] font-semibold ${
+            ok
+              ? ''
+              : entry.status === 'cancelled'
+                ? 'text-[var(--t-faint)] line-through decoration-[var(--t-fg)] decoration-2'
+                : 'text-[var(--t-dim)]'
+          }`}
+          title={entry.title}
+        >
           {entry.title}
         </p>
-        <p className="truncate text-xs text-white/40">
-          {formatWhen(entry.completedAt)}
-          {!ok && entry.error ? ` - ${entry.error}` : ''}
+        <p className="mt-1 flex min-w-0 items-center gap-1.5 text-[13px] text-[var(--t-dim)]">
+          {entry.kind === 'audio' ? (
+            <Music size={13} className="shrink-0" />
+          ) : (
+            <Video size={13} className="shrink-0" />
+          )}
+          <span className="shrink-0">{entry.kind === 'audio' ? 'Audio' : 'Video'}</span>
+          <span aria-hidden="true">·</span>
+          <span className="shrink-0 tabular-nums">{formatWhen(entry.completedAt)}</span>
+          {!ok && (
+            <>
+              <span aria-hidden="true">·</span>
+              <span
+                className={`truncate ${entry.status === 'error' ? 'text-[var(--t-red)]' : ''}`}
+                title={entry.error ?? undefined}
+              >
+                {entry.error ?? 'Cancelled'}
+              </span>
+            </>
+          )}
         </p>
       </div>
-      {ok && entry.outputPath && (
+      <div className="flex shrink-0 items-center gap-1">
+        {ok && entry.outputPath && (
+          <button
+            onClick={() => void window.api.system.openPath(entry.outputPath!)}
+            className="key key-line mr-1 h-8 px-3 text-[13px]"
+            title="Open in your default player"
+          >
+            <Play size={13} />
+            Play
+          </button>
+        )}
+        {ok && (
+          <PlayInDiscord
+            title={entry.title}
+            url={entry.url}
+            filePath={entry.outputPath}
+          />
+        )}
+        {ok && entry.outputPath && (
+          <button
+            onClick={reveal}
+            className="rounded-sm p-1.5 text-[var(--t-dim)] transition-colors hover:bg-[var(--t-hover)] hover:text-[var(--t-fg)]"
+            aria-label="Show in folder"
+            title="Show in folder"
+          >
+            <FolderOpen size={15} />
+          </button>
+        )}
         <button
-          onClick={() => void window.api.system.openPath(entry.outputPath!)}
-          className="rounded p-1.5 text-white/40 transition-colors hover:text-emerald-300"
-          aria-label="Preview file"
-          title="Preview in your default player"
+          onClick={remove}
+          className="rounded-sm p-1.5 text-[var(--t-dim)] transition-colors hover:bg-[var(--t-hover)] hover:text-[var(--t-red)]"
+          aria-label="Remove from history"
+          title="Remove"
         >
-          <Play size={15} />
+          <Trash2 size={15} />
         </button>
-      )}
-      {ok && (
-        <PlayInDiscord title={entry.title} url={entry.url} filePath={entry.outputPath} />
-      )}
-      {ok && entry.outputPath && (
-        <button
-          onClick={reveal}
-          className="rounded p-1.5 text-white/40 transition-colors hover:text-white"
-          aria-label="Show in folder"
-          title="Show in folder"
-        >
-          <FolderOpen size={15} />
-        </button>
-      )}
-      <button
-        onClick={remove}
-        className="rounded p-1.5 text-white/40 hover:text-red-400"
-        aria-label="Remove from history"
-        title="Remove"
-      >
-        <Trash2 size={15} />
-      </button>
+      </div>
     </li>
   )
 }

@@ -2,18 +2,18 @@
 
 :root {
   color-scheme: dark;
-  --app-bg: #0b0d12;
+  --app-bg: #0b0b0b;
   --app-panel: #0e1016;
   --app-input: #12151c;
-  --app-fg: #e6e8ee;
+  --app-fg: #ecebe6;
 }
 
 html.light {
   color-scheme: light;
-  --app-bg: #f4f5f8;
+  --app-bg: #dcd9d2;
   --app-panel: #ffffff;
   --app-input: #eceef3;
-  --app-fg: #1a1d23;
+  --app-fg: #1a1a1a;
 }
 
 html,
@@ -68,16 +68,24 @@ label {
   cursor: pointer;
 }
 
-/* Native-feeling, theme-tinted selection highlight. */
+/* Native-feeling selection highlight in the section color. */
 ::selection {
-  background: rgba(239, 68, 68, 0.35);
+  background: rgba(210, 47, 36, 0.4);
   color: #fff;
   text-shadow: none;
 }
 
+.signal-blue ::selection {
+  background: rgba(90, 95, 224, 0.45);
+}
+
 html.light ::selection {
-  background: rgba(239, 68, 68, 0.25);
-  color: #1a1d23;
+  background: rgba(194, 42, 31, 0.2);
+  color: #1a1a1a;
+}
+
+html.light .signal-blue ::selection {
+  background: rgba(74, 79, 214, 0.22);
 }
 
 /*
@@ -221,6 +229,27 @@ html.light .hover\:text-red-200:hover {
 html.light .hover\:text-red-300:hover {
   color: #dc2626;
 }
+html.light .text-red-100 {
+  color: #b91c1c;
+}
+
+/* --- Indigo and emerald tints: darken for contrast on light backgrounds --- */
+html.light .text-indigo-100,
+html.light .text-indigo-200,
+html.light .hover\:text-indigo-200:hover {
+  color: #4338ca;
+}
+html.light .text-indigo-300,
+html.light .hover\:text-indigo-300:hover {
+  color: #4f46e5;
+}
+html.light .text-indigo-300\/70,
+html.light .text-indigo-300\/80 {
+  color: rgba(79, 70, 229, 0.8);
+}
+html.light .text-emerald-200 {
+  color: #047857;
+}
 
 /* --- Emerald accent: darken for contrast on light backgrounds --- */
 html.light .text-emerald-300 {
@@ -245,14 +274,6 @@ html.light input[type='range']::-webkit-slider-thumb {
   box-shadow:
     0 0 0 1.5px rgba(20, 22, 28, 0.2),
     0 2px 4px rgba(0, 0, 0, 0.15);
-}
-
-/* --- Scrollbar: adapt to light surface --- */
-html.light ::-webkit-scrollbar-thumb {
-  background: #c1c5ce;
-}
-html.light ::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
 }
 
 /*
@@ -289,6 +310,14 @@ html.light .group:hover .group-hover\:text-white {
 html.light .placeholder\:text-white\/30::placeholder {
   color: rgba(26, 29, 35, 0.4);
 }
+html.light .placeholder\:text-white\/45::placeholder {
+  color: rgba(26, 29, 35, 0.5);
+}
+
+/* Thumbnail overlay chips carry both classes on one element */
+html.light .bg-black\/70.text-white\/90 {
+  color: rgba(255, 255, 255, 0.9);
+}
 
 .drag-region {
   -webkit-app-region: drag;
@@ -303,131 +332,20 @@ html.light .placeholder\:text-white\/30::placeholder {
   height: 10px;
 }
 
-::-webkit-scrollbar-thumb {
-  background: #2a2f3a;
-  border-radius: 6px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #3a4150;
-}
-
-/*
- * Thin, theme-tinted scrollbar for contained scroll areas (e.g. the playlist
- * picker). Padding sits on the LEFT of the track so the thumb hugs the right
- * edge with breathing room between it and the content.
- */
-.scroll-thin {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(239, 68, 68, 0.45) transparent;
-}
-
-.scroll-thin::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-.scroll-thin::-webkit-scrollbar-track {
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
   background: transparent;
 }
 
-.scroll-thin::-webkit-scrollbar-thumb {
-  background-color: rgba(239, 68, 68, 0.4);
-  border-radius: 9999px;
-  /* Transparent borders shrink the visible thumb and push it off the right edge,
-     leaving more space on its left than its right. */
-  border: 2px solid transparent;
-  border-left-width: 5px;
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 2px;
+  background-color: var(--t-rule-strong);
   background-clip: padding-box;
 }
 
-.scroll-thin::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(239, 68, 68, 0.6);
-}
-
-/*
- * Empty-state ambient animation. Slow-drifting blurred gradient blobs, a gently
- * rotating dashed orbit, a breathing ring, and a stroke that traces the link
- * glyph. All transforms/opacity only, so they stay GPU-cheap.
- */
-@keyframes blob-drift-a {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  33% {
-    transform: translate(24px, -18px) scale(1.08);
-  }
-  66% {
-    transform: translate(-16px, 14px) scale(0.96);
-  }
-}
-
-@keyframes blob-drift-b {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(-28px, 20px) scale(1.12);
-  }
-}
-
-@keyframes blob-drift-c {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  40% {
-    transform: translate(18px, 22px) scale(1.06);
-  }
-  75% {
-    transform: translate(22px, -12px) scale(0.94);
-  }
-}
-
-@keyframes orbit-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes orbit-spin-rev {
-  to {
-    transform: rotate(-360deg);
-  }
-}
-
-@keyframes ring-breathe {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 0.55;
-  }
-  50% {
-    transform: scale(1.12);
-    opacity: 0.15;
-  }
-}
-
-@keyframes trace-dash {
-  0% {
-    stroke-dashoffset: 120;
-  }
-  60%,
-  100% {
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes float-soft {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-6px);
-  }
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--t-dim);
 }
 
 @keyframes progress-slide {
@@ -442,35 +360,6 @@ html.light .placeholder\:text-white\/30::placeholder {
 .progress-indeterminate {
   width: 30%;
   animation: progress-slide 1.4s ease-in-out infinite;
-}
-
-.anim-blob-a {
-  animation: blob-drift-a 18s ease-in-out infinite;
-}
-.anim-blob-b {
-  animation: blob-drift-b 22s ease-in-out infinite;
-}
-.anim-blob-c {
-  animation: blob-drift-c 26s ease-in-out infinite;
-}
-.anim-orbit {
-  transform-origin: center;
-  animation: orbit-spin 28s linear infinite;
-}
-.anim-orbit-rev {
-  transform-origin: center;
-  animation: orbit-spin-rev 36s linear infinite;
-}
-.anim-ring {
-  transform-origin: center;
-  animation: ring-breathe 4.5s ease-in-out infinite;
-}
-.anim-trace {
-  stroke-dasharray: 120;
-  animation: trace-dash 5s ease-in-out infinite;
-}
-.anim-float {
-  animation: float-soft 6s ease-in-out infinite;
 }
 
 @keyframes toast-in {
@@ -489,341 +378,393 @@ html.light .placeholder\:text-white\/30::placeholder {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .anim-blob-a,
-  .anim-blob-b,
-  .anim-blob-c,
-  .anim-orbit,
-  .anim-orbit-rev,
-  .anim-ring,
-  .anim-trace,
-  .anim-float,
   .anim-toast-in {
     animation: none;
   }
 }
 
 /*
- * Form-field grammar. `.field` is the container for any text input row: a
- * carved-in well (inner shadow + hairline) that brightens on hover and lights
- * up with the section accent on focus (red = downloader, indigo = Discord).
+ * Keyboard focus ring in the downloader's signal. Applied to a section root so
+ * every focusable descendant shares one themed ring instead of the browser's.
  */
-.field {
-  border-radius: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
-    rgba(9, 11, 16, 0.55);
-  box-shadow:
-    inset 0 1px 3px rgba(0, 0, 0, 0.35),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.03);
-  transition:
-    border-color 150ms ease,
-    box-shadow 250ms ease,
-    background-color 150ms ease;
+.focus-ring-red :is(button, a, [role='button'], input[type='checkbox']):focus-visible {
+  outline: 2px solid rgba(248, 113, 113, 0.75);
+  outline-offset: 2px;
 }
-
-.field:hover {
-  border-color: rgba(255, 255, 255, 0.14);
-}
-
-.field-red:focus-within {
-  border-color: rgba(239, 68, 68, 0.6);
-  box-shadow:
-    inset 0 1px 3px rgba(0, 0, 0, 0.35),
-    0 0 0 3px rgba(239, 68, 68, 0.12),
-    0 10px 32px -8px rgba(239, 68, 68, 0.4);
-}
-
-.field-indigo:focus-within {
-  border-color: rgba(99, 102, 241, 0.6);
-  box-shadow:
-    inset 0 1px 3px rgba(0, 0, 0, 0.35),
-    0 0 0 3px rgba(99, 102, 241, 0.14),
-    0 10px 32px -8px rgba(99, 102, 241, 0.45);
-}
-
-html.light .field {
-  border-color: rgba(20, 22, 28, 0.14);
-  background: var(--app-input);
-  box-shadow: inset 0 1px 2px rgba(20, 22, 28, 0.08);
+.focus-ring-indigo
+  :is(
+    button,
+    a,
+    [role='button'],
+    input[type='checkbox'],
+    input[type='range']
+  ):focus-visible {
+  outline: 2px solid rgba(129, 140, 248, 0.75);
+  outline-offset: 2px;
 }
 
 /*
- * Button grammar. `.btn` + an accent class. Accent buttons are lit gradients
- * with an inner top highlight and colored glow that intensifies on hover;
- * `.btn-ghost` is the quiet hairline variant. All press down on :active.
+ * Stage and panel world. Working screens are a dark stage (what you control)
+ * with a slightly raised side panel (what is lined up). Components read the
+ * --t-* context tokens, so the same markup is correct on either surface and in
+ * either theme without per-utility light-mode remaps.
  */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  border-radius: 0.75rem;
-  font-weight: 500;
-  transition:
-    transform 120ms ease,
-    box-shadow 200ms ease,
-    filter 150ms ease,
-    border-color 150ms ease,
-    color 150ms ease;
+:root {
+  --w-stage: #121212;
+  --w-floor: #0b0b0b;
+  --w-panel: #19191a;
+  --w-red: #d22f24;
+  --w-red-deep: #b42719;
+  --w-blue: #4a4fd6;
+  --w-blue-deep: #3b40c4;
+  --w-live: #3ecf6e;
 }
 
-.btn:active:not(:disabled) {
-  transform: scale(0.97);
+:root,
+.stage,
+.floor,
+.sheet {
+  --t-fg: #ecebe6;
+  --t-dim: #a3a29c;
+  --t-faint: #807f79;
+  --t-rule: #262624;
+  --t-rule-strong: #3a3a37;
+  --t-hover: #1b1b1a;
+  --t-tape: #262624;
+  --t-red: #f0574b;
+  --t-blue: #8b8ff0;
+  --t-ok: #5fd68a;
+  --t-warn: #e8b04a;
+  --t-ring: #121212;
 }
 
-.btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  box-shadow: none;
+.sheet {
+  --t-hover: #222223;
+  --t-tape: #232324;
+  --t-ring: #19191a;
+  background-color: var(--w-panel);
+  color: var(--t-fg);
 }
 
-.btn-indigo {
-  color: #fff;
-  border: 1px solid rgba(129, 140, 248, 0.5);
-  background: linear-gradient(180deg, #6d70f6 0%, #5558ef 55%, #474ae6 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    0 4px 18px -4px rgba(99, 102, 241, 0.55);
+.stage {
+  background-color: var(--w-stage);
+  color: var(--t-fg);
 }
 
-.btn-indigo:hover:not(:disabled) {
-  filter: brightness(1.1);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    0 6px 24px -4px rgba(99, 102, 241, 0.7);
+.floor {
+  --t-ring: #0b0b0b;
+  background-color: var(--w-floor);
+  color: var(--t-fg);
 }
 
-.btn-red {
-  color: #fff;
-  border: 1px solid rgba(248, 113, 113, 0.5);
-  background: linear-gradient(180deg, #f3564e 0%, #e93d38 55%, #d92b2f 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    0 4px 18px -4px rgba(239, 68, 68, 0.5);
+html.light {
+  --w-stage: #e9e7e1;
+  --w-floor: #dcd9d2;
+  --w-panel: #f4f2ed;
 }
 
-.btn-red:hover:not(:disabled) {
-  filter: brightness(1.1);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    0 6px 24px -4px rgba(239, 68, 68, 0.65);
-}
-
-.btn-ghost {
-  color: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.045),
-    rgba(255, 255, 255, 0.015)
-  );
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-}
-
-.btn-ghost:hover:not(:disabled) {
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.22);
-}
-
-html.light .btn-ghost {
-  color: rgba(26, 29, 35, 0.75);
-  border-color: rgba(20, 22, 28, 0.16);
-  background: var(--app-panel);
-  box-shadow: none;
-}
-
-html.light .btn-ghost:hover:not(:disabled) {
-  color: #1a1d23;
-  border-color: rgba(20, 22, 28, 0.32);
+html.light:root,
+html.light .stage,
+html.light .floor,
+html.light .sheet {
+  --t-fg: #1a1a1a;
+  --t-dim: #55544f;
+  --t-faint: #6f6e69;
+  --t-rule: #d3d0c8;
+  --t-rule-strong: #b3b0a8;
+  --t-hover: #dedbd4;
+  --t-tape: #d3d0c8;
+  --t-red: #b8281d;
+  --t-blue: #3b40c4;
+  --t-ok: #17673a;
+  --t-warn: #7a4e00;
+  --t-ring: #e9e7e1;
 }
 
 /*
- * Range sliders. `.slider` is the base (volume etc.); components paint the fill
- * with an inline linear-gradient background so the track shows progress.
- * `.slider-seek` is the timeline variant: a slightly smaller always-visible
- * thumb marks the position (hidden only when the slider is disabled).
+ * Section signal. A section root sets the accent its selections speak in:
+ * red for the downloader and app-wide screens, blue for Discord.
  */
-.slider {
-  -webkit-appearance: none;
-  appearance: none;
-  height: 4px;
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.1);
-  outline: none;
-  cursor: pointer;
+:root,
+.signal-red {
+  --t-accent: #d22f24;
+  --t-accent-soft: rgba(210, 47, 36, 0.2);
+  --t-accent-text: #ffd7d2;
 }
 
-.slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  height: 12px;
-  width: 12px;
-  border-radius: 9999px;
-  background: #e0e7ff;
-  border: 2px solid rgb(99, 102, 241);
-  box-shadow: 0 0 8px rgba(99, 102, 241, 0.55);
-  transition:
-    transform 120ms ease,
-    box-shadow 120ms ease;
+.signal-blue {
+  --t-accent: #5a5fe0;
+  --t-accent-soft: rgba(90, 95, 224, 0.24);
+  --t-accent-text: #dddeff;
 }
 
-.slider::-webkit-slider-thumb:hover {
-  transform: scale(1.15);
-  box-shadow: 0 0 12px rgba(99, 102, 241, 0.75);
+html.light:root,
+html.light .signal-red {
+  --t-accent: #c22a1f;
+  --t-accent-soft: rgba(194, 42, 31, 0.12);
+  --t-accent-text: #9b2218;
 }
 
-.slider-red::-webkit-slider-thumb {
-  background: #fee2e2;
-  border-color: rgb(239, 68, 68);
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.55);
+html.light .signal-blue {
+  --t-accent: #4a4fd6;
+  --t-accent-soft: rgba(74, 79, 214, 0.14);
+  --t-accent-text: #2f33a8;
 }
 
-.slider-seek {
-  height: 5px;
+html.light .floor {
+  --t-ring: #dcd9d2;
 }
 
-.slider-seek::-webkit-slider-thumb {
-  height: 10px;
-  width: 10px;
+html.light .sheet {
+  --t-hover: #e9e6df;
+  --t-tape: #e2dfd8;
+  --t-ring: #f4f2ed;
 }
 
-.slider-seek:hover::-webkit-slider-thumb,
-.slider-seek:focus-visible::-webkit-slider-thumb {
-  transform: scale(1.25);
-}
+@layer components {
+  .display {
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
 
-.slider-seek:disabled::-webkit-slider-thumb {
-  opacity: 0;
-}
+  .numeral {
+    font-weight: 600;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
 
-html.light .slider {
-  background: rgba(20, 22, 28, 0.14);
-}
+  .key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 2px;
+    font-weight: 600;
+    line-height: 1;
+    transition:
+      background-color 120ms ease,
+      border-color 120ms ease,
+      color 120ms ease;
+  }
 
-/*
- * Custom checkbox: rounded well that fills with a lit accent gradient and a
- * popping check mark. `.checkbox-indigo` for the Discord section.
- */
-.checkbox {
-  -webkit-appearance: none;
-  appearance: none;
-  display: inline-grid;
-  place-content: center;
-  width: 16px;
-  height: 16px;
-  border-radius: 5px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.06),
-    rgba(255, 255, 255, 0.01)
-  );
-  cursor: pointer;
-  transition:
-    background 150ms ease,
-    border-color 150ms ease,
-    box-shadow 200ms ease;
-}
+  .key:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 
-.checkbox::before {
-  content: '';
-  width: 9px;
-  height: 9px;
-  transform: scale(0);
-  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 82% 0%, 43% 62%);
-  background: #fff;
-  transition: transform 130ms ease;
-}
+  .key-red {
+    background-color: var(--w-red);
+    color: #fff;
+  }
 
-.checkbox:hover {
-  border-color: rgba(255, 255, 255, 0.4);
-}
+  .key-red:hover:not(:disabled) {
+    background-color: var(--w-red-deep);
+  }
 
-.checkbox:checked {
-  border-color: transparent;
-  background: linear-gradient(180deg, #f3564e, #d92b2f);
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.45);
-}
+  .key-blue {
+    background-color: var(--w-blue);
+    color: #fff;
+  }
 
-.checkbox:checked::before {
-  transform: scale(1);
-}
+  .key-blue:hover:not(:disabled) {
+    background-color: var(--w-blue-deep);
+  }
 
-.checkbox-indigo:checked {
-  background: linear-gradient(180deg, #6d70f6, #474ae6);
-  box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
-}
+  .key-line {
+    border: 1px solid var(--t-rule-strong);
+    background-color: transparent;
+    color: var(--t-fg);
+  }
 
-html.light .checkbox {
-  border-color: rgba(20, 22, 28, 0.3);
-  background: var(--app-panel);
-}
+  .key-line:hover:not(:disabled) {
+    border-color: var(--t-dim);
+    background-color: var(--t-hover);
+  }
 
-/* Checkbox styled as a pill switch (used for boolean settings). */
-.switch {
-  -webkit-appearance: none;
-  appearance: none;
-  position: relative;
-  width: 34px;
-  height: 20px;
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.12);
-  transition: background 150ms ease;
-  cursor: pointer;
-}
+  .line-field {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-bottom: 2px solid var(--t-rule-strong);
+    transition: border-color 150ms ease;
+  }
 
-.switch::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 16px;
-  height: 16px;
-  border-radius: 9999px;
-  background: #fff;
-  opacity: 0.85;
-  transition:
-    transform 150ms ease,
-    opacity 150ms ease;
-}
+  .line-field:hover {
+    border-color: var(--t-dim);
+  }
 
-.switch:checked {
-  background: rgba(99, 102, 241, 0.9);
-}
+  .line-field-red:focus-within {
+    border-color: var(--w-red);
+  }
 
-.switch:checked::after {
-  transform: translateX(14px);
-  opacity: 1;
-}
+  .line-field-blue:focus-within {
+    border-color: var(--w-blue);
+  }
 
-html.light .switch {
-  background: rgba(20, 22, 28, 0.18);
-}
+  .line-field input {
+    color: var(--t-fg);
+  }
 
-/* Indigo-tinted variant of .scroll-thin for the Discord section. */
-.scroll-thin-indigo {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(99, 102, 241, 0.45) transparent;
-}
+  .line-field input::placeholder {
+    color: var(--t-faint);
+  }
 
-.scroll-thin-indigo::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
+  .chip {
+    border: 1px solid var(--t-rule-strong);
+    border-radius: 2px;
+    color: var(--t-dim);
+    font-weight: 500;
+    transition:
+      background-color 120ms ease,
+      border-color 120ms ease,
+      color 120ms ease;
+  }
 
-.scroll-thin-indigo::-webkit-scrollbar-track {
-  background: transparent;
-}
+  .chip:hover {
+    border-color: var(--t-dim);
+    color: var(--t-fg);
+  }
 
-.scroll-thin-indigo::-webkit-scrollbar-thumb {
-  background-color: rgba(99, 102, 241, 0.4);
-  border-radius: 9999px;
-  border: 2px solid transparent;
-  border-left-width: 5px;
-  background-clip: padding-box;
-}
+  .chip[aria-pressed='true'] {
+    border-color: var(--t-accent);
+    background-color: var(--t-accent-soft);
+    color: var(--t-accent-text);
+  }
 
-.scroll-thin-indigo::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(99, 102, 241, 0.6);
+  .tape {
+    background-color: var(--t-tape);
+  }
+
+  .tick {
+    -webkit-appearance: none;
+    appearance: none;
+    display: inline-grid;
+    place-content: center;
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid var(--t-rule-strong);
+    border-radius: 2px;
+    background: transparent;
+    cursor: pointer;
+    transition:
+      background-color 120ms ease,
+      border-color 120ms ease;
+  }
+
+  .tick::before {
+    content: '';
+    width: 9px;
+    height: 9px;
+    transform: scale(0);
+    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 82% 0%, 43% 62%);
+    background: #fff;
+    transition: transform 120ms ease;
+  }
+
+  .tick:hover {
+    border-color: var(--t-dim);
+  }
+
+  .tick:checked {
+    border-color: var(--t-accent);
+    background-color: var(--t-accent);
+  }
+
+  .tick:checked::before {
+    transform: scale(1);
+  }
+
+  .toggle {
+    -webkit-appearance: none;
+    appearance: none;
+    position: relative;
+    flex-shrink: 0;
+    width: 36px;
+    height: 20px;
+    border-radius: 2px;
+    background-color: var(--t-rule-strong);
+    cursor: pointer;
+    transition: background-color 150ms ease;
+  }
+
+  .toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 1px;
+    background: #fff;
+    transition: transform 150ms ease;
+  }
+
+  .toggle:checked {
+    background-color: var(--t-accent);
+  }
+
+  .toggle:checked::after {
+    transform: translateX(16px);
+  }
+
+  .line-range {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    background-color: var(--t-rule-strong);
+    outline: none;
+    cursor: pointer;
+  }
+
+  .line-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border: 0;
+    background: var(--t-accent);
+    transition: transform 120ms ease;
+  }
+
+  .line-range:hover::-webkit-slider-thumb,
+  .line-range:focus-visible::-webkit-slider-thumb {
+    transform: scale(1.2);
+  }
+
+  .line-range:disabled {
+    cursor: default;
+  }
+
+  .line-range:disabled::-webkit-slider-thumb {
+    opacity: 0;
+  }
+
+  .line-range-thin {
+    height: 4px;
+  }
+
+  .line-range-thin::-webkit-slider-thumb {
+    width: 12px;
+    height: 12px;
+  }
+
+  /*
+   * Scroll area with a permanent 10px gutter (the scrollbar width set above),
+   * so content never reflows when a scrollbar appears. The track is
+   * transparent, so the gutter shows the element's own surface color. Take
+   * 10px off the right padding to keep left and right margins equal, or add
+   * .scroll-centered for centered pages.
+   */
+  .scroll-ink {
+    scrollbar-gutter: stable;
+  }
+
+  .scroll-centered {
+    scrollbar-gutter: stable both-edges;
+  }
+
+  .tape .chip:not([aria-pressed='true']) {
+    border-color: transparent;
+  }
 }

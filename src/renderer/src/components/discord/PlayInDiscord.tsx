@@ -68,13 +68,13 @@ export function PlayInDiscord({
         onClick={click}
         title={queued ? 'Queued in Discord' : 'Play in Discord'}
         aria-label="Play in Discord"
-        className="rounded p-1 text-white/40 transition-colors hover:text-indigo-300"
+        className="rounded-sm p-1 text-[var(--t-dim)] transition-colors hover:bg-[var(--t-hover)] hover:text-[var(--t-blue)]"
       >
-        {queued ? <Check size={15} className="text-emerald-400" /> : <Bot size={15} />}
+        {queued ? <Check size={15} className="text-[var(--t-ok)]" /> : <Bot size={15} />}
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-20 mt-1 w-56 overflow-hidden rounded-xl border border-white/10 bg-[#161a22] py-1 shadow-xl shadow-black/40">
-          <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-white/30">
+        <div className="sheet absolute right-0 top-full z-20 mt-1 w-60 overflow-hidden rounded-sm border border-[var(--t-rule-strong)] py-1 shadow-[0_16px_32px_-8px_rgba(0,0,0,0.5)]">
+          <p className="px-3 py-1.5 text-xs font-semibold text-[var(--t-dim)]">
             Queue in server
           </p>
           {guilds.map((guild) => {
@@ -83,12 +83,12 @@ export function PlayInDiscord({
               <button
                 key={guild.id}
                 onClick={() => void send(guild.id)}
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-white/80 transition-colors hover:bg-white/5"
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--t-hover)]"
               >
                 {guild.icon ? (
-                  <img src={guild.icon} alt="" className="h-5 w-5 rounded-full" />
+                  <img src={guild.icon} alt="" className="h-5 w-5 rounded-sm" />
                 ) : (
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/10 text-[10px] font-semibold uppercase">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-sm bg-[var(--t-rule)] text-[10px] font-semibold uppercase">
                     {guild.name.slice(0, 1)}
                   </span>
                 )}
@@ -96,7 +96,7 @@ export function PlayInDiscord({
                 {inVoice && (
                   <span
                     title="The bot is in a voice channel here"
-                    className="h-2 w-2 shrink-0 rounded-full bg-emerald-500"
+                    className="h-2 w-2 shrink-0 rounded-full bg-[var(--w-live)]"
                   />
                 )}
               </button>

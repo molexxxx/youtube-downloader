@@ -113,24 +113,21 @@ export function UrlBar(): React.JSX.Element {
   }
 
   return (
-    <div
-      className={`flex flex-col space-y-2.5 ${
-        results.length > 0 ? 'min-h-0 flex-1' : ''
-      }`}
-    >
-      <div className="flex gap-2.5">
-        <div className="field field-red group flex flex-1 items-center gap-2.5 px-4 py-3">
+    <div className={`flex flex-col gap-5 ${results.length > 0 ? 'min-h-0 flex-1' : ''}`}>
+      <div className="flex items-end gap-4">
+        <div className="line-field line-field-red group flex-1 pb-3">
           <Search
-            size={18}
-            className="shrink-0 text-white/40 transition-colors group-focus-within:text-red-400/80"
+            size={20}
+            className="shrink-0 text-[var(--t-faint)] transition-colors group-focus-within:text-[var(--t-red)]"
           />
           <input
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && submit()}
             placeholder="Paste a video or playlist link, or type to search YouTube…"
+            aria-label="Video link or search"
             spellCheck={false}
-            className="flex-1 bg-transparent text-sm text-white/90 outline-none placeholder:text-white/30"
+            className="min-w-0 flex-1 bg-transparent text-base outline-none"
           />
           {url && (
             <button
@@ -140,16 +137,17 @@ export function UrlBar(): React.JSX.Element {
                 setChoice(null)
               }}
               title="Clear"
-              className="shrink-0 rounded-md p-0.5 text-white/30 transition-colors hover:bg-white/10 hover:text-white/70"
+              aria-label="Clear"
+              className="shrink-0 rounded-sm p-1 text-[var(--t-dim)] transition-colors hover:bg-[var(--t-hover)] hover:text-[var(--t-fg)]"
             >
-              <X size={15} />
+              <X size={16} />
             </button>
           )}
         </div>
         <button
           onClick={submit}
           disabled={busy || !trimmed}
-          className="btn btn-red px-5 text-sm"
+          className="key key-red h-12 shrink-0 px-6 text-sm"
         >
           {busy ? (
             <Loader2 size={16} className="animate-spin" />
@@ -161,102 +159,90 @@ export function UrlBar(): React.JSX.Element {
       </div>
 
       {choice && (
-        <div className="flex flex-col gap-3 rounded-xl border border-red-500/25 bg-red-500/[0.06] p-3.5">
-          <div className="flex items-start gap-2.5">
-            <ListVideo size={18} className="mt-0.5 shrink-0 text-red-400" />
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-white/90">
-                This link is part of a playlist
-              </p>
-              <p className="mt-0.5 text-xs text-white/50">
-                Download just this video, or the entire playlist it belongs to?
-              </p>
-            </div>
-            <button
-              onClick={() => setChoice(null)}
-              title="Cancel"
-              className="ml-auto shrink-0 rounded-md p-0.5 text-white/30 transition-colors hover:bg-white/10 hover:text-white/70"
-            >
-              <X size={15} />
-            </button>
+        <div className="anim-toast-in flex flex-wrap items-center gap-x-5 gap-y-3 border-y border-[var(--t-rule)] py-4">
+          <ListVideo size={20} className="shrink-0 text-[var(--t-red)]" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold">This link is part of a playlist</p>
+            <p className="mt-0.5 text-sm text-[var(--t-dim)]">
+              Download just this video, or the entire playlist it belongs to?
+            </p>
           </div>
-          <div className="flex gap-2.5">
-            <button
-              onClick={chooseSingle}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-white/80 transition-colors hover:border-white/20 hover:bg-white/[0.07] hover:text-white"
-            >
-              <Video size={16} />
+          <div className="flex gap-2">
+            <button onClick={chooseSingle} className="key key-line h-10 px-4 text-sm">
+              <Video size={15} />
               Just this video
             </button>
-            <button
-              onClick={choosePlaylist}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-500 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-red-500/20 transition-all hover:bg-red-600 hover:shadow-red-500/30 active:scale-[0.98]"
-            >
-              <ListVideo size={16} />
+            <button onClick={choosePlaylist} className="key key-red h-10 px-4 text-sm">
+              <ListVideo size={15} />
               Entire playlist
             </button>
           </div>
+          <button
+            onClick={() => setChoice(null)}
+            title="Cancel"
+            aria-label="Cancel"
+            className="shrink-0 rounded-sm p-1 text-[var(--t-dim)] transition-colors hover:bg-[var(--t-hover)] hover:text-[var(--t-fg)]"
+          >
+            <X size={16} />
+          </button>
         </div>
       )}
 
       {results.length > 0 && (
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-white/10 bg-white/[0.02]">
-          <div className="flex shrink-0 items-center justify-between border-b border-white/5 px-3.5 py-2">
-            <span className="text-xs font-medium text-white/45">
-              {results.length} search results
-            </span>
+        <section className="flex min-h-0 flex-1 flex-col">
+          <div className="flex shrink-0 items-baseline justify-between border-b border-[var(--t-rule-strong)] pb-3">
+            <span className="text-sm font-semibold">{results.length} search results</span>
             <button
               onClick={() => setResults([])}
-              className="text-xs text-white/40 transition-colors hover:text-white/70"
+              className="text-sm text-[var(--t-dim)] transition-colors hover:text-[var(--t-fg)]"
             >
               Clear
             </button>
           </div>
-          <ul className="scroll-thin min-h-0 flex-1 divide-y divide-white/5 overflow-y-auto">
+          <ul className="scroll-ink -ml-3 -mr-[22px] min-h-0 flex-1 overflow-y-auto">
             {results.map((entry) => (
-              <li key={entry.id}>
+              <li
+                key={entry.id}
+                className="group relative flex items-center gap-4 border-b border-[var(--t-rule)] px-3 py-3 transition-colors hover:bg-[var(--t-hover)]"
+              >
+                <button
+                  onClick={() => previewResult(entry)}
+                  title="Preview this video"
+                  aria-label={`Preview ${entry.title}`}
+                  className="group/thumb relative z-10 shrink-0 overflow-hidden rounded-sm"
+                >
+                  {entry.thumbnail ? (
+                    <img
+                      src={entry.thumbnail}
+                      alt=""
+                      loading="lazy"
+                      className="aspect-video w-28 object-cover"
+                    />
+                  ) : (
+                    <span className="flex aspect-video w-28 items-center justify-center bg-[var(--t-rule)]">
+                      <Play size={16} className="text-[var(--t-faint)]" />
+                    </span>
+                  )}
+                  <span className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover/thumb:opacity-100">
+                    <Play size={18} className="text-white" fill="currentColor" />
+                  </span>
+                </button>
                 <button
                   onClick={() => void resolveUrl(entry.url)}
-                  className="group flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-white/[0.04]"
+                  className="flex min-w-0 flex-1 items-center gap-4 text-left after:absolute after:inset-0"
                 >
-                  <span
-                    role="button"
-                    tabIndex={0}
-                    onClick={(e) => {
-                      // The row resolves the video; the thumbnail previews it.
-                      e.stopPropagation()
-                      previewResult(entry)
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.stopPropagation()
-                        previewResult(entry)
-                      }
-                    }}
-                    title="Preview this video"
-                    aria-label={`Preview ${entry.title}`}
-                    className="relative shrink-0 overflow-hidden rounded-md"
-                  >
-                    {entry.thumbnail ? (
-                      <img
-                        src={entry.thumbnail}
-                        alt=""
-                        className="h-11 w-[72px] object-cover"
-                      />
-                    ) : (
-                      <span className="flex h-11 w-[72px] items-center justify-center bg-white/5">
-                        <Play size={16} className="text-white/30" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[15px] font-medium">
+                      {entry.title}
+                    </span>
+                    {entry.uploader && (
+                      <span className="mt-0.5 block truncate text-[13px] text-[var(--t-dim)]">
+                        {entry.uploader}
                       </span>
                     )}
-                    <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                      <Play size={16} className="text-white" fill="currentColor" />
-                    </span>
-                  </span>
-                  <span className="min-w-0 flex-1 truncate text-sm text-white/80 transition-colors group-hover:text-white">
-                    {entry.title}
                   </span>
                   {entry.duration ? (
-                    <span className="shrink-0 rounded bg-white/5 px-1.5 py-0.5 text-xs tabular-nums text-white/45">
+                    <span className="shrink-0 text-[13px] tabular-nums text-[var(--t-dim)]">
                       {formatDuration(entry.duration)}
                     </span>
                   ) : null}
@@ -264,7 +250,7 @@ export function UrlBar(): React.JSX.Element {
               </li>
             ))}
           </ul>
-        </div>
+        </section>
       )}
     </div>
   )

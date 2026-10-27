@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ListPlus, Loader2, Play, Plus, Search, X } from 'lucide-react'
+import { CheckCircle2, ListPlus, Loader2, Play, Plus, Search, X } from 'lucide-react'
 import type { PlaylistEntry, TrackInput } from '@shared/types'
 import { useAppStore } from '../../stores/appStore'
 import { formatDuration, looksLikeUrl } from '../../lib/format'
@@ -7,8 +7,8 @@ import { LocalFilesPanel } from './LocalFilesPanel'
 
 /**
  * Search YouTube or paste a link/playlist, then add tracks to the active queue.
- * Results float over the player/queue as a dismissable dropdown (Esc, the X,
- * or clicking anywhere else closes it) so the layout never squishes.
+ * Results drop over the stage as a raised panel (Esc, the X, or clicking
+ * anywhere else closes it) so the layout never moves.
  */
 export function SearchPanel(): React.JSX.Element | null {
   const guildId = useAppStore((s) => s.activeGuildId)
@@ -123,11 +123,11 @@ export function SearchPanel(): React.JSX.Element | null {
 
   return (
     <section ref={rootRef} className="relative z-20 shrink-0">
-      <div className="flex gap-2.5">
-        <div className="field field-indigo group flex flex-1 items-center gap-2.5 px-4 py-2.5">
+      <div className="flex items-end gap-3">
+        <div className="line-field line-field-blue group flex-1 pb-3">
           <Search
-            size={17}
-            className="shrink-0 text-white/40 group-focus-within:text-indigo-400/80"
+            size={19}
+            className="shrink-0 text-[var(--t-faint)] transition-colors group-focus-within:text-[var(--t-blue)]"
           />
           <input
             value={query}
@@ -135,8 +135,9 @@ export function SearchPanel(): React.JSX.Element | null {
             onKeyDown={(e) => e.key === 'Enter' && void submit()}
             onFocus={() => results.length > 0 && setOpen(true)}
             placeholder="Search YouTube, or paste a link or playlist to queue it…"
+            aria-label="Search or link to queue"
             spellCheck={false}
-            className="flex-1 bg-transparent text-sm text-white/90 outline-none placeholder:text-white/30"
+            className="min-w-0 flex-1 bg-transparent text-base outline-none"
           />
           {query && (
             <button
@@ -146,16 +147,17 @@ export function SearchPanel(): React.JSX.Element | null {
                 setOpen(false)
               }}
               title="Clear"
-              className="shrink-0 rounded-md p-0.5 text-white/30 transition-colors hover:bg-white/10 hover:text-white/70"
+              aria-label="Clear search"
+              className="shrink-0 rounded-sm p-1 text-[var(--t-dim)] transition-colors hover:bg-[var(--t-hover)] hover:text-[var(--t-fg)]"
             >
-              <X size={14} />
+              <X size={15} />
             </button>
           )}
         </div>
         <button
           onClick={() => void submit()}
           disabled={busy || !trimmed}
-          className="btn btn-indigo px-4 text-sm"
+          className="key key-blue h-11 shrink-0 px-5 text-sm"
         >
           {busy ? (
             <Loader2 size={16} className="animate-spin" />
@@ -169,24 +171,25 @@ export function SearchPanel(): React.JSX.Element | null {
 
       {(notice || error) && !open && (
         <p
-          className={`absolute left-0 right-0 top-full z-30 mt-2 rounded-lg border px-3 py-1.5 text-xs ${
-            notice
-              ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300'
-              : 'border-red-500/25 bg-red-500/10 text-red-300'
+          role={error ? 'alert' : 'status'}
+          className={`absolute left-0 top-full mt-2 flex items-center gap-1.5 text-[13px] ${
+            notice ? 'text-[var(--t-fg)]' : 'text-[var(--t-red)]'
           }`}
         >
+          {notice && <CheckCircle2 size={14} className="shrink-0 text-[var(--w-live)]" />}
           {notice ?? error}
         </p>
       )}
 
       {open && results.length > 0 && (
-        <div className="absolute left-0 right-0 top-full z-30 mt-2 flex max-h-96 flex-col overflow-hidden rounded-xl border border-white/10 bg-[#12151c]/95 shadow-2xl shadow-black/50 backdrop-blur-md">
-          <div className="flex shrink-0 items-center gap-3 border-b border-white/5 px-3.5 py-2">
-            <span className="text-xs font-medium text-white/45">
-              {results.length} results
-            </span>
+        <div className="sheet absolute left-0 right-0 top-full z-30 mt-3 flex max-h-[440px] flex-col rounded-sm shadow-[0_24px_48px_-12px_rgba(0,0,0,0.6)]">
+          <div className="flex shrink-0 items-center gap-4 border-b border-[var(--t-rule-strong)] px-5 py-3">
+            <span className="text-sm font-semibold">{results.length} results</span>
             {notice && (
-              <span className="truncate text-xs text-emerald-300">{notice}</span>
+              <span className="flex min-w-0 items-center gap-1.5 truncate text-[13px] text-[var(--t-dim)]">
+                <CheckCircle2 size={13} className="shrink-0 text-[var(--w-live)]" />
+                {notice}
+              </span>
             )}
             <div className="ml-auto flex items-center gap-3">
               <button
@@ -204,49 +207,58 @@ export function SearchPanel(): React.JSX.Element | null {
                     `Added ${results.length} tracks`
                   )
                 }
-                className="flex items-center gap-1.5 text-xs text-indigo-300 transition-colors hover:text-indigo-200"
+                className="flex items-center gap-1.5 text-[13px] font-semibold text-[var(--t-blue)] transition-opacity hover:opacity-80"
               >
-                <ListPlus size={13} />
+                <ListPlus size={14} />
                 Add all
               </button>
               <button
                 onClick={() => setOpen(false)}
                 title="Close results"
                 aria-label="Close results"
-                className="rounded p-1 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+                className="rounded-sm p-1 text-[var(--t-dim)] transition-colors hover:bg-[var(--t-hover)] hover:text-[var(--t-fg)]"
               >
-                <X size={14} />
+                <X size={15} />
               </button>
             </div>
           </div>
-          <ul className="scroll-thin-indigo min-h-0 flex-1 divide-y divide-white/5 overflow-y-auto">
+          <ul className="scroll-ink min-h-0 flex-1 overflow-y-auto">
             {results.map((entry) => (
               <li key={entry.id}>
                 <button
                   onClick={() => addResult(entry)}
-                  className="group flex w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-white/[0.04]"
+                  title="Add to the queue"
+                  className="group flex w-full items-center gap-4 border-b border-[var(--t-rule)] py-2.5 pl-5 pr-2.5 text-left transition-colors hover:bg-[var(--t-hover)]"
                 >
-                  <div className="relative shrink-0 overflow-hidden rounded-md">
+                  <span className="relative shrink-0 overflow-hidden rounded-sm">
                     {entry.thumbnail ? (
                       <img
                         src={entry.thumbnail}
                         alt=""
-                        className="h-10 w-[68px] object-cover"
+                        loading="lazy"
+                        className="aspect-video w-24 object-cover"
                       />
                     ) : (
-                      <div className="flex h-10 w-[68px] items-center justify-center bg-white/5">
-                        <Play size={15} className="text-white/30" />
-                      </div>
+                      <span className="flex aspect-video w-24 items-center justify-center bg-[var(--t-rule)]">
+                        <Play size={15} className="text-[var(--t-faint)]" />
+                      </span>
                     )}
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                      <Plus size={16} className="text-white" />
-                    </div>
-                  </div>
-                  <span className="min-w-0 flex-1 truncate text-sm text-white/80 group-hover:text-white">
-                    {entry.title}
+                    <span className="absolute inset-0 flex items-center justify-center bg-[var(--w-blue)]/80 opacity-0 transition-opacity group-hover:opacity-100">
+                      <Plus size={18} className="text-white" />
+                    </span>
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold">
+                      {entry.title}
+                    </span>
+                    {entry.uploader && (
+                      <span className="mt-0.5 block truncate text-xs text-[var(--t-dim)]">
+                        {entry.uploader}
+                      </span>
+                    )}
                   </span>
                   {entry.duration ? (
-                    <span className="shrink-0 rounded bg-white/5 px-1.5 py-0.5 text-xs tabular-nums text-white/45">
+                    <span className="shrink-0 text-[13px] tabular-nums text-[var(--t-dim)]">
                       {formatDuration(entry.duration)}
                     </span>
                   ) : null}

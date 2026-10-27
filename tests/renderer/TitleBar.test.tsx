@@ -45,7 +45,7 @@ describe('TitleBar', () => {
     useAppStore.setState({ view: 'history' })
     render(<TitleBar />)
     const downloader = screen.getByText('Downloader').closest('button')
-    expect(downloader?.className).toContain('bg-red-500/15')
+    expect(downloader).toHaveAttribute('aria-current', 'page')
   })
 
   it('shows an update badge when an update is ready', () => {

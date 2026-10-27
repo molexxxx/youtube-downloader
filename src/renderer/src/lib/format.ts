@@ -63,9 +63,24 @@ export function playlistChoiceId(url: string): string | null {
  * `/shorts/…` forms.
  */
 export function youtubeEmbedUrl(url: string, id?: string | null): string | null {
-  const videoId = /^[\w-]{11}$/.test(id ?? '') ? id! : parseYoutubeVideoId(url)
+  const videoId = resolveVideoId(url, id)
   if (!videoId) return null
   return `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`
+}
+
+/**
+ * Medium-quality (320x180) YouTube thumbnail for a video, or null when no video
+ * id can be derived. Used where the stored record carries no thumbnail of its
+ * own, such as queue jobs and history entries.
+ */
+export function youtubeThumbnailUrl(url: string, id?: string | null): string | null {
+  const videoId = resolveVideoId(url, id)
+  if (!videoId) return null
+  return `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`
+}
+
+function resolveVideoId(url: string, id?: string | null): string | null {
+  return /^[\w-]{11}$/.test(id ?? '') ? id! : parseYoutubeVideoId(url)
 }
 
 function parseYoutubeVideoId(url: string): string | null {

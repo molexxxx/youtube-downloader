@@ -7,16 +7,24 @@ type Level = LogEntry['level']
 const LEVELS: Level[] = ['debug', 'info', 'warn', 'error']
 
 const LEVEL_STYLE: Record<Level, string> = {
-  debug: 'text-white/40',
-  info: 'text-sky-300',
-  warn: 'text-amber-300',
-  error: 'text-red-300'
+  debug: 'text-[var(--t-dim)]',
+  info: 'text-[var(--t-blue)]',
+  warn: 'text-[var(--t-warn)]',
+  error: 'text-[var(--t-red)]'
+}
+
+const LEVEL_MARK: Record<Level, string> = {
+  debug: 'bg-[var(--t-dim)]',
+  info: 'bg-[var(--t-blue)]',
+  warn: 'bg-[var(--t-warn)]',
+  error: 'bg-[var(--t-red)]'
 }
 
 function formatTime(ms: number): string {
   return new Date(ms).toLocaleTimeString(undefined, { hour12: false })
 }
 
+/** Live app log on the stage: level filters and tools above a recessed console well. */
 export function LogsScreen(): React.JSX.Element {
   const logs = useAppStore((s) => s.logs)
   const setLogs = useAppStore((s) => s.setLogs)
@@ -50,30 +58,50 @@ export function LogsScreen(): React.JSX.Element {
   }
 
   return (
-    <div className="flex h-full flex-col gap-3">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-lg font-semibold">Logs</h1>
-        <div className="flex items-center gap-1.5">
-          {LEVELS.map((level) => (
-            <button
-              key={level}
-              onClick={() => toggleLevel(level)}
-              className={`rounded-md px-2 py-1 text-xs font-medium capitalize ${
-                active.has(level)
-                  ? 'bg-white/10 text-white'
-                  : 'text-white/35 hover:text-white/60'
-              }`}
-            >
-              {level}
-            </button>
-          ))}
-          <span className="mx-1 h-4 w-px bg-white/10" />
+    <div className="flex h-full min-h-0 flex-col px-10 pb-8 pt-8">
+      <div className="flex items-end justify-between gap-4 border-b border-[var(--t-rule-strong)] pb-4">
+        <div>
+          <h1 className="display text-[24px]">Logs</h1>
+          <p className="mt-2 text-sm tabular-nums text-[var(--t-dim)]">
+            {visible.length === logs.length
+              ? `${logs.length} ${logs.length === 1 ? 'entry' : 'entries'}`
+              : `${visible.length} of ${logs.length} entries`}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div
+            role="group"
+            aria-label="Levels"
+            className="tape flex gap-0.5 rounded-sm p-1"
+          >
+            {LEVELS.map((level) => {
+              const on = active.has(level)
+              return (
+                <button
+                  key={level}
+                  onClick={() => toggleLevel(level)}
+                  aria-pressed={on}
+                  className={`flex items-center gap-2 rounded-sm px-2.5 py-1 text-[13px] font-semibold capitalize transition-colors ${
+                    on
+                      ? 'bg-[var(--w-stage)] text-[var(--t-fg)]'
+                      : 'text-[var(--t-dim)] line-through hover:text-[var(--t-fg)]'
+                  }`}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`h-2 w-2 shrink-0 ${on ? LEVEL_MARK[level] : 'bg-[var(--t-rule-strong)]'}`}
+                  />
+                  {level}
+                </button>
+              )
+            })}
+          </div>
+          <span aria-hidden="true" className="mx-2 h-5 w-px bg-[var(--t-rule-strong)]" />
           <button
             onClick={() => setFollow((v) => !v)}
             title="Follow new logs"
-            className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs ${
-              follow ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/70'
-            }`}
+            aria-pressed={follow}
+            className="chip flex items-center gap-1.5 px-2.5 py-1.5 text-[13px]"
           >
             <ArrowDownToLine size={13} />
             Tail
@@ -81,7 +109,7 @@ export function LogsScreen(): React.JSX.Element {
           <button
             onClick={copyAll}
             title="Copy visible logs"
-            className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-white/40 hover:text-white/70"
+            className="key key-line h-8 px-3 text-[13px]"
           >
             <Copy size={13} />
             Copy
@@ -89,7 +117,7 @@ export function LogsScreen(): React.JSX.Element {
           <button
             onClick={() => setLogs([])}
             title="Clear the view"
-            className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-white/40 hover:text-red-300"
+            className="key key-line h-8 px-3 text-[13px] hover:text-[var(--t-red)]"
           >
             <Trash2 size={13} />
             Clear
@@ -99,20 +127,20 @@ export function LogsScreen(): React.JSX.Element {
 
       <div
         ref={scrollRef}
-        className="selectable flex-1 overflow-y-auto rounded-xl border border-white/5 bg-black/20 p-3 font-mono text-xs leading-relaxed"
+        className="floor selectable scroll-ink mt-6 min-h-0 flex-1 overflow-y-auto rounded-sm py-3 pl-4 pr-1.5 font-mono text-xs leading-relaxed"
       >
         {visible.length === 0 ? (
-          <p className="text-white/30">No log entries.</p>
+          <p className="text-[var(--t-faint)]">No log entries.</p>
         ) : (
           visible.map((entry, i) => (
-            <div key={i} className="flex gap-2 whitespace-pre-wrap break-all">
-              <span className="shrink-0 text-white/30">
+            <div key={i} className="flex gap-3 whitespace-pre-wrap break-all">
+              <span className="shrink-0 text-[var(--t-dim)]">
                 {formatTime(entry.timestamp)}
               </span>
-              <span className={`shrink-0 uppercase ${LEVEL_STYLE[entry.level]}`}>
+              <span className={`w-11 shrink-0 uppercase ${LEVEL_STYLE[entry.level]}`}>
                 {entry.level}
               </span>
-              <span className="text-white/75">{entry.message}</span>
+              <span className="text-[var(--t-fg)]">{entry.message}</span>
             </div>
           ))
         )}

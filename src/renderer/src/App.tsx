@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Bell, BellOff, Download, History, KeyRound, X } from 'lucide-react'
+import { AlertCircle, Bell, BellOff, Download, History, KeyRound, X } from 'lucide-react'
 import { useAppStore } from './stores/appStore'
 import { applyTheme } from './lib/theme'
 import { TitleBar } from './components/layout/TitleBar'
@@ -117,39 +117,43 @@ function App(): React.JSX.Element {
   }, [theme])
 
   return (
-    <div className="flex h-screen flex-col bg-[#0b0d12] text-white">
+    <div className="floor flex h-screen flex-col">
       <TitleBar />
       <UpdateToast />
       <VideoPreviewModal />
       {binaries !== null && (!binariesReady || setupOpen || setupComplete === false) ? (
         <SetupGate />
       ) : view === 'settings' ? (
-        <main className="flex-1 overflow-y-auto p-5">
+        <main className="focus-ring-red signal-red stage scroll-ink scroll-centered flex-1 overflow-y-auto">
           <SettingsScreen />
         </main>
       ) : view === 'logs' ? (
-        <main className="flex flex-1 flex-col overflow-hidden p-5">
+        <main className="focus-ring-red signal-red stage flex min-h-0 flex-1 flex-col overflow-hidden">
           <LogsScreen />
         </main>
       ) : view === 'discord' ? (
-        <main className="flex flex-1 flex-col overflow-hidden p-5">
+        <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <DiscordScreen />
         </main>
       ) : (
-        <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <DownloaderTabs />
-          {view === 'history' ? (
-            <div className="flex-1 overflow-y-auto px-5 pb-5">
-              <HistoryScreen />
-            </div>
-          ) : (
-            <div className="flex min-h-0 flex-1 gap-5 overflow-hidden px-5 pb-5">
-              <section className="flex min-h-0 flex-1 flex-col gap-4">
+        <main className="focus-ring-red signal-red stage flex min-h-0 flex-1 overflow-hidden">
+          <section className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <DownloaderTabs />
+            {view === 'history' ? (
+              <div className="scroll-ink min-h-0 flex-1 overflow-y-auto pb-10 pl-10 pr-[30px]">
+                <HistoryScreen />
+              </div>
+            ) : (
+              <div className="scroll-ink flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto pb-8 pl-10 pr-[30px]">
                 <UrlBar />
                 {error && (
-                  <div className="rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-2 text-sm text-red-300">
-                    {error}
-                  </div>
+                  <p
+                    role="alert"
+                    className="flex items-start gap-2 text-sm text-[var(--t-red)]"
+                  >
+                    <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                    <span className="selectable min-w-0">{error}</span>
+                  </p>
                 )}
                 <CookieHint />
                 {resolving ? (
@@ -159,16 +163,21 @@ function App(): React.JSX.Element {
                 ) : searchResults.length === 0 && !error ? (
                   <EmptyState />
                 ) : null}
-              </section>
-              <aside className="scroll-thin flex w-80 flex-col gap-3 overflow-y-auto border-l border-white/5 pl-5 pr-2">
-                <div className="flex shrink-0 items-center justify-between">
-                  <h2 className="text-sm font-semibold text-white/70">Downloads</h2>
-                  <NotificationToggle />
-                </div>
-                <DownloadQueue />
-              </aside>
+              </div>
+            )}
+          </section>
+          <aside
+            aria-label="Downloads"
+            className="sheet flex w-[360px] shrink-0 flex-col border-l border-[var(--t-rule)]"
+          >
+            <div className="flex shrink-0 items-end justify-between gap-3 px-6 pb-4 pt-6">
+              <h2 className="display text-lg">Downloads</h2>
+              <NotificationToggle />
             </div>
-          )}
+            <div className="scroll-ink min-h-0 flex-1 overflow-y-auto pb-6 pl-6 pr-[14px]">
+              <DownloadQueue />
+            </div>
+          </aside>
         </main>
       )}
     </div>
@@ -180,7 +189,11 @@ function DownloaderTabs(): React.JSX.Element {
   const setView = useAppStore((s) => s.setView)
 
   return (
-    <div className="flex shrink-0 items-center gap-1 px-5 pb-3 pt-3">
+    <div
+      role="tablist"
+      aria-label="Downloader"
+      className="flex shrink-0 items-center gap-6 px-10 pb-5 pt-5"
+    >
       <SubTab
         active={view === 'downloads'}
         onClick={() => setView('downloads')}
@@ -213,10 +226,10 @@ function SubTab({
       onClick={onClick}
       role="tab"
       aria-selected={active}
-      className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+      className={`flex items-center gap-1.5 border-b-2 py-1.5 text-[13px] font-semibold transition-colors ${
         active
-          ? 'bg-red-500/15 text-red-200 ring-1 ring-inset ring-red-500/25'
-          : 'text-white/50 hover:bg-white/5 hover:text-white'
+          ? 'border-[var(--w-red)] text-[var(--t-fg)]'
+          : 'border-transparent text-[var(--t-dim)] hover:text-[var(--t-fg)]'
       }`}
     >
       {icon}
@@ -233,27 +246,25 @@ function CookieHint(): React.JSX.Element | null {
   if (!cookieHint) return null
 
   return (
-    <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm">
-      <KeyRound size={16} className="mt-0.5 shrink-0 text-amber-300" />
-      <div className="flex-1 space-y-2">
-        <p className="text-amber-200/90">
-          This looks like private, age-restricted, or members-only content. Sign in by
-          importing your browser cookies, then try again.
-        </p>
-        <button
-          onClick={() => {
-            setView('settings')
-            setCookieHint(false)
-          }}
-          className="rounded-md bg-amber-500/90 px-3 py-1 text-xs font-medium text-black hover:bg-amber-400"
-        >
-          Set up cookies
-        </button>
-      </div>
+    <div className="flex items-center gap-3 border-y border-[var(--t-rule-strong)] py-3 text-sm">
+      <KeyRound size={16} className="shrink-0 text-[var(--t-warn)]" />
+      <p className="min-w-0 flex-1 text-[var(--t-fg)]">
+        This looks like private, age-restricted, or members-only content. Sign in by
+        importing your browser cookies, then try again.
+      </p>
+      <button
+        onClick={() => {
+          setView('settings')
+          setCookieHint(false)
+        }}
+        className="key key-line h-8 shrink-0 px-3 text-[13px]"
+      >
+        Set up cookies
+      </button>
       <button
         onClick={() => setCookieHint(false)}
         aria-label="Dismiss"
-        className="shrink-0 rounded p-0.5 text-white/30 hover:bg-white/10 hover:text-white/70"
+        className="shrink-0 rounded-sm p-1 text-[var(--t-dim)] transition-colors hover:bg-[var(--t-hover)] hover:text-[var(--t-fg)]"
       >
         <X size={14} />
       </button>
@@ -275,12 +286,13 @@ function NotificationToggle(): React.JSX.Element {
     <button
       onClick={toggle}
       title={notifications ? 'Mute notifications' : 'Unmute notifications'}
-      className="rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white/70"
+      aria-label={notifications ? 'Mute notifications' : 'Unmute notifications'}
+      className="mb-1 rounded-sm p-1.5 text-[var(--t-dim)] transition-colors hover:bg-[var(--t-hover)] hover:text-[var(--t-fg)]"
     >
       {notifications ? (
-        <Bell size={14} />
+        <Bell size={15} />
       ) : (
-        <BellOff size={14} className="text-red-400" />
+        <BellOff size={15} className="text-[var(--t-red)]" />
       )}
     </button>
   )

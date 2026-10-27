@@ -4,9 +4,9 @@ import { useAppStore } from '../../stores/appStore'
 import { Select } from '../shared/Select'
 
 /**
- * Per-server settings: role gating and auto-leave. Rendered inside the sidebar
- * tabs, so it draws no card chrome of its own. Playback volume intentionally
- * lives only in the player - it applies live and is remembered per server.
+ * Per-server settings on the sheet: role gating and auto-leave. Playback
+ * volume intentionally lives only in the player - it applies live and is
+ * remembered per server.
  */
 export function PermissionsPanel(): React.JSX.Element | null {
   const guild = useAppStore(
@@ -33,27 +33,30 @@ export function PermissionsPanel(): React.JSX.Element | null {
   ]
 
   return (
-    <div className="flex flex-col gap-4 p-3.5">
-      <div>
-        <label className="mb-1.5 block text-xs font-medium text-white/60">
-          Who can use slash commands
-        </label>
+    <div className="scroll-ink flex min-h-0 flex-1 flex-col overflow-y-auto pb-6 pl-6 pr-[14px] pt-5">
+      <p className="truncate text-[13px] text-[var(--t-dim)]">{guild.name}</p>
+
+      <div className="mt-4 border-t border-[var(--t-rule-strong)] pt-5">
+        <p className="text-sm font-semibold">Who can use slash commands</p>
         <Select
           value={settings.allowedRoleId ?? ''}
           onChange={(value) => void update({ allowedRoleId: value || null })}
           options={roleOptions}
           accent="indigo"
+          className="mt-2.5"
         />
-        <p className="mt-1.5 text-[11px] leading-relaxed text-white/30">
+        <p className="mt-2.5 text-[13px] leading-relaxed text-[var(--t-dim)]">
           Gates /play, /skip and friends inside Discord. You always have full control from
           this app.
         </p>
       </div>
 
-      <label className="flex cursor-pointer items-center justify-between gap-3">
-        <span className="text-xs font-medium text-white/60">
-          Leave voice when the queue ends
-          <span className="mt-0.5 block font-normal text-white/30">
+      <label className="mt-6 flex cursor-pointer items-center justify-between gap-4 border-t border-[var(--t-rule)] pt-5">
+        <span>
+          <span className="block text-sm font-semibold">
+            Leave voice when the queue ends
+          </span>
+          <span className="mt-1 block text-[13px] text-[var(--t-dim)]">
             Disconnects after a minute of silence.
           </span>
         </span>
@@ -61,7 +64,7 @@ export function PermissionsPanel(): React.JSX.Element | null {
           type="checkbox"
           checked={settings.autoLeaveOnEmpty}
           onChange={(e) => void update({ autoLeaveOnEmpty: e.target.checked })}
-          className="switch shrink-0"
+          className="toggle"
         />
       </label>
     </div>

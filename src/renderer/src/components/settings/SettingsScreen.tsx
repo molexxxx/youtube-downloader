@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import {
   AlertTriangle,
   Bug,
@@ -27,6 +27,7 @@ import type {
   VideoContainer
 } from '@shared/types'
 import { Select } from '../shared/Select'
+import { Segmented } from '../shared/Segmented'
 import {
   describeFfmpeg,
   describeYtdlp,
@@ -39,6 +40,12 @@ import { SelfTestList } from '../setup/SelfTestList'
 const THEMES: Theme[] = ['system', 'dark', 'light']
 const CONTAINERS: VideoContainer[] = ['mp4', 'mkv']
 
+/** Boxed text input matching the line-tone Select trigger. */
+const INPUT =
+  'w-full rounded-sm border border-[var(--t-rule-strong)] bg-transparent px-3 py-2.5 text-sm text-[var(--t-fg)] outline-none transition-colors placeholder:text-[var(--t-faint)] hover:border-[var(--t-dim)] focus:border-[var(--t-accent)]'
+
+const SMALL_KEY = 'key key-line h-8 shrink-0 px-3 text-[13px]'
+
 function formatAge(ms: number | null): string {
   if (ms == null) return 'never'
   const mins = Math.floor(ms / 60000)
@@ -49,6 +56,10 @@ function formatAge(ms: number | null): string {
   return `${Math.floor(hours / 24)}d ago`
 }
 
+/**
+ * App settings as a ruled ledger on the stage: each section title holds the
+ * left column while its rows run down the right. Every change saves at once.
+ */
 export function SettingsScreen(): React.JSX.Element | null {
   const config = useAppStore((s) => s.config)
   const setConfig = useAppStore((s) => s.setConfig)
@@ -154,338 +165,362 @@ export function SettingsScreen(): React.JSX.Element | null {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
-      <h1 className="text-lg font-semibold">Settings</h1>
-
-      <Section title="Downloads">
-        <Field label="Download folder">
-          <div className="flex gap-2">
-            <input
-              readOnly
-              value={config.downloadDir}
-              className="min-w-0 flex-1 truncate rounded-lg border border-white/10 bg-[#12151c] px-3 py-2 text-sm text-white/70 outline-none"
-            />
-            <button
-              onClick={chooseDir}
-              className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 text-sm text-white/70 hover:border-white/20"
-            >
-              <FolderOpen size={15} />
-              Browse
-            </button>
-          </div>
-        </Field>
-
-        <Field label="Default preset">
-          <Select
-            value={config.defaultPreset}
-            onChange={(v) => update({ defaultPreset: v })}
-            options={PRESETS.map((p) => ({ value: p.id, label: p.label }))}
-          />
-        </Field>
-
-        <Field
-          label="Default container"
-          description="Video downloads always include the best available audio, merged in automatically."
+    <div className="mx-auto w-full max-w-[1040px] px-10 pb-16 pt-8">
+      <div className="flex items-end justify-between gap-4 border-b border-[var(--t-rule-strong)] pb-4">
+        <div>
+          <h1 className="display text-[24px]">Settings</h1>
+          <p className="mt-2 text-sm text-[var(--t-dim)]">
+            Changes save as you make them.
+          </p>
+        </div>
+        <button
+          onClick={reset}
+          className="key key-line h-9 shrink-0 px-3 text-[13px] hover:text-[var(--t-red)]"
         >
-          <Toggles
-            value={config.videoContainer}
-            options={CONTAINERS}
-            onChange={(v) => update({ videoContainer: v as VideoContainer })}
-          />
-        </Field>
+          <RotateCcw size={14} />
+          Reset to defaults
+        </button>
+      </div>
 
-        <Field label="Concurrent downloads">
-          <Slider
-            value={config.maxConcurrentDownloads}
-            min={1}
-            max={8}
-            onChange={(v) => update({ maxConcurrentDownloads: v })}
-          />
-        </Field>
+      <div className="divide-y divide-[var(--t-rule)]">
+        <Section title="Downloads">
+          <Field label="Download folder" stacked>
+            <div className="flex gap-2">
+              <input
+                readOnly
+                value={config.downloadDir}
+                className={`${INPUT} min-w-0 flex-1 truncate`}
+              />
+              <button
+                onClick={chooseDir}
+                className="key key-line h-[42px] shrink-0 px-4 text-sm"
+              >
+                <FolderOpen size={15} />
+                Browse
+              </button>
+            </div>
+          </Field>
 
-        <Field label="Output template">
-          <input
-            value={config.outputTemplate}
-            onChange={(e) => update({ outputTemplate: e.target.value })}
-            className="w-full rounded-lg border border-white/10 bg-[#12151c] px-3 py-2 text-sm outline-none"
-          />
-        </Field>
-
-        <Field
-          label="Playlist fetch limit"
-          description="Max items to load when resolving a playlist or mix. Large Mix/radio lists resolve slowly - keep this modest. Set 0 for no limit."
-        >
-          <input
-            type="number"
-            min={0}
-            max={5000}
-            value={config.playlistFetchLimit}
-            onChange={(e) =>
-              update({
-                playlistFetchLimit: Math.max(0, Math.floor(Number(e.target.value) || 0))
-              })
-            }
-            className="w-full rounded-lg border border-white/10 bg-[#12151c] px-3 py-2 text-sm outline-none"
-          />
-        </Field>
-      </Section>
-
-      <Section title="Post-processing">
-        <Check
-          label="Embed thumbnail"
-          description="Save the video thumbnail as cover art inside the file."
-          checked={config.embedThumbnail}
-          onChange={(v) => update({ embedThumbnail: v })}
-        />
-        <Check
-          label="Embed metadata"
-          description="Write title, uploader, and date into the file's tags."
-          checked={config.embedMetadata}
-          onChange={(v) => update({ embedMetadata: v })}
-        />
-        <Check
-          label="Embed chapters"
-          description="Include YouTube chapter markers when available."
-          checked={config.embedChapters}
-          onChange={(v) => update({ embedChapters: v })}
-        />
-        <Check
-          label="Write subtitles"
-          description="Download available subtitles alongside the video."
-          checked={config.writeSubtitles}
-          onChange={(v) => update({ writeSubtitles: v })}
-        />
-        {config.writeSubtitles && (
-          <Field label="Subtitle languages (comma-separated)">
-            <input
-              value={config.subtitleLangs.join(', ')}
-              onChange={(e) =>
-                update({
-                  subtitleLangs: e.target.value
-                    .split(',')
-                    .map((s) => s.trim())
-                    .filter(Boolean)
-                })
-              }
-              placeholder="en, es, fr"
-              className="w-full rounded-lg border border-white/10 bg-[#12151c] px-3 py-2 text-sm outline-none placeholder:text-white/25"
+          <Field label="Default preset">
+            <Select
+              value={config.defaultPreset}
+              onChange={(v) => update({ defaultPreset: v })}
+              options={PRESETS.map((p) => ({ value: p.id, label: p.label }))}
             />
           </Field>
-        )}
-        <Check
-          label="Remove sponsored segments (SponsorBlock)"
-          description="Automatically cut sponsor, intro, and outro segments."
-          checked={config.sponsorBlock}
-          onChange={(v) => update({ sponsorBlock: v })}
-        />
-        <Check
-          label="Skip already-downloaded (archive)"
-          description="Keep a record so re-running a playlist skips finished items."
-          checked={config.useDownloadArchive}
-          onChange={(v) => update({ useDownloadArchive: v })}
-        />
-      </Section>
 
-      <Section title="Cookies">
-        <Field
-          label="Import cookies from browser"
-          description="Lets the app download private, age-restricted, and members-only videos by reusing your signed-in browser session."
-        >
-          <Select
-            value={config.cookiesFromBrowser ?? ''}
-            onChange={setCookieBrowser}
-            options={[
-              { value: '', label: 'Disabled' },
-              { value: 'auto', label: 'Auto-detect' },
-              ...(cookies?.detected ?? []).map((b) => ({ value: b.name, label: b.label }))
-            ]}
+          <Field
+            label="Default container"
+            description="Video downloads always include the best available audio, merged in automatically."
+            width="w-40"
+          >
+            <Segmented
+              label="Default container"
+              size="sm"
+              uppercase
+              value={config.videoContainer}
+              options={CONTAINERS.map((c) => ({ value: c, label: c }))}
+              onChange={(v) => update({ videoContainer: v })}
+            />
+          </Field>
+
+          <Field label="Concurrent downloads">
+            <Slider
+              label="Concurrent downloads"
+              value={config.maxConcurrentDownloads}
+              min={1}
+              max={8}
+              onChange={(v) => update({ maxConcurrentDownloads: v })}
+            />
+          </Field>
+
+          <Field label="Output template" stacked>
+            <input
+              value={config.outputTemplate}
+              onChange={(e) => update({ outputTemplate: e.target.value })}
+              className={`${INPUT} font-mono text-[13px]`}
+            />
+          </Field>
+
+          <Field
+            label="Playlist fetch limit"
+            description="Max items to load when resolving a playlist or mix. Large Mix/radio lists resolve slowly - keep this modest. Set 0 for no limit."
+            width="w-28"
+          >
+            <input
+              type="number"
+              min={0}
+              max={5000}
+              value={config.playlistFetchLimit}
+              onChange={(e) =>
+                update({
+                  playlistFetchLimit: Math.max(0, Math.floor(Number(e.target.value) || 0))
+                })
+              }
+              className={`${INPUT} tabular-nums`}
+            />
+          </Field>
+        </Section>
+
+        <Section title="Post-processing">
+          <Check
+            label="Embed thumbnail"
+            description="Save the video thumbnail as cover art inside the file."
+            checked={config.embedThumbnail}
+            onChange={(v) => update({ embedThumbnail: v })}
           />
-        </Field>
+          <Check
+            label="Embed metadata"
+            description="Write title, uploader, and date into the file's tags."
+            checked={config.embedMetadata}
+            onChange={(v) => update({ embedMetadata: v })}
+          />
+          <Check
+            label="Embed chapters"
+            description="Include YouTube chapter markers when available."
+            checked={config.embedChapters}
+            onChange={(v) => update({ embedChapters: v })}
+          />
+          <Check
+            label="Write subtitles"
+            description="Download available subtitles alongside the video."
+            checked={config.writeSubtitles}
+            onChange={(v) => update({ writeSubtitles: v })}
+          />
+          {config.writeSubtitles && (
+            <Field label="Subtitle languages (comma-separated)" stacked>
+              <input
+                value={config.subtitleLangs.join(', ')}
+                onChange={(e) =>
+                  update({
+                    subtitleLangs: e.target.value
+                      .split(',')
+                      .map((s) => s.trim())
+                      .filter(Boolean)
+                  })
+                }
+                placeholder="en, es, fr"
+                className={INPUT}
+              />
+            </Field>
+          )}
+          <Check
+            label="Remove sponsored segments (SponsorBlock)"
+            description="Automatically cut sponsor, intro, and outro segments."
+            checked={config.sponsorBlock}
+            onChange={(v) => update({ sponsorBlock: v })}
+          />
+          <Check
+            label="Skip already-downloaded (archive)"
+            description="Keep a record so re-running a playlist skips finished items."
+            checked={config.useDownloadArchive}
+            onChange={(v) => update({ useDownloadArchive: v })}
+          />
+        </Section>
 
-        {cookies && cookies.detected.length === 0 ? (
-          <CookieNote tone="warn">
-            No supported browsers detected on this machine, so cookies can&apos;t be
-            imported.
-          </CookieNote>
-        ) : config.cookiesFromBrowser ? (
-          <>
-            <CookieStatus cookies={cookies} busy={cookieBusy} failed={cookieFailed} />
+        <Section title="Cookies">
+          <Field
+            label="Import cookies from browser"
+            description="Lets the app download private, age-restricted, and members-only videos by reusing your signed-in browser session."
+          >
+            <Select
+              value={config.cookiesFromBrowser ?? ''}
+              onChange={setCookieBrowser}
+              options={[
+                { value: '', label: 'Disabled' },
+                { value: 'auto', label: 'Auto-detect' },
+                ...(cookies?.detected ?? []).map((b) => ({
+                  value: b.name,
+                  label: b.label
+                }))
+              ]}
+            />
+          </Field>
 
-            <CookieNote tone="info">
-              Tip: close
-              {cookies?.effectiveLabel
-                ? ` ${cookies.effectiveLabel}`
-                : ' your browser'}{' '}
-              completely before refreshing - a running browser locks its cookie database
-              and the import will fail.
-            </CookieNote>
-
-            {cookieFailed && (
+          {cookies && cookies.detected.length === 0 ? (
+            <div className="py-4">
               <CookieNote tone="warn">
-                Couldn&apos;t read cookies. Make sure
+                No supported browsers detected on this machine, so cookies can&apos;t be
+                imported.
+              </CookieNote>
+            </div>
+          ) : config.cookiesFromBrowser ? (
+            <div className="space-y-3 py-4">
+              <div className="flex items-start justify-between gap-6">
+                <CookieStatus cookies={cookies} busy={cookieBusy} failed={cookieFailed} />
+                <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    onClick={refreshCookies}
+                    disabled={cookieBusy}
+                    className={SMALL_KEY}
+                  >
+                    <RefreshCw size={13} className={cookieBusy ? 'animate-spin' : ''} />
+                    Refresh
+                  </button>
+                  <button
+                    onClick={clearCookies}
+                    disabled={cookieBusy}
+                    className={`${SMALL_KEY} hover:text-[var(--t-red)]`}
+                  >
+                    <Trash2 size={13} />
+                    Clear
+                  </button>
+                </div>
+              </div>
+
+              <CookieNote tone="info">
+                Tip: close
                 {cookies?.effectiveLabel
                   ? ` ${cookies.effectiveLabel}`
                   : ' your browser'}{' '}
-                is fully closed (check the system tray), then press Refresh.
+                completely before refreshing - a running browser locks its cookie database
+                and the import will fail.
               </CookieNote>
-            )}
 
-            <div className="flex items-center justify-end gap-2">
-              <button
-                onClick={refreshCookies}
-                disabled={cookieBusy}
-                className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs text-white/70 hover:border-white/20 disabled:opacity-50"
-              >
-                <RefreshCw size={13} className={cookieBusy ? 'animate-spin' : ''} />
-                Refresh
-              </button>
-              <button
-                onClick={clearCookies}
-                disabled={cookieBusy}
-                className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs text-white/70 hover:border-red-500/40 hover:text-red-300 disabled:opacity-50"
-              >
-                <Trash2 size={13} />
-                Clear
-              </button>
+              {cookieFailed && (
+                <CookieNote tone="warn">
+                  Couldn&apos;t read cookies. Make sure
+                  {cookies?.effectiveLabel
+                    ? ` ${cookies.effectiveLabel}`
+                    : ' your browser'}{' '}
+                  is fully closed (check the system tray), then press Refresh.
+                </CookieNote>
+              )}
             </div>
-          </>
-        ) : null}
-      </Section>
+          ) : null}
+        </Section>
 
-      <Section title="Appearance & updates">
-        <Field label="Theme">
-          <Toggles
-            value={config.theme}
-            options={THEMES}
-            onChange={(v) => update({ theme: v as Theme })}
-          />
-        </Field>
-        <Check
-          label="Auto-update the app"
-          checked={config.autoUpdateApp}
-          onChange={(v) => update({ autoUpdateApp: v })}
-        />
-        <Check
-          label="Desktop notification when a download finishes"
-          checked={config.notifications}
-          onChange={(v) => update({ notifications: v })}
-        />
-        <Check
-          label="Keep running in the tray when the window is closed"
-          checked={config.closeToTray}
-          onChange={(v) => update({ closeToTray: v })}
-        />
-        <Check
-          label="Launch on system startup"
-          description="Start the app automatically when you log in - handy for keeping the Discord bot online."
-          checked={config.launchOnStartup}
-          onChange={(v) => update({ launchOnStartup: v })}
-        />
-        {config.launchOnStartup && (
+        <Section title="Appearance & updates">
+          <Field label="Theme">
+            <Segmented
+              label="Theme"
+              size="sm"
+              capitalize
+              value={config.theme}
+              options={THEMES.map((t) => ({ value: t, label: t }))}
+              onChange={(v) => update({ theme: v })}
+            />
+          </Field>
           <Check
-            label="Start minimized to the tray"
-            description="When launched at login, start hidden in the tray instead of opening the window."
-            checked={config.startMinimized}
-            onChange={(v) => update({ startMinimized: v })}
+            label="Auto-update the app"
+            checked={config.autoUpdateApp}
+            onChange={(v) => update({ autoUpdateApp: v })}
           />
-        )}
-      </Section>
-
-      <Section title="yt-dlp & FFmpeg">
-        {binaries && (
-          <>
-            <BinaryRow
-              name="yt-dlp"
-              version={binaries.ytdlp.version}
-              detail={sourceLabel(binaries.ytdlp.source)}
-              line={describeYtdlp(binaries.ytdlp)}
-              action={
-                binaries.ytdlp.source !== 'system' && (
-                  <button
-                    onClick={checkYtdlp}
-                    disabled={checkingYtdlp || describeYtdlp(binaries.ytdlp).busy}
-                    title="Look for a new stable yt-dlp release and install it"
-                    className="btn btn-ghost shrink-0 px-3 py-1.5 text-xs"
-                  >
-                    <RefreshCw
-                      size={13}
-                      className={checkingYtdlp ? 'animate-spin' : ''}
-                    />
-                    Check now
-                  </button>
-                )
-              }
+          <Check
+            label="Desktop notification when a download finishes"
+            checked={config.notifications}
+            onChange={(v) => update({ notifications: v })}
+          />
+          <Check
+            label="Keep running in the tray when the window is closed"
+            checked={config.closeToTray}
+            onChange={(v) => update({ closeToTray: v })}
+          />
+          <Check
+            label="Launch on system startup"
+            description="Start the app automatically when you log in - handy for keeping the Discord bot online."
+            checked={config.launchOnStartup}
+            onChange={(v) => update({ launchOnStartup: v })}
+          />
+          {config.launchOnStartup && (
+            <Check
+              label="Start minimized to the tray"
+              description="When launched at login, start hidden in the tray instead of opening the window."
+              checked={config.startMinimized}
+              onChange={(v) => update({ startMinimized: v })}
             />
-            <SelfTestRow
-              report={binaries.ytdlp.selfTest}
-              installed={binaries.ytdlp.installed}
-              busy={testing === 'ytdlp'}
-              onRun={() => runSelfTest('ytdlp')}
-            />
-            {binaries.ytdlp.source !== 'system' && (
-              <Check
-                label="Install new yt-dlp releases automatically"
-                description="Checked once a day. A release is installed only after it matches the checksums the yt-dlp signing key vouches for."
-                checked={config.autoUpdateYtdlp}
-                onChange={(v) => update({ autoUpdateYtdlp: v })}
-              />
-            )}
-            <BinaryRow
-              name="FFmpeg"
-              version={
-                binaries.ffmpeg.version ??
-                (binaries.ffmpeg.installed ? 'earlier download' : null)
-              }
-              detail={
-                binaries.ffmpeg.source === 'system'
-                  ? sourceLabel('system')
-                  : binaries.ffmpeg.pinned?.publisher
-              }
-              line={describeFfmpeg(binaries.ffmpeg)}
-            />
-            <SelfTestRow
-              report={binaries.ffmpeg.selfTest}
-              installed={binaries.ffmpeg.installed}
-              busy={testing === 'ffmpeg'}
-              onRun={() => runSelfTest('ffmpeg')}
-            />
-            <div className="flex items-center justify-between gap-3 border-t border-white/5 pt-3">
-              <p className="text-xs text-white/35">
-                {"Switch between the app's copies and ones on this computer."}
-              </p>
-              <button
-                onClick={() => setSetupOpen(true)}
-                className="btn btn-ghost shrink-0 px-3 py-1.5 text-xs"
-              >
-                <Wrench size={13} />
-                Run setup again
-              </button>
-            </div>
-          </>
-        )}
-      </Section>
+          )}
+        </Section>
 
-      <Section title="App update">
-        <AppUpdatePanel
-          status={appUpdate}
-          checking={checking}
-          onCheck={checkForUpdate}
-          onDownload={() => window.api.appUpdate.download()}
-          onInstall={() => window.api.appUpdate.install()}
-        />
-      </Section>
+        <Section title="yt-dlp & FFmpeg">
+          {binaries && (
+            <>
+              <div className="space-y-3 py-4">
+                <BinaryRow
+                  name="yt-dlp"
+                  version={binaries.ytdlp.version}
+                  detail={sourceLabel(binaries.ytdlp.source)}
+                  line={describeYtdlp(binaries.ytdlp)}
+                  action={
+                    binaries.ytdlp.source !== 'system' && (
+                      <button
+                        onClick={checkYtdlp}
+                        disabled={checkingYtdlp || describeYtdlp(binaries.ytdlp).busy}
+                        title="Look for a new stable yt-dlp release and install it"
+                        className={SMALL_KEY}
+                      >
+                        <RefreshCw
+                          size={13}
+                          className={checkingYtdlp ? 'animate-spin' : ''}
+                        />
+                        Check now
+                      </button>
+                    )
+                  }
+                />
+                <SelfTestRow
+                  report={binaries.ytdlp.selfTest}
+                  installed={binaries.ytdlp.installed}
+                  busy={testing === 'ytdlp'}
+                  onRun={() => runSelfTest('ytdlp')}
+                />
+              </div>
+              {binaries.ytdlp.source !== 'system' && (
+                <Check
+                  label="Install new yt-dlp releases automatically"
+                  description="Checked once a day. A release is installed only after it matches the checksums the yt-dlp signing key vouches for."
+                  checked={config.autoUpdateYtdlp}
+                  onChange={(v) => update({ autoUpdateYtdlp: v })}
+                />
+              )}
+              <div className="space-y-3 py-4">
+                <BinaryRow
+                  name="FFmpeg"
+                  version={
+                    binaries.ffmpeg.version ??
+                    (binaries.ffmpeg.installed ? 'earlier download' : null)
+                  }
+                  detail={
+                    binaries.ffmpeg.source === 'system'
+                      ? sourceLabel('system')
+                      : binaries.ffmpeg.pinned?.publisher
+                  }
+                  line={describeFfmpeg(binaries.ffmpeg)}
+                />
+                <SelfTestRow
+                  report={binaries.ffmpeg.selfTest}
+                  installed={binaries.ffmpeg.installed}
+                  busy={testing === 'ffmpeg'}
+                  onRun={() => runSelfTest('ffmpeg')}
+                />
+              </div>
+              <div className="flex items-center justify-between gap-6 py-4">
+                <p className="text-[13px] text-[var(--t-dim)]">
+                  {"Switch between the app's copies and ones on this computer."}
+                </p>
+                <button onClick={() => setSetupOpen(true)} className={SMALL_KEY}>
+                  <Wrench size={13} />
+                  Run setup again
+                </button>
+              </div>
+            </>
+          )}
+        </Section>
 
-      <Section title="About">
-        <AboutPanel version={appVersion} />
-      </Section>
+        <Section title="App update">
+          <AppUpdatePanel
+            status={appUpdate}
+            checking={checking}
+            onCheck={checkForUpdate}
+            onDownload={() => window.api.appUpdate.download()}
+            onInstall={() => window.api.appUpdate.install()}
+          />
+        </Section>
 
-      <button
-        onClick={reset}
-        className="flex items-center gap-2 self-start rounded-lg border border-white/10 px-3 py-2 text-sm text-white/60 hover:border-red-500/40 hover:text-red-300"
-      >
-        <RotateCcw size={15} />
-        Reset to defaults
-      </button>
+        <Section title="About">
+          <AboutPanel version={appVersion} />
+        </Section>
+      </div>
     </div>
   )
 }
@@ -498,55 +533,63 @@ function Section({
   children: React.ReactNode
 }): React.JSX.Element {
   return (
-    <section className="rounded-2xl border border-white/5 bg-white/[0.02] p-5">
-      <h2 className="mb-4 text-sm font-semibold text-white/70">{title}</h2>
-      <div className="space-y-4">{children}</div>
+    <section className="grid grid-cols-[200px_minmax(0,1fr)] gap-x-12 py-8">
+      <h2 className="sticky top-6 self-start text-[15px] font-semibold">{title}</h2>
+      <div className="min-w-0 divide-y divide-[var(--t-rule)] [&>:first-child]:pt-0 [&>:last-child]:pb-0">
+        {children}
+      </div>
     </section>
   )
 }
 
+/**
+ * One setting row: label and description on the left with a fixed-width
+ * control on the right, or `stacked` for full-width controls such as paths.
+ */
 function Field({
   label,
   description,
+  stacked = false,
+  width = 'w-64',
   children
 }: {
   label: string
   description?: string
+  stacked?: boolean
+  width?: string
   children: React.ReactNode
 }): React.JSX.Element {
-  return (
-    <div className="space-y-1.5">
-      <label className="block text-xs font-medium text-white/50">{label}</label>
-      {description && <p className="-mt-1 text-xs text-white/30">{description}</p>}
-      {children}
+  const id = useId()
+  const text = (
+    <div className="min-w-0">
+      <p id={id} className="text-sm font-semibold">
+        {label}
+      </p>
+      {description && (
+        <p className="mt-1 text-[13px] leading-relaxed text-[var(--t-dim)]">
+          {description}
+        </p>
+      )}
     </div>
   )
-}
 
-function Toggles({
-  value,
-  options,
-  onChange
-}: {
-  value: string
-  options: readonly string[]
-  onChange: (value: string) => void
-}): React.JSX.Element {
+  if (stacked) {
+    return (
+      <div className="py-4">
+        {text}
+        <div role="group" aria-labelledby={id} className="mt-3">
+          {children}
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="flex gap-2">
-      {options.map((o) => (
-        <button
-          key={o}
-          onClick={() => onChange(o)}
-          className={`rounded-lg border px-3 py-1.5 text-xs capitalize ${
-            value === o
-              ? 'border-red-500/50 bg-red-500/10 text-red-300'
-              : 'border-white/10 text-white/60 hover:border-white/20'
-          }`}
-        >
-          {o}
-        </button>
-      ))}
+    <div className="flex items-center justify-between gap-8 py-4">
+      {text}
+      <div role="group" aria-labelledby={id} className={`${width} shrink-0`}>
+        {children}
+      </div>
     </div>
   )
 }
@@ -563,75 +606,67 @@ function Check({
   onChange: (value: boolean) => void
 }): React.JSX.Element {
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className="flex w-full items-center justify-between gap-4 text-left"
-    >
+    <label className="flex cursor-pointer items-center justify-between gap-8 py-4">
       <span className="min-w-0">
-        <span className="block text-sm text-white/80">{label}</span>
+        <span className="block text-sm font-semibold">{label}</span>
         {description && (
-          <span className="mt-0.5 block text-xs text-white/35">{description}</span>
+          <span className="mt-1 block text-[13px] leading-relaxed text-[var(--t-dim)]">
+            {description}
+          </span>
         )}
       </span>
-      <span
-        className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
-          checked ? 'bg-red-500' : 'bg-white/15'
-        }`}
-      >
-        <span
-          className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
-            checked ? 'translate-x-4' : 'translate-x-0.5'
-          }`}
-        />
-      </span>
-    </button>
+      <input
+        type="checkbox"
+        role="switch"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="toggle"
+      />
+    </label>
   )
 }
 
 function Slider({
+  label,
   value,
   min,
   max,
-  suffix,
   onChange
 }: {
+  label: string
   value: number
   min: number
   max: number
-  suffix?: string
   onChange: (value: number) => void
 }): React.JSX.Element {
   const pct = ((value - min) / (max - min)) * 100
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-4">
       <input
         type="range"
         min={min}
         max={max}
         value={value}
+        aria-label={label}
         onChange={(e) => onChange(Number(e.target.value))}
         style={{
-          background: `linear-gradient(to right, rgb(239 68 68) ${pct}%, rgba(255,255,255,0.12) ${pct}%)`
+          background: `linear-gradient(90deg, var(--t-accent) ${pct}%, var(--t-rule-strong) ${pct}%)`
         }}
-        className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full outline-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow"
+        className="line-range line-range-thin min-w-0 flex-1"
       />
-      <span className="w-14 shrink-0 text-right text-sm tabular-nums text-white/70">
+      <span className="w-5 shrink-0 text-right text-sm font-semibold tabular-nums">
         {value}
-        {suffix ? ` ${suffix}` : ''}
       </span>
     </div>
   )
 }
 
 const LINE_TONES: Record<BinaryLine['tone'], string> = {
-  muted: 'text-white/40',
-  busy: 'text-white/60',
-  ok: 'text-emerald-300',
-  warn: 'text-amber-300',
-  error: 'text-red-300'
+  muted: 'text-[var(--t-faint)]',
+  busy: 'text-[var(--t-dim)]',
+  ok: 'text-[var(--t-ok)]',
+  warn: 'text-[var(--t-warn)]',
+  error: 'text-[var(--t-red)]'
 }
 
 function BinaryRow({
@@ -648,33 +683,35 @@ function BinaryRow({
   action?: React.ReactNode
 }): React.JSX.Element {
   return (
-    <div className="space-y-2">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 text-sm">
-          <div>
-            <span className="font-medium">{name}</span>
-            <span className="ml-2 font-mono text-xs text-white/50">
+    <div>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-sm">
+            <span className="font-semibold">{name}</span>
+            <span className="font-mono text-[13px] text-[var(--t-dim)]">
               {version ?? 'not installed'}
             </span>
-            {detail && <span className="ml-2 text-xs text-white/30">{detail}</span>}
-          </div>
+            {detail && (
+              <span className="text-[13px] text-[var(--t-faint)]">{detail}</span>
+            )}
+          </p>
           <p
-            className={`mt-0.5 flex items-center gap-1.5 text-xs ${LINE_TONES[line.tone]}`}
+            className={`mt-1 flex items-center gap-1.5 text-[13px] ${LINE_TONES[line.tone]}`}
           >
-            {line.busy && <Loader2 size={12} className="shrink-0 animate-spin" />}
-            {line.tone === 'error' && <AlertTriangle size={12} className="shrink-0" />}
+            {line.busy && <Loader2 size={13} className="shrink-0 animate-spin" />}
+            {line.tone === 'error' && <AlertTriangle size={13} className="shrink-0" />}
             <span>{line.text}</span>
           </p>
         </div>
         {action}
       </div>
       {line.busy && (
-        <div className="h-1 overflow-hidden rounded-full bg-white/5">
+        <div className="mt-3 h-1 overflow-hidden bg-[var(--t-rule)]">
           {line.percent === null ? (
-            <div className="progress-indeterminate h-full rounded-full bg-red-500/70" />
+            <div className="progress-indeterminate h-full bg-[var(--t-accent)]" />
           ) : (
             <div
-              className="h-full rounded-full bg-red-500 transition-[width] duration-200"
+              className="h-full bg-[var(--t-accent)] transition-[width] duration-200"
               style={{ width: `${line.percent}%` }}
             />
           )}
@@ -685,10 +722,10 @@ function BinaryRow({
 }
 
 const SUMMARY_TONES = {
-  muted: 'text-white/40',
-  ok: 'text-emerald-300',
-  warn: 'text-amber-300',
-  error: 'text-red-300'
+  muted: 'text-[var(--t-faint)]',
+  ok: 'text-[var(--t-ok)]',
+  warn: 'text-[var(--t-warn)]',
+  error: 'text-[var(--t-red)]'
 } as const
 
 function SelfTestRow({
@@ -706,26 +743,29 @@ function SelfTestRow({
   if (!installed) return null
   const summary = selfTestSummary(report)
   return (
-    <div className="space-y-2 pl-1">
-      <div className="flex items-center justify-between gap-3">
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-4">
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
           disabled={report === null}
           aria-expanded={open}
-          className={`flex items-center gap-1.5 text-xs disabled:cursor-default ${SUMMARY_TONES[summary.tone]}`}
+          className={`flex items-center gap-1.5 text-[13px] disabled:cursor-default ${SUMMARY_TONES[summary.tone]}`}
         >
-          <ShieldCheck size={13} className="shrink-0" />
+          <ShieldCheck size={14} className="shrink-0" />
           {summary.text}
           {report && (
-            <span className="text-white/30"> · {open ? 'hide' : 'show'} checks</span>
+            <span className="text-[var(--t-faint)]">
+              {' '}
+              · {open ? 'hide' : 'show'} checks
+            </span>
           )}
         </button>
         <button
           onClick={onRun}
           disabled={busy}
           title="Check that it provides everything the app uses"
-          className="btn btn-ghost shrink-0 px-3 py-1.5 text-xs"
+          className={SMALL_KEY}
         >
           {busy ? (
             <Loader2 size={13} className="animate-spin" />
@@ -735,7 +775,11 @@ function SelfTestRow({
           {busy ? 'Testing…' : 'Self-test'}
         </button>
       </div>
-      {open && report && <SelfTestList report={report} />}
+      {open && report && (
+        <div className="border-l-2 border-[var(--t-rule-strong)] pl-4">
+          <SelfTestList report={report} />
+        </div>
+      )}
     </div>
   )
 }
@@ -765,34 +809,34 @@ function AppUpdatePanel({
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
+    <div className="py-4">
+      <div className="flex items-center justify-between gap-6">
         <span
-          className={`text-sm ${state === 'error' ? 'text-red-300' : 'text-white/70'}`}
+          className={`text-sm ${state === 'error' ? 'text-[var(--t-red)]' : 'font-semibold'}`}
         >
           {label[state]}
         </span>
         {state === 'available' ? (
           <button
             onClick={onDownload}
-            className="flex items-center gap-1.5 rounded-lg bg-red-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-600"
+            className="key key-red h-9 shrink-0 px-4 text-[13px]"
           >
-            <Download size={13} />
+            <Download size={14} />
             Download
           </button>
         ) : state === 'downloaded' ? (
           <button
             onClick={onInstall}
-            className="flex items-center gap-1.5 rounded-lg bg-red-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-600"
+            className="key key-red h-9 shrink-0 px-4 text-[13px]"
           >
-            <RotateCcw size={13} />
+            <RotateCcw size={14} />
             Restart & install
           </button>
         ) : (
           <button
             onClick={onCheck}
             disabled={checking || state === 'checking'}
-            className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs text-white/70 hover:border-white/20 disabled:opacity-50"
+            className={SMALL_KEY}
           >
             <RefreshCw
               size={13}
@@ -803,9 +847,9 @@ function AppUpdatePanel({
         )}
       </div>
       {state === 'downloading' && (
-        <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
+        <div className="mt-3 h-1 overflow-hidden bg-[var(--t-rule)]">
           <div
-            className="h-full bg-red-500 transition-all"
+            className="h-full bg-[var(--t-accent)] transition-[width] duration-200"
             style={{ width: `${status?.percent ?? 0}%` }}
           />
         </div>
@@ -834,35 +878,33 @@ function CookieStatus({
   const using = cookies?.effectiveLabel
   const stale = cookies?.ageMs != null && cookies.ageMs > COOKIE_STALE_MS
 
-  let icon = <Loader2 size={14} className="animate-spin text-white/50" />
+  let icon = <Loader2 size={14} className="animate-spin" />
   let text = 'Importing cookies…'
-  let tone = 'text-white/60'
+  let tone = 'text-[var(--t-dim)]'
 
   if (!busy) {
     if (failed || (!cookies?.cached && cookies?.effectiveBrowser)) {
-      icon = <AlertTriangle size={14} className="text-amber-400" />
+      icon = <AlertTriangle size={14} />
       text = 'No cookies imported yet'
-      tone = 'text-amber-300'
+      tone = 'text-[var(--t-warn)]'
     } else if (cookies?.cached) {
-      icon = stale ? (
-        <RefreshCw size={14} className="text-amber-400" />
-      ) : (
-        <CheckCircle2 size={14} className="text-emerald-400" />
-      )
+      icon = stale ? <RefreshCw size={14} /> : <CheckCircle2 size={14} />
       text = stale
         ? `Cookies ready - refreshing soon (imported ${formatAge(cookies.ageMs)})`
         : `Cookies ready (imported ${formatAge(cookies.ageMs)})`
-      tone = stale ? 'text-amber-300' : 'text-emerald-300'
+      tone = stale ? 'text-[var(--t-warn)]' : 'text-[var(--t-ok)]'
     }
   }
 
   return (
-    <div className="space-y-1">
-      <div className={`flex items-center gap-2 text-xs ${tone}`}>
-        {icon}
+    <div className="min-w-0">
+      <p className={`flex items-center gap-2 text-sm font-semibold ${tone}`}>
+        <span className="shrink-0">{icon}</span>
         <span>{text}</span>
-      </div>
-      {using && !busy && <p className="pl-6 text-xs text-white/35">Using {using}.</p>}
+      </p>
+      {using && !busy && (
+        <p className="mt-1 pl-[22px] text-[13px] text-[var(--t-dim)]">Using {using}.</p>
+      )}
     </div>
   )
 }
@@ -874,18 +916,16 @@ function CookieNote({
   tone: 'info' | 'warn'
   children: React.ReactNode
 }): React.JSX.Element {
-  const styles =
-    tone === 'warn'
-      ? 'border-amber-500/30 bg-amber-500/5 text-amber-200/90'
-      : 'border-white/10 bg-white/[0.02] text-white/45'
   const Icon = tone === 'warn' ? AlertTriangle : Info
   return (
-    <div
-      className={`flex items-start gap-2 rounded-lg border px-3 py-2 text-xs ${styles}`}
+    <p
+      className={`flex items-start gap-2 text-[13px] leading-relaxed ${
+        tone === 'warn' ? 'text-[var(--t-warn)]' : 'text-[var(--t-dim)]'
+      }`}
     >
-      <Icon size={13} className="mt-0.5 shrink-0" />
+      <Icon size={14} className="mt-0.5 shrink-0" />
       <span>{children}</span>
-    </div>
+    </p>
   )
 }
 
@@ -893,51 +933,40 @@ function AboutPanel({ version }: { version: string | null }): React.JSX.Element 
   const open = (url: string) => () => void window.api.system.openExternal(url)
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="text-sm font-medium text-white/80 selectable">
-          YouTube Downloader
-        </span>
-        <span className="text-xs text-white/40 selectable">
+    <div className="py-4">
+      <p className="flex items-baseline gap-3">
+        <span className="selectable text-sm font-semibold">YouTube Downloader</span>
+        <span className="selectable font-mono text-[13px] text-[var(--t-dim)]">
           {version ? `v${version}` : ''}
         </span>
-      </div>
+      </p>
 
-      <p className="text-xs text-white/40">
+      <p className="mt-1 text-[13px] text-[var(--t-dim)]">
         Built by{' '}
         <button
           onClick={open(AUTHOR_URL)}
-          className="font-medium text-red-300 hover:text-red-200 hover:underline"
+          className="font-semibold text-[var(--t-red)] hover:underline"
         >
           Tony Wiedman
         </button>
         .
       </p>
 
-      <div className="flex flex-wrap gap-2">
-        <button
-          onClick={open(REPO_URL)}
-          className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs text-white/70 hover:border-white/20"
-        >
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button onClick={open(REPO_URL)} className={SMALL_KEY}>
           <Code2 size={14} />
           GitHub repository
-          <ExternalLink size={12} className="text-white/30" />
+          <ExternalLink size={12} className="text-[var(--t-faint)]" />
         </button>
-        <button
-          onClick={open(BUG_REPORT_URL)}
-          className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs text-white/70 hover:border-white/20"
-        >
-          <Bug size={14} className="text-red-400" />
+        <button onClick={open(BUG_REPORT_URL)} className={SMALL_KEY}>
+          <Bug size={14} className="text-[var(--t-red)]" />
           Report a bug
-          <ExternalLink size={12} className="text-white/30" />
+          <ExternalLink size={12} className="text-[var(--t-faint)]" />
         </button>
-        <button
-          onClick={open(FEATURE_REQUEST_URL)}
-          className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs text-white/70 hover:border-white/20"
-        >
-          <Lightbulb size={14} className="text-amber-400" />
+        <button onClick={open(FEATURE_REQUEST_URL)} className={SMALL_KEY}>
+          <Lightbulb size={14} className="text-[var(--t-warn)]" />
           Request a feature
-          <ExternalLink size={12} className="text-white/30" />
+          <ExternalLink size={12} className="text-[var(--t-faint)]" />
         </button>
       </div>
     </div>

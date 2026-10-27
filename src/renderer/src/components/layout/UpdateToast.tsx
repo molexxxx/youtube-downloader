@@ -31,21 +31,21 @@ export function UpdateToast(): React.JSX.Element | null {
   return (
     <div
       role="status"
-      className="anim-toast-in fixed bottom-4 right-4 z-50 w-80 rounded-2xl border border-white/10 bg-[#12151c]/95 p-3.5 shadow-2xl shadow-black/50 backdrop-blur-md"
+      className="anim-toast-in sheet signal-red focus-ring-red fixed bottom-4 right-4 z-50 w-80 rounded-sm border border-[var(--t-rule-strong)] p-4 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.55)]"
     >
       <div className="flex items-start gap-2.5">
-        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-500/15 text-red-300">
+        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-sm bg-[var(--t-accent-soft)] text-[var(--t-accent-text)]">
           <ArrowUpCircle size={17} />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-white/90">
+          <p className="text-sm font-semibold">
             {state === 'downloaded'
               ? 'Update ready to install'
               : state === 'downloading'
                 ? 'Downloading update…'
                 : 'Update available'}
           </p>
-          <p className="mt-0.5 text-xs text-white/45">
+          <p className="mt-0.5 text-[13px] text-[var(--t-dim)]">
             {status.version ? `Version ${status.version}` : 'A new version was found'}
             {state === 'downloaded' && ' - restarts and installs in the background'}
           </p>
@@ -53,7 +53,7 @@ export function UpdateToast(): React.JSX.Element | null {
         <button
           onClick={() => setDismissedKey(key)}
           aria-label="Dismiss"
-          className="shrink-0 rounded p-1 text-white/30 transition-colors hover:bg-white/10 hover:text-white/70"
+          className="shrink-0 rounded-sm p-1 text-[var(--t-dim)] transition-colors hover:bg-[var(--t-hover)] hover:text-[var(--t-fg)]"
         >
           <X size={14} />
         </button>
@@ -61,18 +61,18 @@ export function UpdateToast(): React.JSX.Element | null {
 
       {state === 'downloading' && (
         <div className="mt-3">
-          <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
+          <div className="h-1 overflow-hidden bg-[var(--t-rule)]">
             {status.percent != null && status.percent > 0 ? (
               <div
-                className="h-full rounded-full bg-red-500 transition-all"
+                className="h-full bg-[var(--t-accent)] transition-[width] duration-200"
                 style={{ width: `${status.percent}%` }}
               />
             ) : (
-              <div className="progress-indeterminate h-full rounded-full bg-red-500" />
+              <div className="progress-indeterminate h-full bg-[var(--t-accent)]" />
             )}
           </div>
           {status.percent != null && (
-            <p className="mt-1 text-right text-[11px] tabular-nums text-white/40">
+            <p className="mt-1 text-right text-[11px] tabular-nums text-[var(--t-dim)]">
               {status.percent}%
             </p>
           )}
@@ -83,7 +83,7 @@ export function UpdateToast(): React.JSX.Element | null {
         <button
           onClick={() => void download()}
           disabled={busy}
-          className="btn btn-red mt-3 w-full py-1.5 text-xs"
+          className="key key-red mt-3 h-9 w-full text-[13px]"
         >
           {busy ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
           Download update
@@ -93,7 +93,7 @@ export function UpdateToast(): React.JSX.Element | null {
       {state === 'downloaded' && (
         <button
           onClick={() => void window.api.appUpdate.install()}
-          className="btn btn-red mt-3 w-full py-1.5 text-xs"
+          className="key key-red mt-3 h-9 w-full text-[13px]"
         >
           <RefreshCw size={14} />
           Restart & update

@@ -5,7 +5,8 @@ import {
   looksLikeAuthError,
   looksLikeUrl,
   playlistChoiceId,
-  youtubeEmbedUrl
+  youtubeEmbedUrl,
+  youtubeThumbnailUrl
 } from '@renderer/lib/format'
 
 describe('formatBytes', () => {
@@ -127,5 +128,25 @@ describe('youtubeEmbedUrl', () => {
     expect(youtubeEmbedUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'PL456')).toBe(
       'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?autoplay=1&rel=0'
     )
+  })
+})
+
+describe('youtubeThumbnailUrl', () => {
+  it('derives the thumbnail from watch, short, and youtu.be links', () => {
+    const expected = 'https://i.ytimg.com/vi/dQw4w9WgXcQ/mqdefault.jpg'
+    expect(youtubeThumbnailUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ')).toBe(
+      expected
+    )
+    expect(youtubeThumbnailUrl('https://youtu.be/dQw4w9WgXcQ')).toBe(expected)
+    expect(youtubeThumbnailUrl('https://www.youtube.com/shorts/dQw4w9WgXcQ')).toBe(
+      expected
+    )
+  })
+  it('prefers a valid id and returns null when none can be derived', () => {
+    expect(youtubeThumbnailUrl('https://x', 'dQw4w9WgXcQ')).toBe(
+      'https://i.ytimg.com/vi/dQw4w9WgXcQ/mqdefault.jpg'
+    )
+    expect(youtubeThumbnailUrl('https://x')).toBeNull()
+    expect(youtubeThumbnailUrl('https://www.youtube.com/playlist?list=PL456')).toBeNull()
   })
 })

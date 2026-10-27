@@ -16,6 +16,7 @@ import { useAppStore } from '../../stores/appStore'
 import type {
   AudioFormat,
   DownloadKind,
+  MediaInfo,
   PlaylistEntry,
   VideoContainer,
   VideoFormat
@@ -23,6 +24,7 @@ import type {
 import { PRESETS, getPreset } from '@shared/presets'
 import { formatBytes, formatDuration, youtubeEmbedUrl } from '../../lib/format'
 import { Select, type SelectOption } from '../shared/Select'
+import { Segmented, type SegmentOption } from '../shared/Segmented'
 
 /** Open the in-app preview modal for a video, when an embed can be derived. */
 function openPreview(url: string, title: string, id?: string | null): void {
@@ -35,6 +37,19 @@ function openPreview(url: string, title: string, id?: string | null): void {
 const AUDIO_FORMATS: AudioFormat[] = ['mp3', 'm4a', 'opus', 'flac', 'wav']
 const VIDEO_CONTAINERS: VideoContainer[] = ['mp4', 'mkv']
 const AUDIO_BITRATES = [320, 256, 192, 128, 96]
+
+const KIND_OPTIONS: SegmentOption<DownloadKind>[] = [
+  { value: 'video', label: 'Video', sublabel: 'with audio', icon: <Video size={15} /> },
+  { value: 'audio', label: 'Audio', sublabel: 'audio only', icon: <Music size={15} /> }
+]
+const CONTAINER_OPTIONS: SegmentOption<VideoContainer>[] = VIDEO_CONTAINERS.map((c) => ({
+  value: c,
+  label: c
+}))
+const AUDIO_FORMAT_OPTIONS: SegmentOption<AudioFormat>[] = AUDIO_FORMATS.map((f) => ({
+  value: f,
+  label: f
+}))
 
 function formatHeight(format: VideoFormat): number {
   const res = format.resolution ?? ''
@@ -186,6 +201,15 @@ export function MediaCard(): React.JSX.Element | null {
     }
   }
 
+  /** Wraps a setter so a manual change that departs from the preset clears its highlight. */
+  function manual<T>(current: T, set: (value: T) => void): (value: T) => void {
+    return (value) => {
+      if (value === current) return
+      set(value)
+      setPresetId('')
+    }
+  }
+
   async function startDownload(): Promise<void> {
     if (!info) return
     const sharedOpts = {
@@ -225,186 +249,99 @@ export function MediaCard(): React.JSX.Element | null {
     }
   }
 
-  return (
-    <div
-      className={`flex min-h-0 flex-col rounded-2xl border border-white/5 bg-white/[0.02] p-5 ${
-        info.isPlaylist ? 'flex-1' : ''
-      }`}
-    >
-      <div className="flex gap-4">
-        {info.thumbnail && (
-          <button
-            onClick={() =>
-              !info.isPlaylist && openPreview(info.webpageUrl, info.title, info.id)
-            }
-            disabled={info.isPlaylist || !youtubeEmbedUrl(info.webpageUrl, info.id)}
-            title={info.isPlaylist ? undefined : 'Preview this video'}
-            aria-label={info.isPlaylist ? undefined : 'Preview this video'}
-            className="group/thumb relative shrink-0 cursor-pointer overflow-hidden rounded-xl ring-1 ring-white/10 disabled:cursor-default"
-          >
-            <img src={info.thumbnail} alt="" className="h-24 w-40 object-cover" />
-            <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-black/60 to-transparent" />
-            {!info.isPlaylist && (
-              <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover/thumb:opacity-100">
-                <Play size={22} className="text-white" fill="currentColor" />
-              </span>
-            )}
-            <span className="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded-md bg-black/70 px-1.5 py-0.5 text-[10px] font-medium text-white/90 backdrop-blur-sm">
-              {info.isPlaylist ? (
-                <>
-                  <ListVideo size={11} />
-                  {info.playlistCount > 0 ? info.playlistCount : info.entries.length}{' '}
-                  videos
-                </>
-              ) : (
-                <>
-                  <Clock size={11} />
-                  {formatDuration(info.duration)}
-                </>
-              )}
-            </span>
-          </button>
-        )}
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <span
-              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                info.isPlaylist
-                  ? 'bg-red-500/15 text-red-300'
-                  : 'bg-emerald-500/15 text-emerald-300'
-              }`}
-            >
-              {info.isPlaylist ? <ListVideo size={11} /> : <Video size={11} />}
-              {info.isPlaylist ? 'Playlist' : 'Video'}
-            </span>
-            <button
-              onClick={() => setInfo(null)}
-              title="Close"
-              className="-mr-1 -mt-1 shrink-0 rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white/80"
-            >
-              <X size={16} />
-            </button>
-          </div>
-          <h3 className="selectable mt-2 line-clamp-2 text-base font-semibold leading-snug">
-            {info.title}
-          </h3>
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/45">
-            <span className="selectable truncate">
-              {info.uploader ?? 'Unknown channel'}
-            </span>
-            {info.isPlaylist && info.duration != null && info.duration > 0 && (
-              <span className="flex items-center gap-1">
-                <Clock size={11} />
-                {formatDuration(info.duration)} total
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-4 flex flex-wrap gap-1.5">
+  const controls = (
+    <>
+      <div role="group" aria-label="Preset" className="tape grid grid-cols-3 gap-1 p-1">
         {PRESETS.map((p) => (
           <button
             key={p.id}
             onClick={() => applyPreset(p.id)}
-            className={`rounded-full border px-3 py-1 text-xs transition-all duration-150 ${
-              presetId === p.id
-                ? 'border-red-500/50 bg-gradient-to-b from-red-500/20 to-red-500/5 text-red-200 shadow-[0_0_12px_-2px_rgba(239,68,68,0.35)]'
-                : 'border-white/10 text-white/50 hover:border-white/25 hover:text-white/80'
-            }`}
+            aria-pressed={presetId === p.id}
+            className="chip truncate px-2 py-1.5 text-[13px]"
           >
             {p.label}
           </button>
         ))}
       </div>
 
-      <div className="mt-3 flex gap-2">
-        <KindTab
-          active={kind === 'video'}
-          onClick={() => setKind('video')}
-          icon={<Video size={15} />}
-          label="Video"
-          sublabel="with audio"
-        />
-        <KindTab
-          active={kind === 'audio'}
-          onClick={() => setKind('audio')}
-          icon={<Music size={15} />}
-          label="Audio"
-          sublabel="audio only"
-        />
-      </div>
+      <Segmented
+        label="Output"
+        value={kind}
+        options={KIND_OPTIONS}
+        onChange={manual(kind, setKind)}
+      />
 
-      <div className="mt-3">
-        {kind === 'video' ? (
-          <div className="space-y-2">
-            <Select value={formatId} onChange={setFormatId} options={formatOptions} />
-            <p className="flex items-center gap-1.5 text-xs text-white/40">
-              <Volume2 size={12} className="shrink-0 text-emerald-400/70" />
-              Best available audio is automatically merged into the video.
-            </p>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-white/40">Container</span>
-              {VIDEO_CONTAINERS.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setContainer(c)}
-                  className={`rounded-lg border px-3 py-1 text-xs uppercase transition-all duration-150 ${
-                    container === c
-                      ? 'border-red-500/50 bg-gradient-to-b from-red-500/20 to-red-500/5 text-red-200 shadow-[0_0_12px_-2px_rgba(239,68,68,0.35)]'
-                      : 'border-white/10 text-white/60 hover:border-white/25'
-                  }`}
-                >
-                  {c}
-                </button>
-              ))}
+      {kind === 'video' ? (
+        <div className="flex flex-col gap-2.5">
+          <Select
+            value={formatId}
+            onChange={manual(formatId, setFormatId)}
+            options={formatOptions}
+          />
+          <p className="flex items-center gap-1.5 text-[13px] text-[var(--t-dim)]">
+            <Volume2 size={13} className="shrink-0" />
+            Best available audio is automatically merged into the video.
+          </p>
+          <div className="mt-1 flex items-center gap-4">
+            <span className="w-20 shrink-0 text-[13px] font-semibold text-[var(--t-dim)]">
+              Container
+            </span>
+            <div className="w-44">
+              <Segmented
+                label="Container"
+                value={container}
+                options={CONTAINER_OPTIONS}
+                onChange={manual(container, setContainer)}
+                size="sm"
+                uppercase
+              />
             </div>
           </div>
-        ) : (
-          <div className="space-y-2">
-            <div className="flex flex-wrap gap-2">
-              {AUDIO_FORMATS.map((fmt) => (
-                <button
-                  key={fmt}
-                  onClick={() => setAudioFormat(fmt)}
-                  className={`rounded-lg border px-3 py-1.5 text-sm uppercase transition-all duration-150 ${
-                    audioFormat === fmt
-                      ? 'border-red-500/50 bg-gradient-to-b from-red-500/20 to-red-500/5 text-red-200 shadow-[0_0_12px_-2px_rgba(239,68,68,0.35)]'
-                      : 'border-white/10 text-white/60 hover:border-white/25'
-                  }`}
-                >
-                  {fmt}
-                </button>
-              ))}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          <Segmented
+            label="Audio format"
+            value={audioFormat}
+            options={AUDIO_FORMAT_OPTIONS}
+            onChange={manual(audioFormat, setAudioFormat)}
+            size="sm"
+            uppercase
+          />
+          {audioFormat !== 'flac' && audioFormat !== 'wav' && (
+            <div className="flex items-center gap-4">
+              <span className="w-20 shrink-0 text-[13px] font-semibold text-[var(--t-dim)]">
+                Bitrate
+              </span>
+              <Select
+                value={String(audioBitrate)}
+                onChange={(v) => setAudioBitrate(Number(v))}
+                options={AUDIO_BITRATES.map((b) => ({
+                  value: String(b),
+                  label: `${b} kbps`
+                }))}
+                className="w-44"
+              />
             </div>
-            {audioFormat !== 'flac' && audioFormat !== 'wav' && (
-              <div className="flex items-center gap-2">
-                <span className="shrink-0 text-xs text-white/40">Bitrate</span>
-                <Select
-                  value={String(audioBitrate)}
-                  onChange={(v) => setAudioBitrate(Number(v))}
-                  options={AUDIO_BITRATES.map((b) => ({
-                    value: String(b),
-                    label: `${b} kbps`
-                  }))}
-                  className="w-36"
-                />
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
-      <div className="mt-3">
+      <div>
         <button
           onClick={() => setShowOptions((o) => !o)}
-          className="flex items-center gap-1.5 text-xs text-white/45 hover:text-white/70"
+          aria-expanded={showOptions}
+          className="flex items-center gap-1.5 text-[13px] font-semibold text-[var(--t-dim)] transition-colors hover:text-[var(--t-fg)]"
         >
-          <SlidersHorizontal size={13} />
+          <SlidersHorizontal size={14} />
           {showOptions ? 'Hide options' : 'More options'}
+          <ChevronDown
+            size={14}
+            className={`transition-transform duration-200 ${showOptions ? 'rotate-180' : ''}`}
+          />
         </button>
         {showOptions && (
-          <div className="mt-2 flex flex-wrap gap-1.5">
+          <div className="mt-3 flex flex-wrap gap-1.5">
             <OptionChip
               label="Thumbnail"
               active={embedThumbnail}
@@ -435,69 +372,182 @@ export function MediaCard(): React.JSX.Element | null {
           </div>
         )}
       </div>
+    </>
+  )
 
-      {info.isPlaylist && (
-        <PlaylistPicker
-          entries={info.entries}
-          total={info.playlistCount}
-          fetchLimit={config?.playlistFetchLimit ?? 200}
-          reachedEnd={reachedEnd}
-          selected={selectedItems}
-          onToggle={toggleItem}
-          onToggleAll={toggleAllItems}
-          onLoadMore={loadMore}
-          loadingMore={loadingMore}
-        />
-      )}
+  const downloadKey = (
+    <button
+      onClick={startDownload}
+      disabled={info.isPlaylist && selectedItems.size === 0}
+      className="key key-red h-12 w-full shrink-0 text-[15px]"
+    >
+      <Download size={17} />
+      {info.isPlaylist
+        ? `Download ${selectedItems.size} item${selectedItems.size === 1 ? '' : 's'}`
+        : 'Download'}
+    </button>
+  )
 
-      <button
-        onClick={startDownload}
-        disabled={info.isPlaylist && selectedItems.size === 0}
-        className="btn btn-red mt-4 w-full shrink-0 py-2.5 text-sm"
-      >
-        <Download size={16} />
-        {info.isPlaylist
-          ? `Download ${selectedItems.size} item${selectedItems.size === 1 ? '' : 's'}`
-          : 'Download'}
-      </button>
-    </div>
+  if (info.isPlaylist) {
+    return (
+      <section className="anim-toast-in flex min-h-0 flex-1 flex-col gap-5">
+        <header className="flex shrink-0 items-start gap-6">
+          <MediaThumbnail info={info} compact />
+          <MediaHeading info={info} onClose={() => setInfo(null)} size="compact" />
+        </header>
+        <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_340px] gap-10">
+          <PlaylistPicker
+            entries={info.entries}
+            total={info.playlistCount}
+            fetchLimit={config?.playlistFetchLimit ?? 200}
+            reachedEnd={reachedEnd}
+            selected={selectedItems}
+            onToggle={toggleItem}
+            onToggleAll={toggleAllItems}
+            onLoadMore={loadMore}
+            loadingMore={loadingMore}
+          />
+          <div aria-label="Download options" className="flex min-h-0 flex-col gap-4">
+            <div className="scroll-ink -mr-[10px] flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
+              {controls}
+            </div>
+            {downloadKey}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  return (
+    <section className="anim-toast-in grid grid-cols-[minmax(0,1.05fr)_minmax(320px,1fr)] items-start gap-10">
+      <MediaThumbnail info={info} />
+      <div className="flex min-w-0 flex-col gap-4">
+        <MediaHeading info={info} onClose={() => setInfo(null)} size="full" />
+        <div aria-label="Download options" className="mt-1 flex flex-col gap-4">
+          {controls}
+          {downloadKey}
+        </div>
+      </div>
+    </section>
   )
 }
 
-function KindTab({
-  active,
-  onClick,
-  icon,
-  label,
-  sublabel
+/**
+ * The resolved media's artwork: full column width for a single video, with an
+ * always-visible Preview affordance; a compact 16:9 tile for playlists.
+ */
+function MediaThumbnail({
+  info,
+  compact = false
 }: {
-  active: boolean
-  onClick: () => void
-  icon: React.ReactNode
-  label: string
-  sublabel?: string
+  info: MediaInfo
+  compact?: boolean
 }): React.JSX.Element {
+  const previewable =
+    !info.isPlaylist && Boolean(youtubeEmbedUrl(info.webpageUrl, info.id))
+  const frame = compact ? 'aspect-video w-44 2xl:w-56' : 'aspect-video w-full'
+  const count = info.playlistCount > 0 ? info.playlistCount : info.entries.length
+
+  if (!info.thumbnail) {
+    return (
+      <div
+        className={`${frame} flex shrink-0 items-center justify-center rounded-sm bg-[var(--t-rule)] text-[var(--t-faint)]`}
+      >
+        {info.isPlaylist ? <ListVideo size={compact ? 22 : 36} /> : <Video size={36} />}
+      </div>
+    )
+  }
+
   return (
     <button
-      onClick={onClick}
-      className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-all duration-200 ${
-        active
-          ? 'border-red-500/45 bg-gradient-to-b from-red-500/25 to-red-500/10 text-red-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_4px_16px_-6px_rgba(239,68,68,0.45)]'
-          : 'border-white/10 text-white/50 hover:border-white/25 hover:bg-white/[0.03] hover:text-white'
-      }`}
+      onClick={() => previewable && openPreview(info.webpageUrl, info.title, info.id)}
+      disabled={!previewable}
+      title={previewable ? 'Preview this video' : undefined}
+      aria-label={previewable ? 'Preview this video' : undefined}
+      className={`${frame} group/thumb relative block shrink-0 overflow-hidden rounded-sm disabled:cursor-default`}
     >
-      {icon}
-      <span className="flex items-baseline gap-1.5">
-        {label}
-        {sublabel && (
-          <span
-            className={`text-[11px] font-normal ${active ? 'text-red-200/70' : 'text-white/30'}`}
-          >
-            {sublabel}
-          </span>
+      <img
+        src={info.thumbnail}
+        alt=""
+        className={`h-full w-full object-cover transition-transform duration-500 ease-out ${
+          previewable ? 'group-hover/thumb:scale-[1.03]' : ''
+        }`}
+      />
+      <span className="absolute bottom-2.5 left-2.5 flex items-center gap-1 rounded-sm bg-black/70 px-1.5 py-1 text-xs font-semibold tabular-nums text-white/90">
+        {info.isPlaylist ? (
+          <>
+            <ListVideo size={12} />
+            {count} videos
+          </>
+        ) : (
+          <>
+            <Clock size={12} />
+            {formatDuration(info.duration)}
+          </>
         )}
       </span>
+      {previewable && (
+        <span className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5 rounded-sm bg-black/70 px-2.5 py-1 text-xs font-semibold text-white/90 transition-colors duration-150 group-hover/thumb:bg-[var(--w-red)] group-hover/thumb:text-white">
+          <Play size={12} fill="currentColor" />
+          Preview
+        </span>
+      )}
     </button>
+  )
+}
+
+/** Display-size title with the kind and channel line, plus the close action. */
+function MediaHeading({
+  info,
+  onClose,
+  size
+}: {
+  info: MediaInfo
+  onClose: () => void
+  size: 'full' | 'compact'
+}): React.JSX.Element {
+  const playlistDuration = info.isPlaylist && info.duration != null && info.duration > 0
+  return (
+    <div className="flex min-w-0 flex-1 items-start gap-3">
+      <div className="min-w-0 flex-1">
+        <h2
+          className={`display selectable ${
+            size === 'full'
+              ? 'line-clamp-2 text-[22px] 2xl:line-clamp-3 2xl:text-[26px]'
+              : 'line-clamp-2 text-[20px] 2xl:text-[22px]'
+          }`}
+          title={info.title}
+        >
+          {info.title}
+        </h2>
+        <p className="mt-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[var(--t-dim)]">
+          <span className="flex shrink-0 items-center gap-1.5 font-semibold text-[var(--t-fg)]">
+            {info.isPlaylist ? <ListVideo size={14} /> : <Video size={14} />}
+            {info.isPlaylist ? 'Playlist' : 'Video'}
+          </span>
+          <span aria-hidden="true">·</span>
+          <span className="selectable min-w-0 truncate">
+            {info.uploader ?? 'Unknown channel'}
+          </span>
+          {playlistDuration && (
+            <>
+              <span aria-hidden="true">·</span>
+              <span className="shrink-0 tabular-nums">
+                {formatDuration(info.duration)} total
+              </span>
+            </>
+          )}
+        </p>
+      </div>
+      <button
+        onClick={onClose}
+        title="Close"
+        aria-label="Close"
+        className="-mr-1 shrink-0 rounded-sm p-1.5 text-[var(--t-dim)] transition-colors hover:bg-[var(--t-hover)] hover:text-[var(--t-fg)]"
+      >
+        <X size={18} />
+      </button>
+    </div>
   )
 }
 
@@ -513,11 +563,8 @@ function OptionChip({
   return (
     <button
       onClick={onClick}
-      className={`rounded-full border px-3 py-1 text-xs transition-all duration-150 ${
-        active
-          ? 'border-red-500/50 bg-gradient-to-b from-red-500/20 to-red-500/5 text-red-200 shadow-[0_0_12px_-2px_rgba(239,68,68,0.35)]'
-          : 'border-white/10 text-white/45 hover:border-white/25'
-      }`}
+      aria-pressed={active}
+      className="chip px-3 py-1.5 text-[13px]"
     >
       {label}
     </button>
@@ -556,36 +603,38 @@ function PlaylistPicker({
   // so everything is already loaded).
   const canLoadMore = fetchLimit > 0 && !reachedEnd && entries.length >= fetchLimit
   return (
-    <div className="mt-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-white/10">
-      <div className="flex shrink-0 items-center justify-between bg-white/[0.03] px-3 py-2">
-        <span className="text-xs text-white/45">
+    <div className="flex min-h-0 flex-col">
+      <div className="flex shrink-0 items-baseline justify-between border-b border-[var(--t-rule-strong)] pb-3">
+        <span className="text-sm tabular-nums text-[var(--t-dim)]">
           {selected.size} of {entries.length} selected
-          {remaining > 0 && <span className="text-white/30"> · {total} total</span>}
-          {remaining <= 0 && canLoadMore && (
-            <span className="text-white/30"> · more available</span>
-          )}
+          {remaining > 0 && <span> · {total} total</span>}
+          {remaining <= 0 && canLoadMore && <span> · more available</span>}
         </span>
         <button
           onClick={onToggleAll}
-          className="text-xs font-medium text-red-300 hover:text-red-200"
+          className="text-sm font-semibold text-[var(--t-red)] transition-opacity hover:opacity-80"
         >
           {allSelected ? 'Deselect all' : 'Select all'}
         </button>
       </div>
-      <ul className="scroll-thin min-h-0 flex-1 divide-y divide-white/5 overflow-y-auto">
+      <ul className="scroll-ink -mr-[10px] min-h-0 flex-1 overflow-y-auto">
         {entries.map((entry, i) => {
           const index = i + 1
           const checked = selected.has(index)
           return (
             <li key={entry.id || index}>
-              <label className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-white/[0.03]">
+              <label className="flex cursor-pointer items-center gap-4 border-b border-[var(--t-rule)] py-2.5 pr-1 transition-colors hover:bg-[var(--t-hover)]">
                 <input
                   type="checkbox"
                   checked={checked}
                   onChange={() => onToggle(index)}
-                  className="checkbox shrink-0"
+                  className="tick ml-1 shrink-0"
                 />
-                <span className="w-6 shrink-0 text-right text-xs tabular-nums text-white/30">
+                <span
+                  className={`numeral w-7 shrink-0 text-right text-sm transition-colors ${
+                    checked ? 'text-[var(--t-fg)]' : 'text-[var(--t-faint)]'
+                  }`}
+                >
                   {index}
                 </span>
                 {entry.thumbnail && (
@@ -599,18 +648,29 @@ function PlaylistPicker({
                     }}
                     title="Preview this video"
                     aria-label={`Preview ${entry.title}`}
-                    className="group/thumb relative shrink-0 overflow-hidden rounded"
+                    className={`group/thumb relative shrink-0 overflow-hidden rounded-sm transition-opacity ${
+                      checked ? '' : 'opacity-45'
+                    }`}
                   >
-                    <img src={entry.thumbnail} alt="" className="h-8 w-14 object-cover" />
-                    <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover/thumb:opacity-100">
-                      <Play size={13} className="text-white" fill="currentColor" />
+                    <img
+                      src={entry.thumbnail}
+                      alt=""
+                      loading="lazy"
+                      className="aspect-video w-24 object-cover"
+                    />
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover/thumb:opacity-100">
+                      <Play size={14} className="text-white" fill="currentColor" />
                     </span>
                   </button>
                 )}
-                <span className="min-w-0 flex-1 truncate text-sm text-white/80">
+                <span
+                  className={`min-w-0 flex-1 truncate text-sm transition-colors ${
+                    checked ? 'text-[var(--t-fg)]' : 'text-[var(--t-faint)]'
+                  }`}
+                >
                   {entry.title}
                 </span>
-                <span className="shrink-0 text-xs tabular-nums text-white/35">
+                <span className="shrink-0 text-[13px] tabular-nums text-[var(--t-dim)]">
                   {formatDuration(entry.duration)}
                 </span>
               </label>
@@ -622,7 +682,7 @@ function PlaylistPicker({
         <button
           onClick={onLoadMore}
           disabled={loadingMore}
-          className="group flex shrink-0 items-center justify-center gap-2 border-t border-red-500/20 bg-gradient-to-b from-red-500/[0.12] to-red-500/[0.04] py-3 text-sm font-semibold text-red-300 transition hover:from-red-500/20 hover:to-red-500/[0.08] hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-50"
+          className="group flex shrink-0 items-center justify-center gap-2 border-b border-[var(--t-rule)] py-3 text-sm font-semibold text-[var(--t-red)] transition-colors hover:bg-[var(--t-hover)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loadingMore ? (
             <>
@@ -637,7 +697,7 @@ function PlaylistPicker({
               />
               Load {remaining > 0 ? Math.min(remaining, fetchLimit) : fetchLimit} more
               {remaining > 0 && (
-                <span className="font-normal text-red-300/50">
+                <span className="font-normal text-[var(--t-dim)]">
                   · {remaining} remaining
                 </span>
               )}

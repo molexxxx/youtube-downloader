@@ -35,8 +35,8 @@ function timeAgo(ts: number): string {
 }
 
 /**
- * Live, persisted activity feed for the active server. Rendered inside the
- * sidebar tabs, so it draws no card chrome of its own.
+ * Live, persisted activity feed for the active server, on the sheet. Discord
+ * members are set in the Discord signal; actions from this app read in ink.
  */
 export function AuditLogPanel(): React.JSX.Element | null {
   const activeGuildId = useAppStore((s) => s.activeGuildId)
@@ -45,40 +45,48 @@ export function AuditLogPanel(): React.JSX.Element | null {
   if (!activeGuildId) return null
   const guildEntries = entries.filter((e) => e.guildId === activeGuildId).slice(0, 50)
 
-  if (guildEntries.length === 0) {
-    return (
-      <p className="px-4 py-8 text-center text-xs text-white/30">
-        Nothing yet - actions from you and Discord members show up here.
-      </p>
-    )
-  }
-
   return (
-    <ul className="scroll-thin-indigo min-h-0 flex-1 divide-y divide-white/5 overflow-y-auto">
-      {guildEntries.map((entry) => (
-        <li key={entry.id} className="px-3.5 py-2 text-xs">
-          <div className="flex items-baseline justify-between gap-2">
-            <span className="min-w-0 truncate text-white/70">
-              <span
-                className={
-                  entry.actor.source === 'discord'
-                    ? 'text-indigo-300'
-                    : 'text-emerald-300'
-                }
-              >
-                {entry.actor.username}
-              </span>{' '}
-              <span
-                className={entry.action === 'error' ? 'text-red-300' : 'text-white/45'}
-              >
-                {ACTION_LABEL[entry.action]}
-              </span>{' '}
-              {entry.detail && <span className="text-white/70">{entry.detail}</span>}
-            </span>
-            <span className="shrink-0 text-white/25">{timeAgo(entry.ts)}</span>
-          </div>
-        </li>
-      ))}
-    </ul>
+    <div className="flex min-h-0 flex-1 flex-col px-6 pb-6 pt-5">
+      <p className="text-[13px] text-[var(--t-dim)]">
+        From this app and from Discord members
+      </p>
+      {guildEntries.length === 0 ? (
+        <p className="pt-5 text-sm text-[var(--t-dim)]">
+          Nothing yet - actions from you and Discord members show up here.
+        </p>
+      ) : (
+        <ul className="scroll-ink -mr-6 min-h-0 flex-1 overflow-y-auto pr-[14px]">
+          {guildEntries.map((entry) => (
+            <li
+              key={entry.id}
+              className="flex items-baseline justify-between gap-3 border-b border-[var(--t-rule)] py-2.5 text-[13px]"
+            >
+              <span className="min-w-0">
+                <span
+                  className={`font-semibold ${
+                    entry.actor.source === 'discord' ? 'text-[var(--t-blue)]' : ''
+                  }`}
+                >
+                  {entry.actor.username}
+                </span>{' '}
+                <span
+                  className={
+                    entry.action === 'error'
+                      ? 'text-[var(--t-red)]'
+                      : 'text-[var(--t-dim)]'
+                  }
+                >
+                  {ACTION_LABEL[entry.action]}
+                </span>{' '}
+                {entry.detail && <span>{entry.detail}</span>}
+              </span>
+              <span className="shrink-0 tabular-nums text-[var(--t-faint)]">
+                {timeAgo(entry.ts)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   )
 }

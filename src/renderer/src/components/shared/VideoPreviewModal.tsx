@@ -30,17 +30,17 @@ export function VideoPreviewModal(): React.JSX.Element | null {
       aria-modal="true"
       aria-label={`Preview: ${preview.title}`}
     >
-      <div className="anim-toast-in flex w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0e1016] shadow-2xl shadow-black/60">
-        <div className="flex shrink-0 items-center gap-3 border-b border-white/5 px-4 py-2.5">
-          <span className="text-red-500">▶</span>
-          <p className="selectable min-w-0 flex-1 truncate text-sm font-medium text-white/90">
+      <div className="anim-toast-in sheet focus-ring-red flex w-full max-w-4xl flex-col overflow-hidden rounded-sm border border-[var(--t-rule-strong)] shadow-[0_24px_64px_-12px_rgba(0,0,0,0.7)]">
+        <div className="flex shrink-0 items-center gap-3 border-b border-[var(--t-rule)] px-4 py-2.5">
+          <span className="text-[var(--w-red)]">▶</span>
+          <p className="selectable min-w-0 flex-1 truncate text-sm font-semibold">
             {preview.title}
           </p>
           <button
             onClick={() => void window.api.system.openExternal(preview.watchUrl)}
             title="Watch on YouTube"
             aria-label="Watch on YouTube"
-            className="shrink-0 rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white/80"
+            className="shrink-0 rounded-sm p-1.5 text-[var(--t-dim)] transition-colors hover:bg-[var(--t-hover)] hover:text-[var(--t-fg)]"
           >
             <ExternalLink size={15} />
           </button>
@@ -48,7 +48,7 @@ export function VideoPreviewModal(): React.JSX.Element | null {
             onClick={() => setPreview(null)}
             title="Close preview"
             aria-label="Close preview"
-            className="shrink-0 rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white/80"
+            className="shrink-0 rounded-sm p-1.5 text-[var(--t-dim)] transition-colors hover:bg-[var(--t-hover)] hover:text-[var(--t-fg)]"
           >
             <X size={16} />
           </button>

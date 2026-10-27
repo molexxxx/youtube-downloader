@@ -38,10 +38,10 @@ const PURPOSES: Record<Which, string> = {
 }
 
 const TONES = {
-  muted: 'text-white/40',
-  ok: 'text-emerald-300',
-  warn: 'text-amber-300',
-  error: 'text-red-300'
+  muted: 'text-[var(--t-faint)]',
+  ok: 'text-[var(--t-ok)]',
+  warn: 'text-[var(--t-warn)]',
+  error: 'text-[var(--t-red)]'
 } as const
 
 /** The choice setup starts with: the saved source when that copy is still found and passing, else the app's copy. */
@@ -115,14 +115,14 @@ export function SetupGate(): React.JSX.Element {
   }
 
   return (
-    <div className="scroll-thin flex flex-1 justify-center overflow-y-auto p-8">
-      <div className="w-full max-w-2xl space-y-6">
-        <header className="flex items-start justify-between gap-4">
+    <div className="focus-ring-red signal-red stage scroll-ink scroll-centered flex flex-1 justify-center overflow-y-auto">
+      <div className="w-full max-w-[880px] px-10 pb-16 pt-10">
+        <header className="flex items-start justify-between gap-6 border-b border-[var(--t-rule-strong)] pb-5">
           <div>
-            <h2 className="text-xl font-semibold">
+            <h2 className="display text-[24px]">
               {step === 'done' ? 'Setup check' : 'Set up yt-dlp and FFmpeg'}
             </h2>
-            <p className="mt-1 text-sm text-white/50">
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-[var(--t-dim)]">
               YouTube Downloader runs two tools. Use the copies the app downloads and
               checks, or ones already on this computer. Every choice is self-tested before
               you start.
@@ -133,7 +133,7 @@ export function SetupGate(): React.JSX.Element {
               onClick={() => setSetupOpen(false)}
               aria-label="Close setup"
               title="Close setup"
-              className="btn btn-ghost shrink-0 p-2"
+              className="key key-line h-9 w-9 shrink-0"
             >
               <X size={16} />
             </button>
@@ -159,21 +159,21 @@ export function SetupGate(): React.JSX.Element {
                 onChange={(source) => setChoice((c) => ({ ...c, [which]: source }))}
               />
             ))}
-            <div className="flex items-center justify-between gap-3">
-              <button onClick={rescan} className="btn btn-ghost px-3 py-2 text-xs">
+            <Actions>
+              <button onClick={rescan} className={QUIET_KEY}>
                 <RotateCcw size={13} />
                 Look again
               </button>
-              <button onClick={install} className="btn btn-red px-5 py-2 text-sm">
+              <button onClick={install} className={PRIMARY_KEY}>
                 <Download size={15} />
                 Install and test
               </button>
-            </div>
+            </Actions>
           </>
         )}
 
         {step === 'installing' && binaries && (
-          <div className="space-y-3">
+          <div>
             <ProgressRow
               label="yt-dlp"
               installed={binaries.ytdlp.installed}
@@ -199,28 +199,35 @@ export function SetupGate(): React.JSX.Element {
             {(['ytdlp', 'ffmpeg'] as const).map((which) => (
               <ResultCard key={which} which={which} status={binaries} />
             ))}
-            <div className="flex items-center justify-between gap-3">
-              <button onClick={rescan} className="btn btn-ghost px-3 py-2 text-xs">
+            <Actions>
+              <button onClick={rescan} className={QUIET_KEY}>
                 <ArrowLeft size={13} />
                 Change choices
               </button>
               {setupPassed(binaries) ? (
-                <button onClick={finish} className="btn btn-red px-5 py-2 text-sm">
+                <button onClick={finish} className={PRIMARY_KEY}>
                   <CheckCircle2 size={15} />
                   Start using YouTube Downloader
                 </button>
               ) : (
-                <button onClick={install} className="btn btn-red px-5 py-2 text-sm">
+                <button onClick={install} className={PRIMARY_KEY}>
                   <RotateCcw size={15} />
                   Retry
                 </button>
               )}
-            </div>
+            </Actions>
           </>
         )}
       </div>
     </div>
   )
+}
+
+const QUIET_KEY = 'key key-line h-9 px-3 text-[13px]'
+const PRIMARY_KEY = 'key key-red h-11 px-5 text-sm'
+
+function Actions({ children }: { children: React.ReactNode }): React.JSX.Element {
+  return <div className="mt-8 flex items-center justify-between gap-3">{children}</div>
 }
 
 function Busy({
@@ -231,10 +238,10 @@ function Busy({
   text: string
 }): React.JSX.Element {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] px-4 py-5 text-sm text-white/60">
-      <span className="text-red-400">{icon}</span>
+    <div className="flex items-center gap-3 py-8 text-sm text-[var(--t-dim)]">
+      <span className="text-[var(--t-red)]">{icon}</span>
       {text}
-      <Loader2 size={14} className="ml-auto animate-spin text-white/30" />
+      <Loader2 size={14} className="ml-auto animate-spin text-[var(--t-faint)]" />
     </div>
   )
 }
@@ -278,33 +285,37 @@ function ChoiceCard({
     <section
       role="radiogroup"
       aria-label={NAMES[which]}
-      className="space-y-3 rounded-2xl border border-white/5 bg-white/[0.02] p-5"
+      className="grid grid-cols-[180px_minmax(0,1fr)] gap-x-10 border-b border-[var(--t-rule)] py-7"
     >
       <div>
-        <h3 className="text-sm font-semibold">{NAMES[which]}</h3>
-        <p className="text-xs text-white/40">{PURPOSES[which]}</p>
-      </div>
-      <Option
-        checked={value === 'app'}
-        onSelect={() => onChange('app')}
-        title="Use the app's copy"
-        badge="Recommended"
-        body={appOffer(which, scan, status)}
-      />
-      {found ? (
-        <Option
-          checked={value === 'system'}
-          disabled={!found.report.passed}
-          onSelect={() => onChange('system')}
-          title={`Use ${NAMES[which]} ${found.version ?? ''} on this computer`}
-          body={found.path}
-          footer={<FoundReport copy={found} />}
-        />
-      ) : (
-        <p className="px-1 text-xs text-white/35">
-          {`No ${NAMES[which]} found on this computer's PATH.`}
+        <h3 className="text-[15px] font-semibold">{NAMES[which]}</h3>
+        <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--t-dim)]">
+          {PURPOSES[which]}
         </p>
-      )}
+      </div>
+      <div className="min-w-0 divide-y divide-[var(--t-rule)]">
+        <Option
+          checked={value === 'app'}
+          onSelect={() => onChange('app')}
+          title="Use the app's copy"
+          badge="Recommended"
+          body={appOffer(which, scan, status)}
+        />
+        {found ? (
+          <Option
+            checked={value === 'system'}
+            disabled={!found.report.passed}
+            onSelect={() => onChange('system')}
+            title={`Use ${NAMES[which]} ${found.version ?? ''} on this computer`}
+            body={found.path}
+            footer={<FoundReport copy={found} />}
+          />
+        ) : (
+          <p className="py-3 pl-[34px] text-[13px] text-[var(--t-faint)]">
+            {`No ${NAMES[which]} found on this computer's PATH.`}
+          </p>
+        )}
+      </div>
     </section>
   )
 }
@@ -327,41 +338,41 @@ function Option({
   footer?: React.ReactNode
 }): React.JSX.Element {
   return (
-    <div
-      className={`rounded-xl border transition-colors duration-150 ${
-        checked
-          ? 'border-red-500/50 bg-red-500/[0.06]'
-          : 'border-white/10 bg-white/[0.015] hover:border-white/20'
-      } ${disabled ? 'opacity-60' : ''}`}
-    >
+    <div className={disabled ? 'opacity-60' : ''}>
       <button
         type="button"
         role="radio"
         aria-checked={checked}
         disabled={disabled}
         onClick={onSelect}
-        className="flex w-full items-start gap-3 px-4 py-3 text-left disabled:cursor-not-allowed"
+        className="flex w-full items-start gap-4 py-3.5 text-left disabled:cursor-not-allowed"
       >
         <span
-          className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors duration-150 ${
-            checked ? 'border-red-400 bg-red-500/20' : 'border-white/20'
+          className={`mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-150 ${
+            checked ? 'border-[var(--t-accent)]' : 'border-[var(--t-rule-strong)]'
           }`}
         >
-          {checked && <span className="h-2 w-2 rounded-full bg-red-400" />}
+          {checked && <span className="h-2 w-2 rounded-full bg-[var(--t-accent)]" />}
         </span>
         <span className="min-w-0">
-          <span className="flex items-center gap-2 text-sm text-white/80">
+          <span
+            className={`flex items-center gap-2 text-sm font-semibold transition-colors duration-150 ${
+              checked ? 'text-[var(--t-fg)]' : 'text-[var(--t-dim)]'
+            }`}
+          >
             {title}
             {badge && (
-              <span className="rounded-full bg-red-500/15 px-2 py-px text-[10px] font-medium text-red-300">
+              <span className="rounded-sm bg-[var(--t-accent-soft)] px-1.5 py-0.5 text-[11px] font-semibold text-[var(--t-accent-text)]">
                 {badge}
               </span>
             )}
           </span>
-          <span className="mt-0.5 block break-words text-xs text-white/45">{body}</span>
+          <span className="mt-1 block break-words text-[13px] leading-relaxed text-[var(--t-dim)]">
+            {body}
+          </span>
         </span>
       </button>
-      {footer && <div className="px-4 pb-3 pl-11">{footer}</div>}
+      {footer && <div className="pb-3.5 pl-[34px]">{footer}</div>}
     </div>
   )
 }
@@ -375,7 +386,7 @@ function FoundReport({ copy }: { copy: SystemCopy }): React.JSX.Element {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className={`flex items-center gap-1.5 text-xs ${TONES[summary.tone]}`}
+        className={`flex items-center gap-1.5 text-[13px] ${TONES[summary.tone]}`}
       >
         {summary.text}
         <ChevronDown
@@ -399,33 +410,31 @@ function ProgressRow({
 }): React.JSX.Element {
   const failed = line.tone === 'error'
   return (
-    <div
-      className={`space-y-2 rounded-xl border px-4 py-3 ${
-        failed ? 'border-red-500/40 bg-red-500/5' : 'border-white/5 bg-white/[0.02]'
-      }`}
-    >
+    <div className="space-y-2 border-b border-[var(--t-rule)] py-5">
       <div className="flex items-center justify-between gap-3">
-        <span className="font-mono text-sm">{label}</span>
+        <span className="text-[15px] font-semibold">{label}</span>
         {failed ? (
-          <AlertTriangle className="text-red-400" size={18} />
+          <AlertTriangle className="text-[var(--t-red)]" size={18} />
         ) : installed && !line.busy ? (
-          <CheckCircle2 className="text-emerald-400" size={18} />
+          <CheckCircle2 className="text-[var(--t-ok)]" size={18} />
         ) : (
-          <Loader2 className="animate-spin text-red-400" size={18} />
+          <Loader2 className="animate-spin text-[var(--t-red)]" size={18} />
         )}
       </div>
       {(line.busy || failed) && (
-        <p className={`text-xs ${failed ? 'text-red-300' : 'text-white/50'}`}>
+        <p
+          className={`text-[13px] ${failed ? 'text-[var(--t-red)]' : 'text-[var(--t-dim)]'}`}
+        >
           {line.text}
         </p>
       )}
       {line.busy && (
-        <div className="h-1 overflow-hidden rounded-full bg-white/5">
+        <div className="h-1 overflow-hidden bg-[var(--t-rule)]">
           {line.percent === null ? (
-            <div className="progress-indeterminate h-full rounded-full bg-red-500/70" />
+            <div className="progress-indeterminate h-full bg-[var(--t-accent)]" />
           ) : (
             <div
-              className="h-full rounded-full bg-red-500 transition-[width] duration-200"
+              className="h-full bg-[var(--t-accent)] transition-[width] duration-200"
               style={{ width: `${line.percent}%` }}
             />
           )}
@@ -453,23 +462,29 @@ function ResultCard({
         tone: 'error' as const
       }
   return (
-    <section className="space-y-3 rounded-2xl border border-white/5 bg-white/[0.02] p-5">
-      <div className="flex items-start justify-between gap-3">
+    <section className="space-y-4 border-b border-[var(--t-rule)] py-6">
+      <div className="flex items-start justify-between gap-6">
         <div className="min-w-0">
-          <h3 className="text-sm font-semibold">
+          <h3 className="text-[15px] font-semibold">
             {NAMES[which]}{' '}
-            <span className="font-mono text-xs font-normal text-white/50">
+            <span className="font-mono text-[13px] font-normal text-[var(--t-dim)]">
               {target.version ?? ''}
             </span>
           </h3>
-          <p className="break-words text-xs text-white/40">
+          <p className="mt-1 break-words text-[13px] text-[var(--t-dim)]">
             {sourceLabel(target.source)}
             {target.path ? ` · ${target.path}` : ''}
           </p>
         </div>
-        <span className={`shrink-0 text-xs ${TONES[summary.tone]}`}>{summary.text}</span>
+        <span className={`shrink-0 text-[13px] font-semibold ${TONES[summary.tone]}`}>
+          {summary.text}
+        </span>
       </div>
-      {target.selfTest && <SelfTestList report={target.selfTest} />}
+      {target.selfTest && (
+        <div className="border-l-2 border-[var(--t-rule-strong)] pl-4">
+          <SelfTestList report={target.selfTest} />
+        </div>
+      )}
     </section>
   )
 }

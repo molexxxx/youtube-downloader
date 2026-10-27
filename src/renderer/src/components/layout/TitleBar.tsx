@@ -3,12 +3,16 @@ import {
   Download,
   Minus,
   PictureInPicture2,
+  Play,
   ScrollText,
   Settings,
   Square,
   X
 } from 'lucide-react'
 import { useAppStore } from '../../stores/appStore'
+
+const ICON_BUTTON =
+  'rounded-sm p-1.5 text-[var(--t-dim)] transition-colors hover:bg-[var(--t-hover)] hover:text-[var(--t-fg)]'
 
 export function TitleBar(): React.JSX.Element {
   const view = useAppStore((s) => s.view)
@@ -20,14 +24,14 @@ export function TitleBar(): React.JSX.Element {
   const downloaderActive = view === 'downloads' || view === 'history'
 
   return (
-    <header className="drag-region flex h-10 items-center justify-between border-b border-white/5 bg-[#0e1016] px-4">
-      <div className="flex items-center gap-4">
+    <header className="floor drag-region flex h-10 shrink-0 items-center justify-between border-b border-[var(--t-rule)] px-4">
+      <div className="flex h-full items-center gap-6">
         <div className="flex items-center gap-2 text-sm font-semibold tracking-tight">
-          <span className="text-red-500">▶</span>
+          <Play size={13} fill="currentColor" className="text-[var(--w-red)]" />
           <span>YouTube Downloader</span>
         </div>
         {binariesReady && (
-          <nav className="no-drag flex items-center gap-1.5">
+          <nav className="no-drag flex h-full items-center gap-5">
             <PrimaryTab
               active={downloaderActive}
               onClick={() => setView('downloads')}
@@ -40,7 +44,7 @@ export function TitleBar(): React.JSX.Element {
               onClick={() => setView('discord')}
               icon={<Bot size={14} />}
               label="Discord Bot"
-              accent="indigo"
+              accent="blue"
               dot={discordReady}
             />
           </nav>
@@ -53,7 +57,7 @@ export function TitleBar(): React.JSX.Element {
               onClick={() => void window.api.mini.open()}
               title="Pin quick actions (compact always-on-top window)"
               aria-label="Open quick actions window"
-              className="rounded p-1.5 text-white/60 hover:bg-white/10 hover:text-white"
+              className={ICON_BUTTON}
             >
               <PictureInPicture2 size={14} />
             </button>
@@ -70,26 +74,26 @@ export function TitleBar(): React.JSX.Element {
               label="Settings"
               badge={updateReady}
             />
-            <div className="mx-1.5 h-4 w-px bg-white/10" />
+            <div className="mx-1.5 h-4 w-px bg-[var(--t-rule-strong)]" />
           </>
         )}
         <button
           onClick={() => window.api.system.minimize()}
-          className="rounded p-1.5 text-white/60 hover:bg-white/10 hover:text-white"
+          className={ICON_BUTTON}
           aria-label="Minimize"
         >
           <Minus size={14} />
         </button>
         <button
           onClick={() => window.api.system.maximize()}
-          className="rounded p-1.5 text-white/60 hover:bg-white/10 hover:text-white"
+          className={ICON_BUTTON}
           aria-label="Maximize"
         >
           <Square size={12} />
         </button>
         <button
           onClick={() => window.api.system.close()}
-          className="rounded p-1.5 text-white/60 hover:bg-red-500 hover:text-white"
+          className="rounded-sm p-1.5 text-[var(--t-dim)] transition-colors hover:bg-[var(--w-red)] hover:text-[#fff]"
           aria-label="Close"
         >
           <X size={14} />
@@ -100,8 +104,8 @@ export function TitleBar(): React.JSX.Element {
 }
 
 const TAB_ACCENTS = {
-  red: 'bg-red-500/15 text-red-100 ring-1 ring-inset ring-red-500/30',
-  indigo: 'bg-indigo-500/15 text-indigo-100 ring-1 ring-inset ring-indigo-500/30'
+  red: 'border-[var(--w-red)]',
+  blue: 'border-[var(--w-blue)]'
 } as const
 
 function PrimaryTab({
@@ -122,8 +126,11 @@ function PrimaryTab({
   return (
     <button
       onClick={onClick}
-      className={`relative flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-        active ? TAB_ACCENTS[accent] : 'text-white/50 hover:bg-white/5 hover:text-white'
+      aria-current={active ? 'page' : undefined}
+      className={`relative flex h-full items-center gap-1.5 border-b-2 pt-0.5 text-[13px] font-semibold transition-colors ${
+        active
+          ? `${TAB_ACCENTS[accent]} text-[var(--t-fg)]`
+          : 'border-transparent text-[var(--t-dim)] hover:text-[var(--t-fg)]'
       }`}
     >
       {icon}
@@ -131,7 +138,7 @@ function PrimaryTab({
       {dot && (
         <span
           aria-label="Bot connected"
-          className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-[#0e1016]"
+          className="ml-0.5 h-2 w-2 rounded-full bg-[var(--w-live)]"
         />
       )}
     </button>
@@ -156,17 +163,18 @@ function IconTab({
       onClick={onClick}
       title={label}
       aria-label={label}
-      className={`relative rounded p-1.5 ${
+      aria-current={active ? 'page' : undefined}
+      className={`relative rounded-sm p-1.5 transition-colors ${
         active
-          ? 'bg-white/10 text-white'
-          : 'text-white/60 hover:bg-white/10 hover:text-white'
+          ? 'bg-[var(--t-hover)] text-[var(--t-fg)]'
+          : 'text-[var(--t-dim)] hover:bg-[var(--t-hover)] hover:text-[var(--t-fg)]'
       }`}
     >
       {icon}
       {badge && (
         <span
           aria-label="Update available"
-          className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-[#0e1016]"
+          className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-[var(--w-red)] ring-2 ring-[var(--t-ring)]"
         />
       )}
     </button>

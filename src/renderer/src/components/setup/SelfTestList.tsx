@@ -10,25 +10,25 @@ export function SelfTestList({ report }: { report: SelfTestReport }): React.JSX.
           {check.ok ? (
             <CheckCircle2
               size={14}
-              className="mt-px shrink-0 text-emerald-400"
+              className="mt-px shrink-0 text-[var(--t-ok)]"
               aria-label="Passed"
             />
           ) : check.required ? (
             <XCircle
               size={14}
-              className="mt-px shrink-0 text-red-400"
+              className="mt-px shrink-0 text-[var(--t-red)]"
               aria-label="Failed"
             />
           ) : (
             <AlertTriangle
               size={14}
-              className="mt-px shrink-0 text-amber-400"
+              className="mt-px shrink-0 text-[var(--t-warn)]"
               aria-label="Unavailable"
             />
           )}
           <span className="min-w-0">
-            <span className="text-white/80">{check.label}</span>
-            <span className="block break-words text-white/40">{check.detail}</span>
+            <span className="text-[var(--t-fg)]">{check.label}</span>
+            <span className="block break-words text-[var(--t-dim)]">{check.detail}</span>
           </span>
         </li>
       ))}

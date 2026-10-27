@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AppWindow, Bot, Download, Pin, PinOff, X } from 'lucide-react'
+import { AppWindow, Bot, Download, Pin, PinOff, Play, X } from 'lucide-react'
 import type { MiniWindowSize } from '@shared/types'
 import { useAppStore } from '../../stores/appStore'
 import { applyTheme } from '../../lib/theme'
@@ -8,10 +8,14 @@ import { MiniDownloads } from './MiniDownloads'
 
 type MiniSection = 'download' | 'discord'
 
+const ICON_BUTTON =
+  'rounded-sm p-1.5 text-[var(--t-dim)] transition-colors hover:bg-[var(--t-hover)] hover:text-[var(--t-fg)]'
+
 /**
  * Pinned quick-actions window: a compact always-on-top companion to the main
  * app with the essentials of both sections - quick downloads and Discord bot
- * control - so neither needs a trip back to the full window.
+ * control - so neither needs a trip back to the full window. Each section is
+ * a stage for its controls above a sheet of what is lined up.
  */
 export function MiniApp(): React.JSX.Element {
   const theme = useAppStore((s) => s.config?.theme)
@@ -62,9 +66,13 @@ export function MiniApp(): React.JSX.Element {
   }, [theme])
 
   return (
-    <div className="flex h-screen flex-col bg-[#0b0d12] text-white">
+    <div className="floor flex h-screen flex-col">
       <MiniTitleBar />
-      <div className="flex shrink-0 gap-1 px-3 pt-2.5">
+      <div
+        role="tablist"
+        aria-label="Quick actions"
+        className="flex shrink-0 gap-5 border-b border-[var(--t-rule)] px-4"
+      >
         <SectionTab
           active={section === 'download'}
           onClick={() => setSection('download')}
@@ -77,20 +85,26 @@ export function MiniApp(): React.JSX.Element {
           onClick={() => setSection('discord')}
           icon={<Bot size={13} />}
           label="Discord"
-          accent="indigo"
+          accent="blue"
         />
       </div>
-      <main className="scroll-thin-indigo flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto p-3">
+      <main
+        className={`${
+          section === 'download'
+            ? 'focus-ring-red signal-red'
+            : 'focus-ring-indigo signal-blue'
+        } stage scroll-ink flex min-h-0 flex-1 flex-col overflow-y-auto`}
+      >
         {section === 'download' ? <MiniDownloads /> : <MiniDiscord />}
       </main>
     </div>
   )
 }
 
-const SIZE_PRESETS: { size: MiniWindowSize; label: string; dot: string }[] = [
-  { size: 'compact', label: 'Compact size', dot: 'h-1.5 w-1.5' },
-  { size: 'standard', label: 'Standard size', dot: 'h-2 w-2' },
-  { size: 'tall', label: 'Tall size', dot: 'h-2.5 w-2.5' }
+const SIZE_PRESETS: { size: MiniWindowSize; label: string; mark: string }[] = [
+  { size: 'compact', label: 'Compact size', mark: 'h-1.5 w-1.5' },
+  { size: 'standard', label: 'Standard size', mark: 'h-2 w-2' },
+  { size: 'tall', label: 'Tall size', mark: 'h-2.5 w-2.5' }
 ]
 
 function MiniTitleBar(): React.JSX.Element {
@@ -107,14 +121,12 @@ function MiniTitleBar(): React.JSX.Element {
   }
 
   return (
-    <header className="drag-region flex h-9 shrink-0 items-center gap-2 border-b border-white/5 bg-[#0e1016] px-3">
-      <span className="text-xs text-red-500">▶</span>
-      <span className="text-xs font-semibold tracking-tight text-white/80">
-        Quick Actions
-      </span>
+    <header className="drag-region flex h-9 shrink-0 items-center gap-2 px-3">
+      <Play size={11} fill="currentColor" className="text-[var(--w-red)]" />
+      <span className="text-xs font-semibold tracking-tight">Quick Actions</span>
       <div className="no-drag ml-auto flex items-center gap-0.5">
         <div
-          className="mr-1 flex items-center gap-1 rounded-full border border-white/10 px-2 py-1"
+          className="mr-1 flex items-center gap-0.5"
           role="group"
           aria-label="Window size"
         >
@@ -125,11 +137,13 @@ function MiniTitleBar(): React.JSX.Element {
               title={preset.label}
               aria-label={preset.label}
               aria-pressed={size === preset.size}
-              className="flex h-4 w-4 items-center justify-center rounded-full hover:bg-white/10"
+              className="flex h-6 w-6 items-center justify-center rounded-sm transition-colors hover:bg-[var(--t-hover)]"
             >
               <span
-                className={`rounded-full transition-colors ${preset.dot} ${
-                  size === preset.size ? 'bg-indigo-400' : 'bg-white/25'
+                className={`transition-colors ${preset.mark} ${
+                  size === preset.size
+                    ? 'bg-[var(--w-blue)]'
+                    : 'bg-[var(--t-rule-strong)]'
                 }`}
               />
             </button>
@@ -139,10 +153,11 @@ function MiniTitleBar(): React.JSX.Element {
           onClick={() => void togglePin()}
           title={pinned ? 'Unpin (stop floating on top)' : 'Pin on top of all windows'}
           aria-label={pinned ? 'Unpin window' : 'Pin window on top'}
-          className={`rounded p-1.5 transition-colors ${
+          aria-pressed={pinned}
+          className={`rounded-sm p-1.5 transition-colors hover:bg-[var(--t-hover)] ${
             pinned
-              ? 'text-indigo-300 hover:bg-white/10'
-              : 'text-white/40 hover:bg-white/10 hover:text-white'
+              ? 'text-[var(--t-blue)]'
+              : 'text-[var(--t-dim)] hover:text-[var(--t-fg)]'
           }`}
         >
           {pinned ? <Pin size={13} /> : <PinOff size={13} />}
@@ -151,7 +166,7 @@ function MiniTitleBar(): React.JSX.Element {
           onClick={() => void window.api.mini.focusMain()}
           title="Open the main window"
           aria-label="Open the main window"
-          className="rounded p-1.5 text-white/60 hover:bg-white/10 hover:text-white"
+          className={ICON_BUTTON}
         >
           <AppWindow size={13} />
         </button>
@@ -159,7 +174,7 @@ function MiniTitleBar(): React.JSX.Element {
           onClick={() => void window.api.mini.close()}
           title="Close quick actions"
           aria-label="Close quick actions"
-          className="rounded p-1.5 text-white/60 hover:bg-red-500 hover:text-white"
+          className="rounded-sm p-1.5 text-[var(--t-dim)] transition-colors hover:bg-[var(--w-red)] hover:text-[#fff]"
         >
           <X size={13} />
         </button>
@@ -169,8 +184,8 @@ function MiniTitleBar(): React.JSX.Element {
 }
 
 const SECTION_ACCENTS = {
-  red: 'bg-red-500/15 text-red-200 ring-1 ring-inset ring-red-500/25',
-  indigo: 'bg-indigo-500/15 text-indigo-200 ring-1 ring-inset ring-indigo-500/25'
+  red: 'border-[var(--w-red)]',
+  blue: 'border-[var(--w-blue)]'
 } as const
 
 function SectionTab({
@@ -191,10 +206,10 @@ function SectionTab({
       onClick={onClick}
       role="tab"
       aria-selected={active}
-      className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+      className={`flex items-center gap-1.5 border-b-2 py-2.5 text-[13px] font-semibold transition-colors ${
         active
-          ? SECTION_ACCENTS[accent]
-          : 'text-white/50 hover:bg-white/5 hover:text-white'
+          ? `${SECTION_ACCENTS[accent]} text-[var(--t-fg)]`
+          : 'border-transparent text-[var(--t-dim)] hover:text-[var(--t-fg)]'
       }`}
     >
       {icon}

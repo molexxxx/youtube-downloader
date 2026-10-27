@@ -1,8 +1,15 @@
 import { Loader2, LogOut, Volume2 } from 'lucide-react'
 import { useState } from 'react'
 import { useAppStore } from '../../stores/appStore'
+import { Select } from '../shared/Select'
 
-/** Join/leave a voice channel in the active server. */
+/** Above this many channels the inline row becomes a dropdown. */
+const INLINE_LIMIT = 5
+
+/**
+ * Join or leave a voice channel in the active server, along the stage's foot.
+ * A few channels sit inline; larger servers get a dropdown instead.
+ */
 export function VoiceChannelPicker(): React.JSX.Element | null {
   const guild = useAppStore(
     (s) => s.discordGuilds.find((g) => g.id === s.activeGuildId) ?? null
@@ -36,65 +43,75 @@ export function VoiceChannelPicker(): React.JSX.Element | null {
   }
 
   return (
-    <section className="shrink-0 rounded-2xl border border-white/10 bg-white/[0.02] p-3.5">
-      <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-white/40">
-          Voice channels
-        </h3>
-        {connectedChannelId && (
-          <button
-            onClick={() => void leave()}
-            className="flex items-center gap-1 text-xs text-white/50 transition-colors hover:text-red-300"
-          >
-            {busy === 'leave' ? (
-              <Loader2 size={12} className="animate-spin" />
-            ) : (
-              <LogOut size={12} />
-            )}
-            Leave
-          </button>
-        )}
-      </div>
+    <section
+      aria-label="Voice channels"
+      className="mt-auto flex shrink-0 flex-wrap items-center gap-x-1 gap-y-2 border-t border-[var(--t-rule)] pt-4"
+    >
+      <span className="mr-3 text-[13px] font-semibold text-[var(--t-dim)]">Voice</span>
       {guild.voiceChannels.length === 0 ? (
-        <p className="py-2 text-center text-xs text-white/30">
+        <span className="text-sm text-[var(--t-dim)]">
           No voice channels in this server.
-        </p>
+        </span>
+      ) : guild.voiceChannels.length > INLINE_LIMIT ? (
+        <div className="flex items-center gap-3">
+          <Select
+            ariaLabel="Voice channel"
+            accent="indigo"
+            className="w-72"
+            value={connectedChannelId ?? ''}
+            placeholder="Pick a voice channel"
+            onChange={(id) => void join(id)}
+            options={guild.voiceChannels.map((c) => ({ value: c.id, label: c.name }))}
+          />
+          {busy && busy !== 'leave' ? (
+            <Loader2 size={14} className="animate-spin text-[var(--t-dim)]" />
+          ) : connectedChannelId ? (
+            <span className="flex items-center gap-1.5 text-[13px] text-[var(--t-dim)]">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-[var(--w-live)]" />
+              Connected
+            </span>
+          ) : null}
+        </div>
       ) : (
-        <ul className="scroll-thin-indigo flex max-h-72 flex-col gap-0.5 overflow-y-auto">
-          {guild.voiceChannels.map((channel) => {
-            const connected = channel.id === connectedChannelId
-            return (
-              <li key={channel.id}>
-                <button
-                  onClick={() => void join(channel.id)}
-                  disabled={busy === channel.id}
-                  title={connected ? 'The bot is playing here' : `Join ${channel.name}`}
-                  className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm transition-colors ${
-                    connected
-                      ? 'bg-emerald-500/10 text-emerald-200 ring-1 ring-inset ring-emerald-500/25'
-                      : 'text-white/70 hover:bg-white/[0.05] hover:text-white'
-                  }`}
-                >
-                  {busy === channel.id ? (
-                    <Loader2 size={14} className="shrink-0 animate-spin text-white/40" />
-                  ) : (
-                    <Volume2
-                      size={14}
-                      className={`shrink-0 ${connected ? 'text-emerald-300' : 'text-white/40'}`}
-                    />
-                  )}
-                  <span className="min-w-0 flex-1 truncate">{channel.name}</span>
-                  {connected && (
-                    <span className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide">
-                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-                      Live
-                    </span>
-                  )}
-                </button>
-              </li>
-            )
-          })}
-        </ul>
+        guild.voiceChannels.map((channel) => {
+          const connected = channel.id === connectedChannelId
+          return (
+            <button
+              key={channel.id}
+              onClick={() => void join(channel.id)}
+              disabled={busy === channel.id}
+              aria-current={connected ? 'true' : undefined}
+              title={connected ? 'The bot is playing here' : `Join ${channel.name}`}
+              className={`flex max-w-[220px] items-center gap-2 border-b-2 px-3 py-1.5 text-sm transition-colors ${
+                connected
+                  ? 'border-[var(--w-blue)] font-semibold text-[var(--t-blue)]'
+                  : 'border-transparent text-[var(--t-dim)] hover:text-[var(--t-fg)]'
+              }`}
+            >
+              {busy === channel.id ? (
+                <Loader2 size={14} className="shrink-0 animate-spin" />
+              ) : connected ? (
+                <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-[var(--w-live)]" />
+              ) : (
+                <Volume2 size={14} className="shrink-0" />
+              )}
+              <span className="min-w-0 truncate">{channel.name}</span>
+            </button>
+          )
+        })
+      )}
+      {connectedChannelId && (
+        <button
+          onClick={() => void leave()}
+          className="ml-auto flex items-center gap-1.5 rounded-sm px-2 py-1.5 text-[13px] text-[var(--t-dim)] transition-colors hover:text-[var(--t-red)]"
+        >
+          {busy === 'leave' ? (
+            <Loader2 size={13} className="animate-spin" />
+          ) : (
+            <LogOut size={13} />
+          )}
+          Leave channel
+        </button>
       )}
     </section>
   )
