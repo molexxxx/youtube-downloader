@@ -66,6 +66,10 @@ html {
   }
 }
 
+html.lenis {
+  scroll-behavior: auto;
+}
+
 body {
   margin: 0;
   background: var(--w-stage);

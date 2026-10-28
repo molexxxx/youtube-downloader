@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { fetchReleases, summarize, type ReleaseSummary } from './release'
+import { scrollPage } from './smooth'
 
 /** Starts from the build-time snapshot and swaps in live GitHub data when it arrives. */
 export function useRelease(): ReleaseSummary | null {
@@ -60,10 +61,10 @@ export function useActiveSection(ids: string[]): string {
     }
 
     let timer = 0
+    let jump = 0
     const settle = () => {
       jumping.current = false
       window.clearTimeout(timer)
-      window.removeEventListener('scrollend', settle)
     }
 
     const onClick = (event: MouseEvent) => {
@@ -85,11 +86,13 @@ export function useActiveSection(ids: string[]): string {
       const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
       settle()
+      const token = ++jump
       jumping.current = true
       setActive((current) => (id === 'top' ? ids[0] : ids.includes(id) ? id : current))
-      window.addEventListener('scrollend', settle)
-      timer = window.setTimeout(settle, 1500)
-      window.scrollTo({ top, behavior: far || still ? 'instant' : 'smooth' })
+      timer = window.setTimeout(settle, 3000)
+      scrollPage(top, far || still, () => {
+        if (token === jump) settle()
+      })
       history.pushState(null, '', `#${id}`)
 
       if (target) {

@@ -12,6 +12,7 @@ import {
   type ReactNode
 } from 'react'
 import { CAPTIONS, GALLERY, shot, type ShotName } from '../shots'
+import { holdScroll } from '../smooth'
 
 const OpenShot = createContext<(name: ShotName) => void>(() => undefined)
 
@@ -55,6 +56,7 @@ export function LightboxProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const element = dialog.current
     if (!element) return
+    holdScroll(index !== null)
     if (index !== null && !element.open) element.showModal()
     if (index === null && element.open) element.close()
   }, [index])

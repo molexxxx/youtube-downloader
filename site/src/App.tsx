@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Bar } from './components/Bar'
 import { Hero } from './components/Hero'
 import { LightboxProvider } from './components/Lightbox'
@@ -16,6 +16,7 @@ import {
 import { useActiveSection, useRelease } from './hooks'
 import { currentPlatform } from './platform'
 import { SECTIONS } from './sections'
+import { startSmoothScroll } from './smooth'
 
 const SECTION_IDS = SECTIONS.map(({ id }) => id)
 
@@ -23,6 +24,8 @@ export function App() {
   const release = useRelease()
   const [platform] = useState(currentPlatform)
   const active = useActiveSection(SECTION_IDS)
+
+  useEffect(() => startSmoothScroll(), [])
 
   return (
     <LightboxProvider>
