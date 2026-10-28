@@ -1,11 +1,35 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react'
-import { SettingsScreen } from '@renderer/components/settings/SettingsScreen'
+import {
+  render,
+  screen,
+  fireEvent,
+  cleanup,
+  waitFor,
+  within
+} from '@testing-library/react'
+import {
+  SettingsScreen,
+  sourceDescription
+} from '@renderer/components/settings/SettingsScreen'
 import { useAppStore } from '@renderer/stores/appStore'
-import type { AppConfig, AppUpdateStatus, CookieInfo } from '@shared/types'
+import type {
+  AppConfig,
+  AppUpdateStatus,
+  BinariesScan,
+  CookieInfo,
+  SelfTestReport
+} from '@shared/types'
 import { baseBinaries, installMockApi } from './helpers/mockApi'
 
 let api: ReturnType<typeof installMockApi>
+
+const passing = (path: string): SelfTestReport => ({
+  path,
+  version: '2026.10.26',
+  at: 1,
+  passed: true,
+  checks: []
+})
 
 const fullConfig = (overrides: Partial<AppConfig> = {}): AppConfig =>
   ({
@@ -49,6 +73,35 @@ beforeEach(() => {
   useAppStore.setState({ config: fullConfig(), binaries, appUpdate: null })
 })
 afterEach(() => cleanup())
+
+describe('sourceDescription', () => {
+  const status = baseBinaries()
+
+  it('names the copy in use when a tool runs from this computer', () => {
+    const onPath = { ...status, ytdlp: { ...status.ytdlp, path: '/opt/yt-dlp' } }
+    expect(sourceDescription('ytdlp', 'system', onPath, null, false)).toBe(
+      'Using yt-dlp at /opt/yt-dlp.'
+    )
+  })
+
+  it('reports what the scan found next to the app copy', () => {
+    const failing = { ...passing('/usr/bin/ffmpeg'), passed: false }
+    const scan: BinariesScan = {
+      ytdlp: null,
+      ffmpeg: { path: '/usr/bin/ffmpeg', version: '7.1', report: failing },
+      ytdlpRelease: null
+    }
+    expect(sourceDescription('ffmpeg', 'app', status, scan, false)).toMatch(
+      /FFmpeg 7\.1 at \/usr\/bin\/ffmpeg failed its self-test, so it can't be used\.$/
+    )
+    expect(sourceDescription('ytdlp', 'app', status, scan, false)).toMatch(
+      /No yt-dlp on this computer's PATH\.$/
+    )
+    expect(sourceDescription('ytdlp', 'app', status, null, true)).toMatch(
+      /Looking for a copy on this computer…$/
+    )
+  })
+})
 
 describe('SettingsScreen', () => {
   it('returns null without a config', () => {
@@ -169,6 +222,49 @@ describe('SettingsScreen', () => {
     render(<SettingsScreen />)
     fireEvent.click(screen.getByText('Reset to defaults'))
     await waitFor(() => expect(api.config.reset).toHaveBeenCalled())
+  })
+
+  it('switches a tool to the copy on this computer in place, without reopening setup', async () => {
+    const scan: BinariesScan = {
+      ytdlp: {
+        path: '/usr/bin/yt-dlp',
+        version: '2026.10.26',
+        report: passing('/usr/bin/yt-dlp')
+      },
+      ffmpeg: null,
+      ytdlpRelease: null
+    }
+    api.binaries.scan.mockResolvedValue(scan)
+    render(<SettingsScreen />)
+    expect(screen.queryByText('Run setup again')).toBeNull()
+
+    const ytdlp = screen.getByRole('group', { name: 'yt-dlp source' })
+    const computer = within(ytdlp).getByText('This computer').closest('button')!
+    await waitFor(() => expect(computer).toBeEnabled())
+    expect(
+      screen.getByText(/Also found yt-dlp 2026\.10\.26 at \/usr\/bin\/yt-dlp\./)
+    ).toBeInTheDocument()
+
+    fireEvent.click(computer)
+    await waitFor(() =>
+      expect(api.config.set).toHaveBeenCalledWith({ ytdlpSource: 'system' })
+    )
+    await waitFor(() => expect(api.binaries.selfTest).toHaveBeenCalledWith('ytdlp'))
+    expect(api.binaries.bootstrap).toHaveBeenCalledTimes(1)
+    await waitFor(() => expect(useAppStore.getState().binaryChange).toBeNull())
+
+    const ffmpeg = screen.getByRole('group', { name: 'FFmpeg source' })
+    expect(within(ffmpeg).getByText('This computer').closest('button')).toBeDisabled()
+    expect(screen.getByText(/No FFmpeg on this computer's PATH\./)).toBeInTheDocument()
+  })
+
+  it('looks for copies on this computer again on request', async () => {
+    render(<SettingsScreen />)
+    await waitFor(() => expect(api.binaries.scan).toHaveBeenCalledTimes(1))
+    const again = screen.getByText('Look again').closest('button')!
+    await waitFor(() => expect(again).toBeEnabled())
+    fireEvent.click(again)
+    await waitFor(() => expect(api.binaries.scan).toHaveBeenCalledTimes(2))
   })
 
   it('warns when no browsers are detected', async () => {

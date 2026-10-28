@@ -54,10 +54,19 @@ export function setConfig(partial: Partial<AppConfig>): AppConfig {
   return s.store
 }
 
+/** How this install's tools were set up. Resetting preferences keeps them, so setup never runs again. */
+const INSTALL_STATE: ReadonlyArray<keyof AppConfig> = [
+  'setupComplete',
+  'ytdlpSource',
+  'ffmpegSource'
+]
+
 export function resetConfig(): AppConfig {
   const s = getStore()
+  const kept = INSTALL_STATE.map((key) => [key, s.get(key)] as const)
   s.clear()
   s.set('downloadDir', app.getPath('downloads'))
+  for (const [key, value] of kept) s.set(key, value as never)
   return s.store
 }
 

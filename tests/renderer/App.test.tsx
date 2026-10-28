@@ -22,6 +22,7 @@ beforeEach(() => {
     config: null,
     binaries: null,
     binariesReady: false,
+    binaryChange: null,
     view: 'downloads',
     info: null,
     error: null,
@@ -57,6 +58,25 @@ describe('App', () => {
     api.binaries.status.mockResolvedValue(notReady)
     api.binaries.bootstrap.mockResolvedValue(notReady)
     render(<App />)
+    expect(await screen.findByText('Set up yt-dlp and FFmpeg')).toBeInTheDocument()
+  })
+
+  it('shows setup on first run even when both tools are already present', async () => {
+    const config = await api.config.get()
+    api.config.get.mockResolvedValue({ ...config, setupComplete: false })
+    render(<App />)
+    expect(await screen.findByText('Set up yt-dlp and FFmpeg')).toBeInTheDocument()
+  })
+
+  it('keeps setup closed while Settings changes where a tool comes from', async () => {
+    api.binaries.status.mockResolvedValue(notReady)
+    const config = await api.config.get()
+    api.config.get.mockResolvedValue({ ...config, setupComplete: true })
+    useAppStore.setState({ binaryChange: 'ffmpeg' })
+    render(<App />)
+    await waitFor(() => expect(useAppStore.getState().binaries).toEqual(notReady))
+    expect(screen.queryByText('Set up yt-dlp and FFmpeg')).toBeNull()
+    useAppStore.setState({ binaryChange: null })
     expect(await screen.findByText('Set up yt-dlp and FFmpeg')).toBeInTheDocument()
   })
 

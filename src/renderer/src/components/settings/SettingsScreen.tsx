@@ -12,15 +12,18 @@ import {
   Loader2,
   RefreshCw,
   RotateCcw,
+  Search,
   ShieldCheck,
-  Trash2,
-  Wrench
+  Trash2
 } from 'lucide-react'
 import { useAppStore } from '../../stores/appStore'
 import { PRESETS } from '@shared/presets'
 import type {
   AppConfig,
   AppUpdateStatus,
+  BinariesScan,
+  BinariesStatus,
+  BinarySource,
   CookieInfo,
   SelfTestReport,
   Theme,
@@ -66,7 +69,10 @@ export function SettingsScreen(): React.JSX.Element | null {
   const binaries = useAppStore((s) => s.binaries)
   const setBinaries = useAppStore((s) => s.setBinaries)
   const appUpdate = useAppStore((s) => s.appUpdate)
-  const setSetupOpen = useAppStore((s) => s.setSetupOpen)
+  const binaryChange = useAppStore((s) => s.binaryChange)
+  const setBinaryChange = useAppStore((s) => s.setBinaryChange)
+  const [scan, setScan] = useState<BinariesScan | null>(null)
+  const [scanning, setScanning] = useState(false)
   const [checkingYtdlp, setCheckingYtdlp] = useState(false)
   const [testing, setTesting] = useState<'ytdlp' | 'ffmpeg' | null>(null)
   const [cookies, setCookies] = useState<CookieInfo | null>(null)
@@ -81,6 +87,10 @@ export function SettingsScreen(): React.JSX.Element | null {
 
   useEffect(() => {
     void window.api.system.appVersion().then(setAppVersion)
+  }, [])
+
+  useEffect(() => {
+    void lookForCopies()
   }, [])
 
   if (!config) return null
@@ -106,6 +116,40 @@ export function SettingsScreen(): React.JSX.Element | null {
     } finally {
       setCheckingYtdlp(false)
     }
+  }
+
+  async function lookForCopies(): Promise<void> {
+    setScanning(true)
+    try {
+      setScan(await window.api.binaries.scan())
+    } finally {
+      setScanning(false)
+    }
+  }
+
+  /** Installs whatever the current sources need, then self-tests the tool that changed. */
+  async function applyTool(which: Tool, partial?: Partial<AppConfig>): Promise<void> {
+    setBinaryChange(which)
+    try {
+      if (partial) setConfig(await window.api.config.set(partial))
+      const status = await window.api.binaries.bootstrap()
+      setBinaries(status)
+      if (status[which].installed) {
+        setTesting(which)
+        setBinaries(await window.api.binaries.selfTest(which))
+      }
+    } finally {
+      setTesting(null)
+      setBinaryChange(null)
+    }
+  }
+
+  /** Switches one tool between the app's copy and the one on this computer, in place. */
+  function switchSource(which: Tool, source: BinarySource): Promise<void> {
+    return applyTool(
+      which,
+      which === 'ytdlp' ? { ytdlpSource: source } : { ffmpegSource: source }
+    )
   }
 
   async function runSelfTest(which: 'ytdlp' | 'ffmpeg'): Promise<void> {
@@ -442,19 +486,30 @@ export function SettingsScreen(): React.JSX.Element | null {
                   detail={sourceLabel(binaries.ytdlp.source)}
                   line={describeYtdlp(binaries.ytdlp)}
                   action={
-                    binaries.ytdlp.source !== 'system' && (
-                      <button
-                        onClick={checkYtdlp}
-                        disabled={checkingYtdlp || describeYtdlp(binaries.ytdlp).busy}
-                        title="Look for a new stable yt-dlp release and install it"
-                        className={SMALL_KEY}
-                      >
-                        <RefreshCw
-                          size={13}
-                          className={checkingYtdlp ? 'animate-spin' : ''}
-                        />
-                        Check now
-                      </button>
+                    !binaries.ytdlp.installed && config.ytdlpSource === 'app' ? (
+                      <InstallAgainKey
+                        busy={binaryChange !== null}
+                        onClick={() => applyTool('ytdlp')}
+                      />
+                    ) : (
+                      binaries.ytdlp.source !== 'system' && (
+                        <button
+                          onClick={checkYtdlp}
+                          disabled={
+                            checkingYtdlp ||
+                            binaryChange !== null ||
+                            describeYtdlp(binaries.ytdlp).busy
+                          }
+                          title="Look for a new stable yt-dlp release and install it"
+                          className={SMALL_KEY}
+                        >
+                          <RefreshCw
+                            size={13}
+                            className={checkingYtdlp ? 'animate-spin' : ''}
+                          />
+                          Check now
+                        </button>
+                      )
                     )
                   }
                 />
@@ -465,6 +520,15 @@ export function SettingsScreen(): React.JSX.Element | null {
                   onRun={() => runSelfTest('ytdlp')}
                 />
               </div>
+              <SourceField
+                which="ytdlp"
+                current={config.ytdlpSource}
+                status={binaries}
+                scan={scan}
+                scanning={scanning}
+                changing={binaryChange !== null}
+                onChange={(source) => switchSource('ytdlp', source)}
+              />
               {binaries.ytdlp.source !== 'system' && (
                 <Check
                   label="Install new yt-dlp releases automatically"
@@ -486,6 +550,15 @@ export function SettingsScreen(): React.JSX.Element | null {
                       : binaries.ffmpeg.pinned?.publisher
                   }
                   line={describeFfmpeg(binaries.ffmpeg)}
+                  action={
+                    !binaries.ffmpeg.installed &&
+                    config.ffmpegSource === 'app' && (
+                      <InstallAgainKey
+                        busy={binaryChange !== null}
+                        onClick={() => applyTool('ffmpeg')}
+                      />
+                    )
+                  }
                 />
                 <SelfTestRow
                   report={binaries.ffmpeg.selfTest}
@@ -494,13 +567,31 @@ export function SettingsScreen(): React.JSX.Element | null {
                   onRun={() => runSelfTest('ffmpeg')}
                 />
               </div>
+              <SourceField
+                which="ffmpeg"
+                current={config.ffmpegSource}
+                status={binaries}
+                scan={scan}
+                scanning={scanning}
+                changing={binaryChange !== null}
+                onChange={(source) => switchSource('ffmpeg', source)}
+              />
               <div className="flex items-center justify-between gap-6 py-4">
                 <p className="text-[13px] text-[var(--t-dim)]">
-                  {"Switch between the app's copies and ones on this computer."}
+                  Copies on this computer are the ones on your PATH, each self-tested
+                  before it can be used.
                 </p>
-                <button onClick={() => setSetupOpen(true)} className={SMALL_KEY}>
-                  <Wrench size={13} />
-                  Run setup again
+                <button
+                  onClick={lookForCopies}
+                  disabled={scanning || binaryChange !== null}
+                  className={SMALL_KEY}
+                >
+                  {scanning ? (
+                    <Loader2 size={13} className="animate-spin" />
+                  ) : (
+                    <Search size={13} />
+                  )}
+                  Look again
                 </button>
               </div>
             </>
@@ -566,7 +657,7 @@ function Field({
         {label}
       </p>
       {description && (
-        <p className="mt-1 text-[13px] leading-relaxed text-[var(--t-dim)]">
+        <p className="mt-1 break-words text-[13px] leading-relaxed text-[var(--t-dim)]">
           {description}
         </p>
       )}
@@ -727,6 +818,105 @@ const SUMMARY_TONES = {
   warn: 'text-[var(--t-warn)]',
   error: 'text-[var(--t-red)]'
 } as const
+
+type Tool = 'ytdlp' | 'ffmpeg'
+
+const TOOL_NAMES: Record<Tool, string> = { ytdlp: 'yt-dlp', ffmpeg: 'FFmpeg' }
+
+/** What the app's own copy of each tool is, in one sentence. */
+const APP_COPY: Record<Tool, string> = {
+  ytdlp:
+    "The app's copy comes from GitHub, is checked against yt-dlp's signed checksums, and keeps itself up to date.",
+  ffmpeg:
+    "The app's copy is the FFmpeg build this app version pins, checked by its SHA-256."
+}
+
+/** Describes the copy in use and what was found on this computer. */
+export function sourceDescription(
+  which: Tool,
+  current: BinarySource,
+  status: BinariesStatus,
+  scan: BinariesScan | null,
+  scanning: boolean
+): string {
+  const name = TOOL_NAMES[which]
+  if (current === 'system') {
+    const path = status[which].path
+    return path
+      ? `Using ${name} at ${path}.`
+      : `Using the ${name} on this computer's PATH.`
+  }
+  const found = scan?.[which] ?? null
+  let local = ''
+  if (scanning) local = 'Looking for a copy on this computer…'
+  else if (scan && !found) local = `No ${name} on this computer's PATH.`
+  else if (found?.report.passed)
+    local = `Also found ${name} ${found.version ?? ''} at ${found.path}.`
+  else if (found) {
+    local = `${name} ${found.version ?? ''} at ${found.path} failed its self-test, so it can't be used.`
+  }
+  return local ? `${APP_COPY[which]} ${local}` : APP_COPY[which]
+}
+
+/** Where a tool runs from: the app's checked copy or the one on this computer, switched in place. */
+function SourceField({
+  which,
+  current,
+  status,
+  scan,
+  scanning,
+  changing,
+  onChange
+}: {
+  which: Tool
+  current: BinarySource
+  status: BinariesStatus
+  scan: BinariesScan | null
+  scanning: boolean
+  changing: boolean
+  onChange: (source: BinarySource) => void
+}): React.JSX.Element {
+  const usable = current === 'system' || Boolean(scan?.[which]?.report.passed)
+  return (
+    <Field
+      label={`Use for ${TOOL_NAMES[which]}`}
+      description={sourceDescription(which, current, status, scan, scanning)}
+    >
+      <Segmented<BinarySource>
+        label={`${TOOL_NAMES[which]} source`}
+        value={current}
+        disabled={changing}
+        onChange={(source) => {
+          if (source !== current) onChange(source)
+        }}
+        options={[
+          { value: 'app', label: "App's copy" },
+          { value: 'system', label: 'This computer', disabled: !usable }
+        ]}
+      />
+    </Field>
+  )
+}
+
+function InstallAgainKey({
+  busy,
+  onClick
+}: {
+  busy: boolean
+  onClick: () => void
+}): React.JSX.Element {
+  return (
+    <button
+      onClick={onClick}
+      disabled={busy}
+      title="Download and check the app's copy again"
+      className={SMALL_KEY}
+    >
+      {busy ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+      Install again
+    </button>
+  )
+}
 
 function SelfTestRow({
   report,

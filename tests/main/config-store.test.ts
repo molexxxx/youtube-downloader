@@ -83,4 +83,19 @@ describe('config store', () => {
     expect(reset.theme).toBeUndefined()
     expect(reset.downloadDir).toBe('/home/downloads')
   })
+
+  it('keeps finished setup and the chosen tool sources through a reset', async () => {
+    const { setConfig, resetConfig } = await import('@main/config')
+    setConfig({
+      theme: 'light',
+      setupComplete: true,
+      ytdlpSource: 'system',
+      ffmpegSource: 'app'
+    })
+    const reset = resetConfig()
+    expect(reset.theme).toBeUndefined()
+    expect(reset.setupComplete).toBe(true)
+    expect(reset.ytdlpSource).toBe('system')
+    expect(reset.ffmpegSource).toBe('app')
+  })
 })

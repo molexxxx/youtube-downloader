@@ -18,7 +18,7 @@ import { DiscordScreen } from './components/discord/DiscordScreen'
 function App(): React.JSX.Element {
   const binariesReady = useAppStore((s) => s.binariesReady)
   const binaries = useAppStore((s) => s.binaries)
-  const setupOpen = useAppStore((s) => s.setupOpen)
+  const binaryChange = useAppStore((s) => s.binaryChange)
   const setupComplete = useAppStore((s) => s.config?.setupComplete)
   const view = useAppStore((s) => s.view)
   const error = useAppStore((s) => s.error)
@@ -121,7 +121,8 @@ function App(): React.JSX.Element {
       <TitleBar />
       <UpdateToast />
       <VideoPreviewModal />
-      {binaries !== null && (!binariesReady || setupOpen || setupComplete === false) ? (
+      {binaries !== null &&
+      (setupComplete === false || (!binariesReady && binaryChange === null)) ? (
         <SetupGate />
       ) : view === 'settings' ? (
         <main className="focus-ring-red signal-red stage scroll-ink scroll-centered flex-1 overflow-y-auto">

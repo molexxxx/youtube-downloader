@@ -55,7 +55,7 @@ beforeEach(() => {
       ffmpeg: { installed: false, version: null, source: null }
     }),
     binariesReady: false,
-    setupOpen: false,
+    binaryChange: null,
     config: { ytdlpSource: 'app', ffmpegSource: 'app', setupComplete: false } as AppConfig
   })
 })
@@ -130,7 +130,6 @@ describe('SetupGate', () => {
     await waitFor(() =>
       expect(api.config.set).toHaveBeenCalledWith({ setupComplete: true })
     )
-    expect(useAppStore.getState().setupOpen).toBe(false)
   })
 
   it('offers a retry instead of starting when a required check fails', async () => {
@@ -152,26 +151,11 @@ describe('SetupGate', () => {
     await waitFor(() => expect(api.binaries.bootstrap).toHaveBeenCalledTimes(2))
   })
 
-  it('can be closed only when it was opened from Settings', async () => {
+  it('is a one-time step with no way to dismiss it unfinished', async () => {
     api.binaries.scan.mockResolvedValue(NOTHING_FOUND)
-    const { unmount } = render(<SetupGate />)
+    render(<SetupGate />)
     await screen.findByText('Install and test')
     expect(screen.queryByLabelText('Close setup')).toBeNull()
-    unmount()
-
-    useAppStore.setState({
-      binaries: tested,
-      binariesReady: true,
-      setupOpen: true,
-      config: {
-        ytdlpSource: 'app',
-        ffmpegSource: 'app',
-        setupComplete: true
-      } as AppConfig
-    })
-    render(<SetupGate />)
-    fireEvent.click(await screen.findByLabelText('Close setup'))
-    expect(useAppStore.getState().setupOpen).toBe(false)
   })
 })
 

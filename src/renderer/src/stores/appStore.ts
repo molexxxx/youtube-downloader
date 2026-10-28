@@ -30,8 +30,8 @@ interface AppState {
   config: AppConfig | null
   binaries: BinariesStatus | null
   binariesReady: boolean
-  /** Setup reopened from Settings while both binaries are ready. */
-  setupOpen: boolean
+  /** A tool whose source Settings is changing; the setup gate stays closed meanwhile. */
+  binaryChange: 'ytdlp' | 'ffmpeg' | null
   view: AppView
   info: MediaInfo | null
   searchResults: PlaylistEntry[]
@@ -64,7 +64,7 @@ interface AppState {
   setConfig: (config: AppConfig) => void
   patchConfig: (partial: Partial<AppConfig>) => void
   setBinaries: (binaries: BinariesStatus) => void
-  setSetupOpen: (open: boolean) => void
+  setBinaryChange: (which: 'ytdlp' | 'ffmpeg' | null) => void
   setView: (view: AppView) => void
   setInfo: (info: MediaInfo | null) => void
   appendEntries: (entries: PlaylistEntry[]) => void
@@ -109,7 +109,7 @@ export const useAppStore = create<AppState>((set) => ({
   config: null,
   binaries: null,
   binariesReady: false,
-  setupOpen: false,
+  binaryChange: null,
   view: 'downloads',
   info: null,
   searchResults: [],
@@ -136,7 +136,7 @@ export const useAppStore = create<AppState>((set) => ({
       config: state.config ? { ...state.config, ...partial } : state.config
     })),
   setBinaries: (binaries) => set({ binaries, binariesReady: binariesAreReady(binaries) }),
-  setSetupOpen: (setupOpen) => set({ setupOpen }),
+  setBinaryChange: (binaryChange) => set({ binaryChange }),
   setView: (view) => set({ view }),
   setInfo: (info) => set({ info }),
   appendEntries: (entries) =>

@@ -4,6 +4,7 @@ export interface SegmentOption<T extends string> {
   label: string
   sublabel?: string
   icon?: React.ReactNode
+  disabled?: boolean
 }
 
 /**
@@ -19,7 +20,8 @@ export function Segmented<T extends string>({
   onChange,
   size = 'md',
   uppercase = false,
-  capitalize = false
+  capitalize = false,
+  disabled = false
 }: {
   label: string
   value: T
@@ -28,6 +30,7 @@ export function Segmented<T extends string>({
   size?: 'md' | 'sm'
   uppercase?: boolean
   capitalize?: boolean
+  disabled?: boolean
 }): React.JSX.Element {
   return (
     <div
@@ -43,12 +46,13 @@ export function Segmented<T extends string>({
             type="button"
             onClick={() => onChange(o.value)}
             aria-pressed={active}
-            className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 border-l border-[var(--t-rule-strong)] font-semibold transition-[background-color,color] duration-150 first:border-l-0 ${
+            disabled={disabled || o.disabled}
+            className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 border-l border-[var(--t-rule-strong)] font-semibold transition-[background-color,color] duration-150 first:border-l-0 disabled:cursor-not-allowed ${
               size === 'md' ? 'px-3 py-2.5 text-sm' : 'px-2 py-2 text-xs'
             } ${uppercase ? 'uppercase' : capitalize ? 'capitalize' : ''} ${
               active
                 ? 'bg-[var(--t-accent-soft)] text-[var(--t-accent-text)] shadow-[inset_0_0_0_1px_var(--t-accent)]'
-                : 'text-[var(--t-dim)] hover:bg-[var(--t-hover)] hover:text-[var(--t-fg)]'
+                : 'text-[var(--t-dim)] enabled:hover:bg-[var(--t-hover)] enabled:hover:text-[var(--t-fg)] disabled:text-[var(--t-faint)]'
             }`}
           >
             {o.icon}

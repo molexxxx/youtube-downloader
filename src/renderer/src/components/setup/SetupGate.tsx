@@ -7,8 +7,7 @@ import {
   Download,
   Loader2,
   RotateCcw,
-  Search,
-  X
+  Search
 } from 'lucide-react'
 import type {
   BinariesScan,
@@ -62,19 +61,20 @@ export function setupPassed(status: BinariesStatus | null): boolean {
   )
 }
 
-/** First-run setup, also opened from Settings: find, choose, install, and self-test yt-dlp and FFmpeg. */
+/**
+ * One-time setup: find, choose, install, and self-test yt-dlp and FFmpeg. It
+ * shows on first run, and again only when a tool goes missing; afterward the
+ * sources are managed in Settings.
+ */
 export function SetupGate(): React.JSX.Element {
   const binaries = useAppStore((s) => s.binaries)
-  const binariesReady = useAppStore((s) => s.binariesReady)
   const config = useAppStore((s) => s.config)
   const setBinaries = useAppStore((s) => s.setBinaries)
   const setConfig = useAppStore((s) => s.setConfig)
-  const setSetupOpen = useAppStore((s) => s.setSetupOpen)
   const [step, setStep] = useState<Step>('scanning')
   const [scan, setScan] = useState<BinariesScan | null>(null)
   const [choice, setChoice] = useState<Choice>({ ytdlp: 'app', ffmpeg: 'app' })
   const startedRef = useRef(false)
-  const canCancel = binariesReady && config?.setupComplete === true
 
   useEffect(() => {
     // StrictMode mounts twice in development; scan only once.
@@ -111,13 +111,12 @@ export function SetupGate(): React.JSX.Element {
 
   async function finish(): Promise<void> {
     setConfig(await window.api.config.set({ setupComplete: true }))
-    setSetupOpen(false)
   }
 
   return (
     <div className="focus-ring-red signal-red stage scroll-ink scroll-centered flex flex-1 justify-center overflow-y-auto">
       <div className="w-full max-w-[880px] px-10 pb-16 pt-10">
-        <header className="flex items-start justify-between gap-6 border-b border-[var(--t-rule-strong)] pb-5">
+        <header className="border-b border-[var(--t-rule-strong)] pb-5">
           <div>
             <h2 className="display text-[24px]">
               {step === 'done' ? 'Setup check' : 'Set up yt-dlp and FFmpeg'}
@@ -128,16 +127,6 @@ export function SetupGate(): React.JSX.Element {
               you start.
             </p>
           </div>
-          {canCancel && (
-            <button
-              onClick={() => setSetupOpen(false)}
-              aria-label="Close setup"
-              title="Close setup"
-              className="key key-line h-9 w-9 shrink-0"
-            >
-              <X size={16} />
-            </button>
-          )}
         </header>
 
         {step === 'scanning' && (

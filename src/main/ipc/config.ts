@@ -27,7 +27,7 @@ export function registerConfigIPC(): void {
     applyTheme(config.theme)
     void applyLaunchOnStartup(config.launchOnStartup, config.startMinimized)
     setAutoDownload(config.autoUpdateApp)
-    binarySourcesChanged()
+    ytdlpUpdater().settingsChanged()
     return config
   })
 }
