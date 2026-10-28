@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Bar } from './components/Bar'
 import { Hero } from './components/Hero'
+import { LightboxProvider } from './components/Lightbox'
 import { Rail } from './components/Rail'
 import { ReleaseDetails } from './components/ReleaseDetails'
 import {
@@ -24,7 +25,7 @@ export function App() {
   const active = useActiveSection(SECTION_IDS)
 
   return (
-    <>
+    <LightboxProvider>
       <a className="skip" href="#content">
         Skip to content
       </a>
@@ -54,6 +55,6 @@ export function App() {
           <ReleaseDetails release={release} platform={platform} />
         </aside>
       </div>
-    </>
+    </LightboxProvider>
   )
 }

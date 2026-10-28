@@ -77,7 +77,6 @@ export function Hero({ release, platform }: HeroProps) {
         eager
         className="hero-window"
         sizes="(min-width: 1180px) calc(100vw - 520px), calc(100vw - 40px)"
-        alt="The Download tab: a resolved Big Buck Bunny video with six presets and a Download button, beside the Downloads panel with three downloads in progress, three queued, and three finished."
       />
     </div>
   )

@@ -2,30 +2,25 @@ import { REPO_URL } from '../release'
 import { SECTIONS } from '../sections'
 import { BrandMark, GitHubMark } from './Marks'
 
-/**
- * The floor rail, drawn like the app's server rail. It mirrors the bar's page
- * navigation for pointer users, so it stays out of the tab order and the
- * accessibility tree.
- */
+/** The page navigation, drawn like the app's server rail. Phones get the top bar instead. */
 export function Rail({ active }: { active: string }) {
   return (
-    <div className="rail">
+    <nav className="rail" aria-label="Page">
       <a className="rail-brand" href="#top" aria-label="YouTube Downloader, back to top">
         <BrandMark size={44} />
       </a>
-      <div className="rail-tiles" aria-hidden="true">
+      <div className="rail-tiles">
         {SECTIONS.map(({ id, label, icon: Icon, tone }) => (
           <a
             key={id}
             href={`#${id}`}
-            tabIndex={-1}
             className="tile"
             data-tone={tone}
             data-active={active === id || undefined}
-            title={label}
+            aria-current={active === id ? 'location' : undefined}
           >
-            <span className="tile-bar" />
-            <span className="tile-box">
+            <span className="tile-bar" aria-hidden="true" />
+            <span className="tile-box" aria-hidden="true">
               <Icon size={20} strokeWidth={2} />
             </span>
             <span className="tile-label">{label}</span>
@@ -40,6 +35,6 @@ export function Rail({ active }: { active: string }) {
       >
         <GitHubMark size={20} />
       </a>
-    </div>
+    </nav>
   )
 }

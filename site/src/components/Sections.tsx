@@ -112,11 +112,7 @@ export function Discord() {
           Slash commands in Discord and the controls in the app drive one player and stay
           in sync.
         </p>
-        <Window
-          name="discord"
-          sizes={STAGE_SIZES}
-          alt="The Discord Bot tab: Caminandes 3 playing in the Theater voice channel with playback controls, beside an Up next queue of ten tracks."
-        />
+        <Window name="discord" sizes={STAGE_SIZES} />
       </div>
 
       <div className="block split">
@@ -132,7 +128,6 @@ export function Discord() {
           name="effects"
           className="window-detail"
           sizes="(min-width: 760px) 578px, calc(100vw - 40px)"
-          alt="The Audio effects panel with the Bass Boost preset: bass at +9 dB, treble at +2 dB, speed and pitch at 1.00x."
         />
       </div>
 
@@ -219,14 +214,12 @@ export function QuickActions() {
             className="window-mini"
             sizes="(min-width: 760px) 380px, 45vw"
             caption="Paste a link and download without opening the main window."
-            alt="Quick Actions on the Download tab: a link field, Video and Audio choices, and a Download button above three active downloads."
           />
           <Window
             name="mini-discord"
             className="window-mini"
             sizes="(min-width: 760px) 380px, 45vw"
             caption="Control playback, the voice channel, and the queue."
-            alt="Quick Actions on the Discord tab: the server tiles, the track playing, playback controls, the Theater voice channel, and the Up next list."
           />
         </div>
       </div>
@@ -244,11 +237,7 @@ export function Setup() {
           and FFmpeg, or copies already on your computer, and installs them with one
           click.
         </p>
-        <Window
-          name="setup"
-          sizes={STAGE_SIZES}
-          alt="The setup screen: the app’s own copies of yt-dlp and FFmpeg selected and marked Recommended, the option to use copies on this computer, and an Install and test button."
-        />
+        <Window name="setup" sizes={STAGE_SIZES} />
         <Ledger
           rows={[
             {
