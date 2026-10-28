@@ -14,6 +14,12 @@
 <a href="https://github.com/molexxxx/youtube-downloader/releases"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-downloads-ytdl.svg?v=5c363c7b" alt="Total downloads" /></a>
 <a href="LICENSE"><img src="https://raw.githubusercontent.com/molexxxx/molexxxx/main/.github/badges/youtube-downloader-license-ytdl.svg?v=8c412731" alt="MIT license" /></a>
 
+<br/>
+
+<a href="https://molexxxx.github.io/youtube-downloader/"><img src=".github/assets/website-button.svg" alt="Visit the website: molexxxx.github.io/youtube-downloader" width="444"></a>
+
+<br/>
+
 **[Download for Windows, macOS, or Linux](#install)**
 
 [Screenshots](#screenshots) · [Features](#features) · [Discord music bot](#discord-music-bot) · [Troubleshooting](#troubleshooting) · [Build from source](#build-from-source)
