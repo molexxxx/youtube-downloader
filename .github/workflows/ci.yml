@@ -28,6 +28,13 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      # The website keeps its own packages in site/; releases do not depend on them.
+      - name: Install website dependencies
+        run: npm ci --prefix site
+
+      - name: Typecheck website
+        run: npm run typecheck:site
+
       - name: Lint
         run: npm run lint
 
