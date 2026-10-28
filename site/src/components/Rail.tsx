@@ -2,7 +2,7 @@ import { REPO_URL } from '../release'
 import { SECTIONS } from '../sections'
 import { BrandMark, GitHubMark } from './Marks'
 
-/** The page navigation, drawn like the app's server rail. Phones get the top bar instead. */
+/** The page navigation, drawn like the app's server rail; on phones it docks to the bottom of the screen. */
 export function Rail({ active }: { active: string }) {
   return (
     <nav className="rail" aria-label="Page">

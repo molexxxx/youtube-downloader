@@ -32,7 +32,7 @@ export function App() {
       <div className="shell">
         <Rail active={active} />
         <div className="stage">
-          <Bar active={active} />
+          <Bar />
           <main id="content">
             <section id="downloader" className="group" aria-labelledby="hero-title">
               <Hero release={release} platform={platform} />

@@ -31,27 +31,32 @@ export function useMediaQuery(query: string): boolean {
 }
 
 /**
- * Tracks which section crosses the middle band of the viewport, and takes over
- * in-page links: the target is marked at once, sections passed on the way are
- * ignored, and jumps longer than two screens skip the animation.
+ * Tracks the last section whose top has passed 45% of the viewport (the last
+ * section once the page is scrolled to the end), and takes over in-page links:
+ * the target is marked at once, sections passed on the way are ignored, and
+ * jumps longer than two screens skip the animation.
  */
 export function useActiveSection(ids: string[]): string {
   const [active, setActive] = useState(ids[0])
   const jumping = useRef(false)
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (jumping.current) return
-        for (const entry of entries) {
-          if (entry.isIntersecting) setActive(entry.target.id)
-        }
-      },
-      { rootMargin: '-45% 0px -50% 0px' }
-    )
-    for (const id of ids) {
-      const element = document.getElementById(id)
-      if (element) observer.observe(element)
+    let frame = 0
+    const measure = () => {
+      frame = 0
+      if (jumping.current) return
+      const line = window.innerHeight * 0.45
+      const end =
+        window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2
+      let current = ids[0]
+      for (const id of ids) {
+        const element = document.getElementById(id)
+        if (element && element.getBoundingClientRect().top <= line) current = id
+      }
+      setActive(end ? ids[ids.length - 1] : current)
+    }
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(measure)
     }
 
     let timer = 0
@@ -93,10 +98,15 @@ export function useActiveSection(ids: string[]): string {
       }
     }
 
+    measure()
     document.addEventListener('click', onClick)
+    window.addEventListener('scroll', schedule, { passive: true })
+    window.addEventListener('resize', schedule)
     return () => {
-      observer.disconnect()
+      cancelAnimationFrame(frame)
       document.removeEventListener('click', onClick)
+      window.removeEventListener('scroll', schedule)
+      window.removeEventListener('resize', schedule)
       settle()
     }
   }, [ids])
