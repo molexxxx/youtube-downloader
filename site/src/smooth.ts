@@ -14,7 +14,7 @@ function keepsNativeScroll(node: HTMLElement): boolean {
 export function startSmoothScroll(): () => void {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches)
     return () => undefined
-  const instance = new Lenis({ autoRaf: true, prevent: keepsNativeScroll })
+  const instance = new Lenis({ autoRaf: true, lerp: 0.15, prevent: keepsNativeScroll })
   lenis = instance
   return () => {
     instance.destroy()
@@ -30,6 +30,37 @@ export function scrollPage(top: number, immediate: boolean, onComplete: () => vo
   }
   window.addEventListener('scrollend', onComplete, { once: true })
   window.scrollTo({ top, behavior: immediate ? 'instant' : 'smooth' })
+}
+
+/**
+ * On desktop, fetches the remaining lazy captures once the page is idle, so
+ * none of them first decodes in the middle of a scroll. Phones keep lazy
+ * loading to save data.
+ */
+export function warmCaptures(): () => void {
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches)
+    return () => undefined
+  const warm = () => {
+    for (const image of document.querySelectorAll<HTMLImageElement>(
+      'img[loading="lazy"]'
+    )) {
+      image.loading = 'eager'
+    }
+  }
+  const idle =
+    window.requestIdleCallback ??
+    ((callback: () => void) => window.setTimeout(callback, 1500))
+  const cancel = window.cancelIdleCallback ?? window.clearTimeout
+  let handle = 0
+  const schedule = () => {
+    handle = idle(warm)
+  }
+  if (document.readyState === 'complete') schedule()
+  else window.addEventListener('load', schedule, { once: true })
+  return () => {
+    window.removeEventListener('load', schedule)
+    cancel(handle)
+  }
 }
 
 /** Holds the page still while an overlay is open. */

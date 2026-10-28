@@ -16,7 +16,7 @@ import {
 import { useActiveSection, useRelease } from './hooks'
 import { currentPlatform } from './platform'
 import { SECTIONS } from './sections'
-import { startSmoothScroll } from './smooth'
+import { startSmoothScroll, warmCaptures } from './smooth'
 
 const SECTION_IDS = SECTIONS.map(({ id }) => id)
 
@@ -26,6 +26,7 @@ export function App() {
   const active = useActiveSection(SECTION_IDS)
 
   useEffect(() => startSmoothScroll(), [])
+  useEffect(() => warmCaptures(), [])
 
   return (
     <LightboxProvider>
