@@ -9,6 +9,8 @@ export default tseslint.config(
     ignores: [
       'out',
       'dist',
+      'site/dist',
+      'site/*.config.ts',
       'node_modules',
       'coverage',
       'scripts',
@@ -20,7 +22,7 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ['src/renderer/**/*.{ts,tsx}'],
+    files: ['src/renderer/**/*.{ts,tsx}', 'site/src/**/*.{ts,tsx}'],
     plugins: { react, 'react-hooks': reactHooks },
     languageOptions: {
       parserOptions: { ecmaFeatures: { jsx: true } }

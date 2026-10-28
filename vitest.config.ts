@@ -54,6 +54,14 @@ export default defineConfig({
           setupFiles: ['./tests/renderer/setup.ts'],
           include: ['tests/renderer/**/*.test.{ts,tsx}']
         }
+      },
+      {
+        extends: true,
+        test: {
+          name: 'site',
+          environment: 'node',
+          include: ['tests/site/**/*.test.ts']
+        }
       }
     ]
   }
