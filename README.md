@@ -16,9 +16,7 @@
 
 <br/>
 
-<a href="https://molexxxx.github.io/youtube-downloader/"><img src=".github/assets/website-button.svg" alt="Visit the website: molexxxx.github.io/youtube-downloader" width="444"></a>
-
-<br/>
+<a href="https://molexxxx.github.io/youtube-downloader/"><img src=".github/assets/website-button.svg" alt="Visit the website: molexxxx.github.io/youtube-downloader" width="322"></a>
 
 **[Download for Windows, macOS, or Linux](#install)**
 
