@@ -39,7 +39,7 @@
     "vite": "^7.3.6"
   },
   "dependencies": {
-    "@discordjs/opus": "^0.10.0",
+    "@discordjs/opus": "^0.11.0",
     "@discordjs/voice": "^0.19.2",
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^4.0.0",
