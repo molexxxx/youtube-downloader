@@ -201,7 +201,7 @@ The token is encrypted with your operating system's secure storage (Keychain on 
 
 ## Build from source
 
-You need [Node.js](https://nodejs.org) 22 and npm.
+You need [Node.js](https://nodejs.org) 22.12 or later and npm.
 
 ```bash
 git clone https://github.com/molexxxx/youtube-downloader.git
