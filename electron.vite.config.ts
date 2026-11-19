@@ -1,5 +1,5 @@
 import { resolve } from 'path'
-import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
+import { defineConfig } from 'electron-vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/postcss'
 import autoprefixer from 'autoprefixer'
@@ -9,7 +9,6 @@ export default defineConfig(({ mode }) => {
 
   return {
     main: {
-      plugins: [externalizeDepsPlugin({ include: ['electron'] })],
       resolve: {
         alias: {
           '@main': resolve('src/main'),
@@ -22,7 +21,6 @@ export default defineConfig(({ mode }) => {
       }
     },
     preload: {
-      plugins: [externalizeDepsPlugin({ include: ['electron'] })],
       resolve: {
         alias: {
           '@shared': resolve('src/shared')

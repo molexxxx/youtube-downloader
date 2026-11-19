@@ -1,6 +1,6 @@
-# Two transitive advisories have no upstream fix, so package.json carries
-# `overrides` for them. JSON takes no comments, so they are documented here.
-# Re-check both on any dependency sweep and drop the override once the parent
+# One transitive advisory has no upstream fix, so package.json carries an
+# `overrides` entry for it. JSON takes no comments, so it is documented here.
+# Re-check it on any dependency sweep and drop the override once the parent
 # ships the fix itself.
 #
 # @discordjs/node-pre-gyp 0.4.5 (latest) still depends on tar ^6.1.11, and every
@@ -10,11 +10,9 @@
 # @discordjs/opus still installs its prebuilt binary rather than falling back to
 # a source build.
 #
-# vite is pinned to ^7.3.6, the first vite 7 accepting esbuild ^0.28.0. esbuild
-# 0.27.3 to 0.28.0 has an arbitrary-file-read in its dev server (GHSA-g7r4-m6w7-qqqr),
-# fixed in 0.28.1. Do not let this drift to vite 8: electron-vite caps vite at ^7,
-# and npm ci --legacy-peer-deps installs the pair anyway, then fails at build with
-# ERR_PACKAGE_PATH_NOT_EXPORTED on 'vite/internal'.
+# vite is a direct devDependency rather than an override: electron-vite,
+# @vitejs/plugin-react and vitest all take it as a peer, and npm ci
+# --legacy-peer-deps does not install peers on its own.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -36,11 +34,6 @@ updates:
     # eslint-plugin-react-hooks v7 does not crash: it adds the
     # react-hooks/set-state-in-effect rule, which flags 7 genuine pre-existing
     # setState-in-useEffect sites. Unpinning means fixing those first.
-    #
-    # @vitejs/plugin-react v6 requires vite ^8, but electron-vite caps vite at
-    # ^7. npm ci --legacy-peer-deps installs the conflicting pair anyway, so it
-    # fails at build with ERR_PACKAGE_PATH_NOT_EXPORTED on 'vite/internal'
-    # rather than at install. Unpin once electron-vite supports vite 8.
     ignore:
       - dependency-name: 'typescript'
         update-types: ['version-update:semver-major']
@@ -49,8 +42,6 @@ updates:
       - dependency-name: '@eslint/js'
         update-types: ['version-update:semver-major']
       - dependency-name: 'eslint-plugin-react-hooks'
-        update-types: ['version-update:semver-major']
-      - dependency-name: '@vitejs/plugin-react'
         update-types: ['version-update:semver-major']
     # Group only minor and patch updates. Majors arrive as their own PRs so one
     # breaking major cannot hold back the routine updates: a single group of 20
