@@ -3,36 +3,77 @@ import { logger } from '../logger'
 import { discordStore } from './store'
 
 /**
- * Local, encrypted bot-token storage. The token is encrypted at rest with
- * Electron's safeStorage (OS keychain-backed) and never leaves the main process
- * - the renderer only ever learns whether a token exists, not its value.
+ * Local, encrypted bot-token storage. The token is encrypted at rest with Electron's asynchronous safeStorage API,
+ * which keeps its key in the operating system's secure storage, and never leaves the main process: the renderer only
+ * learns whether a token exists. Tokens written by the synchronous API in earlier releases decrypt with it unchanged.
  */
 export function hasToken(): boolean {
   const s = discordStore()
   return Boolean(s.get('tokenEnc') || s.get('tokenPlain'))
 }
 
-export function saveToken(token: string): void {
+async function encryptionAvailable(): Promise<boolean> {
+  try {
+    return await safeStorage.isAsyncEncryptionAvailable()
+  } catch (err) {
+    logger.warn('Could not check safeStorage:', err)
+    return false
+  }
+}
+
+/**
+ * Whether Chromium encrypted with its fixed fallback key, which protects nothing. On Linux without a keyring service
+ * the asynchronous API still encrypts, but with this key, marked by the `v10` prefix there; keyring-backed keys are
+ * `v11`. On macOS and Windows `v10` is the Keychain or DPAPI key.
+ */
+export function usesFixedKey(
+  encrypted: Buffer,
+  platform: NodeJS.Platform = process.platform
+): boolean {
+  return platform === 'linux' && encrypted.subarray(0, 3).toString('latin1') === 'v10'
+}
+
+export async function saveToken(token: string): Promise<void> {
   const s = discordStore()
-  if (safeStorage.isEncryptionAvailable()) {
-    s.set('tokenEnc', safeStorage.encryptString(token).toString('base64'))
+  if (await encryptionAvailable()) {
+    const encrypted = await safeStorage.encryptStringAsync(token)
+    s.set('tokenEnc', encrypted.toString('base64'))
     s.set('tokenPlain', null)
-    logger.info('Stored Discord token (encrypted)')
+    if (usesFixedKey(encrypted)) {
+      logger.warn(
+        'No keyring service found - the Discord token is stored with a fixed fallback key and is not protected'
+      )
+    } else {
+      logger.info('Stored Discord token (encrypted)')
+    }
     return
   }
-  // No OS-backed encryption (e.g. a headless Linux session); fall back to plain
-  // storage so the feature still works, but make the downgrade visible.
   logger.warn('safeStorage unavailable - storing Discord token unencrypted')
   s.set('tokenPlain', token)
   s.set('tokenEnc', null)
 }
 
-export function loadToken(): string | null {
+/** Stores the token again under the operating system's current key. Keeps the stored copy when that fails. */
+async function reEncrypt(token: string): Promise<void> {
+  try {
+    const encrypted = await safeStorage.encryptStringAsync(token)
+    discordStore().set('tokenEnc', encrypted.toString('base64'))
+    logger.info('Re-encrypted the Discord token under the current key')
+  } catch (err) {
+    logger.warn('Could not re-encrypt the Discord token:', err)
+  }
+}
+
+export async function loadToken(): Promise<string | null> {
   const s = discordStore()
   const enc = s.get('tokenEnc')
-  if (enc && safeStorage.isEncryptionAvailable()) {
+  if (enc && (await encryptionAvailable())) {
     try {
-      return safeStorage.decryptString(Buffer.from(enc, 'base64'))
+      const { result, shouldReEncrypt } = await safeStorage.decryptStringAsync(
+        Buffer.from(enc, 'base64')
+      )
+      if (shouldReEncrypt) await reEncrypt(result)
+      return result
     } catch (err) {
       logger.warn('Failed to decrypt Discord token:', err)
       return null

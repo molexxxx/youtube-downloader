@@ -38,7 +38,7 @@ export function registerDiscordIPC(): void {
   ipcMain.handle(IPC.discord.guilds, () => service.getGuilds())
 
   ipcMain.handle(IPC.discord.setToken, async (_e, token: string) => {
-    saveToken(token)
+    await saveToken(token)
     try {
       await service.login(token)
     } catch {
@@ -54,7 +54,7 @@ export function registerDiscordIPC(): void {
   })
 
   ipcMain.handle(IPC.discord.connect, async () => {
-    const token = loadToken()
+    const token = await loadToken()
     if (token) {
       try {
         await service.login(token)

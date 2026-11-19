@@ -8,7 +8,7 @@ export { getDiscordService } from './client'
 /** Auto-connect the bot on launch when a token is stored and auto-connect is on. */
 export async function initDiscord(): Promise<void> {
   if (!hasToken() || !getAutoConnect()) return
-  const token = loadToken()
+  const token = await loadToken()
   if (!token) return
   try {
     await getDiscordService().login(token)

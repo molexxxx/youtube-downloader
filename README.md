@@ -165,7 +165,7 @@ The app can also run your own music bot for your Discord servers. It plays throu
 - An activity log per server, and an option to leave voice when the queue ends.
 - Supports Discord's end-to-end encrypted voice (DAVE).
 
-The token is encrypted with your operating system's secure storage (Keychain on macOS, DPAPI on Windows, the Secret Service on Linux). On Linux without a keyring service it is stored unencrypted in the app's settings file.
+The token is encrypted with your operating system's secure storage (Keychain on macOS, DPAPI on Windows, the Secret Service on Linux). On Linux without a keyring service, Electron can only encrypt it with a fixed fallback key, which does not protect it, and the app log says so.
 
 <details>
 <summary><b>Slash commands</b></summary>
