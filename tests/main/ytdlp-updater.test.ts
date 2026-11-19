@@ -191,6 +191,14 @@ async function settle(): Promise<void> {
   }
 }
 
+/**
+ * Waits until the updater has scheduled its next automatic check. The reschedule follows the check's status read,
+ * which does real file I/O, so a fixed number of event loop turns can let the clock move before the timer exists.
+ */
+async function nextCheckScheduled(h: Harness): Promise<void> {
+  await vi.waitFor(() => expect(h.timers.pending()).toBe(1))
+}
+
 function deferred(): { promise: Promise<void>; resolve: () => void } {
   let resolve!: () => void
   const promise = new Promise<void>((r) => {
@@ -608,11 +616,11 @@ describe('automatic checks', () => {
     await vi.waitFor(() =>
       expect(stored(h.settings).lastCheckAt).toBe(T0 + FIRST_CHECK_DELAY_MS)
     )
-    await settle()
+    await nextCheckScheduled(h)
 
     for (let hour = 1; hour < 24; hour++) {
       await h.timers.advance(POLL_MS)
-      await settle()
+      await nextCheckScheduled(h)
     }
     expect(h.http.getJson).toHaveBeenCalledTimes(1)
     await h.timers.advance(POLL_MS)
@@ -633,7 +641,7 @@ describe('automatic checks', () => {
     await vi.waitFor(() =>
       expect(stored(h.settings).lastFailure?.problem).toBe('offline')
     )
-    await settle()
+    await nextCheckScheduled(h)
     await h.timers.advance(POLL_MS)
     await vi.waitFor(() => expect(h.http.download).toHaveBeenCalledTimes(1))
     h.updater.stop()
