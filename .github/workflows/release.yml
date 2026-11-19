@@ -102,7 +102,11 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        # The default shell has no pipefail, so without it `| tee` hid notarytool
+        # failures (v1.4.24: Apple's 403 for an unsigned agreement) and the empty
+        # id only failed later in notarize-macos.
         run: |
+          set -o pipefail
           dmg=$(ls dist/YouTube-Downloader-*-macOS-Installer.dmg | head -1)
           echo "Submitting $dmg for notarization (no-wait)..."
           xcrun notarytool submit "$dmg" \
@@ -110,7 +114,12 @@ jobs:
             --password "$APPLE_APP_SPECIFIC_PASSWORD" \
             --team-id "$APPLE_TEAM_ID" \
             --no-wait --output-format json | tee notarization-submission.json
-          echo "Submission id: $(jq -r '.id' notarization-submission.json)"
+          submission_id=$(jq -r '.id // empty' notarization-submission.json 2>/dev/null || true)
+          if [ -z "$submission_id" ]; then
+            echo "::error::Apple returned no notarization submission id; see the notarytool output above."
+            exit 1
+          fi
+          echo "Submission id: $submission_id"
 
       - name: Build and package (macOS, unsigned)
         if: matrix.os == 'macos-latest' && env.MAC_CSC_LINK == ''
@@ -212,7 +221,11 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          submission_id=$(jq -r '.id' notarization-submission.json)
+          submission_id=$(jq -r '.id // empty' notarization-submission.json 2>/dev/null || true)
+          if [ -z "$submission_id" ]; then
+            echo "::error::The macOS build saved no notarization submission id, so there is nothing to wait for."
+            exit 1
+          fi
           echo "Waiting on Apple notarization submission: $submission_id"
 
           # Retry up to 5 times to recover from transient network drops.
