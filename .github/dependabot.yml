@@ -13,6 +13,14 @@
 # vite is a direct devDependency rather than an override: electron-vite,
 # @vitejs/plugin-react and vitest all take it as a peer, and npm ci
 # --legacy-peer-deps does not install peers on its own.
+#
+# One development-only advisory is accepted without an override: minimatch
+# GHSA-g3hv-75wg-m249, fixed only in minimatch 11. app-builder-lib (^10) and
+# @electron/universal (^9) are the only consumers of the affected copies, and
+# both leave optimizationLevel at its default of 1, while the amplification is
+# only reachable at 2 or higher. Their patterns come from electron-builder.yml,
+# and universal macOS builds are not produced. Re-check when either moves to
+# minimatch 11.
 version: 2
 updates:
   - package-ecosystem: npm
