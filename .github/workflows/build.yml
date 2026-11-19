@@ -73,6 +73,17 @@ jobs:
           # and fail with "<projectDir> not a file". Disable identity discovery.
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
 
+      # Boots the packaged app the way users run it: the bundled Electron, and
+      # native modules loaded from the unpacked asar. The smoke test also checks
+      # that Discord playback encodes with native Opus.
+      - name: Smoke-test the packaged app
+        if: matrix.os != 'ubuntu-latest'
+        run: node scripts/smoke-packaged.mjs
+
+      - name: Smoke-test the packaged app (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: xvfb-run --auto-servernum node scripts/smoke-packaged.mjs
+
       - name: Upload draft artifacts
         uses: actions/upload-artifact@v7
         with:

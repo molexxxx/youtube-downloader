@@ -1,4 +1,7 @@
 import { app, BrowserWindow, dialog } from 'electron'
+import { mkdtempSync } from 'fs'
+import { tmpdir } from 'os'
+import { join } from 'path'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { registerIPC } from './ipc'
 import { createMainWindow, getMainWindow, setQuitting } from './windows'
@@ -14,8 +17,15 @@ import { getConfig } from './config'
 import { applyTheme } from './theme'
 import { logger } from './logger'
 
-/** Headless launch check: confirm native Opus encodes, boot the window, confirm it loads, then exit. */
+/**
+ * Headless launch check: confirm native Opus encodes, boot the window, confirm it loads, then exit. It runs in a
+ * throwaway profile, so it never reads real settings or logs in a stored Discord bot.
+ */
 const SMOKE_TEST = process.argv.includes('--smoke-test')
+
+if (SMOKE_TEST) {
+  app.setPath('userData', mkdtempSync(join(tmpdir(), 'youtube-downloader-smoke-')))
+}
 
 // Boot diagnostics: a packaged build that dies before the window appears used
 // to exit silently. Log every fatal to userData/logs/app.log, and if no window
