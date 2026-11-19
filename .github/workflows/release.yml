@@ -358,6 +358,21 @@ jobs:
             --notes-file release-notes.md \
             --draft=false --latest
 
+  # A release published with GITHUB_TOKEN does not fire pages.yml's
+  # `release: published` trigger, but a workflow_dispatch sent with it does, so
+  # the website's baked release snapshot is rebuilt from here.
+  refresh-site:
+    name: Refresh the website
+    needs: [publish]
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Dispatch the Pages deploy
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run pages.yml --repo "${{ github.repository }}" --ref main
+
   notify-badges:
     name: Refresh profile badges
     needs: [publish]
