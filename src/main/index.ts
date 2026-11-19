@@ -8,12 +8,13 @@ import { startBinaries, stopBinaries } from './binaries'
 import { initTray, destroyTray } from './tray'
 import { initDownloadObserver } from './download-observer'
 import { initDiscord, shutdownDiscord } from './discord'
+import { ensureNativeOpus, nativeOpusSelfTest } from './discord/native-opus'
 import { applyLaunchOnStartup } from './startup'
 import { getConfig } from './config'
 import { applyTheme } from './theme'
 import { logger } from './logger'
 
-/** Headless launch check: boot the window, confirm it loads, then exit. */
+/** Headless launch check: confirm native Opus encodes, boot the window, confirm it loads, then exit. */
 const SMOKE_TEST = process.argv.includes('--smoke-test')
 
 // Boot diagnostics: a packaged build that dies before the window appears used
@@ -54,6 +55,13 @@ function runSmokeTest(): void {
   const window = getMainWindow()
   if (!window) {
     logger.error('Smoke test failed: no main window')
+    app.exit(1)
+    return
+  }
+  const opus = ensureNativeOpus()
+  const opusFailure = opus.loaded ? nativeOpusSelfTest() : opus.detail
+  if (opusFailure) {
+    logger.error(`Smoke test failed: native Opus does not work (${opusFailure})`)
     app.exit(1)
     return
   }

@@ -20,6 +20,7 @@ import type {
 import { logger } from '../logger'
 import { GuildMusicPlayer } from './player'
 import { registerGuildCommands, handleInteraction } from './commands'
+import { ensureNativeOpus } from './native-opus'
 import { hasToken } from './token'
 
 // Permissions the bot needs in a server: see/send in text channels, embed links
@@ -102,6 +103,7 @@ export class DiscordService extends EventEmitter {
   }
 
   async login(token: string): Promise<void> {
+    ensureNativeOpus()
     await this.disconnect()
     this.setState('connecting', null)
 
