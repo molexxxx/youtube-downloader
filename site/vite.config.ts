@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { fetchReleases, summarize, type ReleaseSummary } from './src/release'
+import { fetchReleases, summarize, type ReleaseSummary } from './src/release.ts'
 
 export default defineConfig(async () => {
   let snapshot: ReleaseSummary | null = null
