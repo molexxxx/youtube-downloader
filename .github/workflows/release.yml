@@ -79,6 +79,10 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get update && sudo apt-get install -y rpm
 
+      - name: Ship the most compatible native Opus build (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: bash scripts/add-compatible-opus.sh
+
       # macOS signed: builds a signed (not-yet-notarized) .dmg/.zip. The next
       # step submits the .dmg to Apple without waiting; the notarize-macos job
       # polls for approval and staples it.

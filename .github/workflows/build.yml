@@ -40,6 +40,12 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get update && sudo apt-get install -y rpm
 
+      - name: Ship the most compatible native Opus build (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/add-compatible-opus.sh
+
       # macOS, signed: runs only when the Apple Developer ID cert is configured.
       # Signs the .app and .dmg. Notarization happens only in the release
       # workflow (this build just produces signed CI artifacts).
