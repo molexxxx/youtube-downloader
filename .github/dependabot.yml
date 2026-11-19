@@ -54,6 +54,18 @@ updates:
         update-types:
           - minor
           - patch
+  # The website keeps its own exactly pinned packages and lockfile, so it needs
+  # its own entry. Routine bumps arrive as one PR and majors on their own, as
+  # above. pages.yml redeploys the site when a merge lands on main.
+  - package-ecosystem: npm
+    directory: '/site'
+    schedule:
+      interval: weekly
+    groups:
+      site:
+        update-types:
+          - minor
+          - patch
   - package-ecosystem: github-actions
     directory: '/'
     schedule:
