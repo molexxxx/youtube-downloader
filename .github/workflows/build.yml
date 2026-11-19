@@ -21,6 +21,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       YOUTUBE_DL_SKIP_DOWNLOAD: '1'
+      YOUTUBE_DL_SKIP_PYTHON_CHECK: '1'
       # Surfaced to job env so step `if:` can test it - the `secrets` context
       # is not allowed inside `if` expressions, but `env` is.
       MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}

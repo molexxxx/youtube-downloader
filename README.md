@@ -216,6 +216,8 @@ npm test
 npm run package:win    # Or package:mac, package:linux
 ```
 
+On macOS and Linux, youtube-dl-exec's install script fails unless `python3` is Python 3.11 or later. The app never uses that Python, since it runs its own yt-dlp build, so if yours is older, install with `YOUTUBE_DL_SKIP_PYTHON_CHECK=1 npm ci --legacy-peer-deps`.
+
 Built with Electron, React 19, TypeScript, electron-vite, Tailwind CSS 4, and Zustand. Downloads go through yt-dlp (via youtube-dl-exec) and FFmpeg; the bot uses discord.js and @discordjs/voice with native Opus (@discordjs/opus) and sodium-native encryption. Tests run on Vitest, and electron-builder packages the installers.
 
 ## Contributing

@@ -26,6 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       YOUTUBE_DL_SKIP_DOWNLOAD: '1'
+      YOUTUBE_DL_SKIP_PYTHON_CHECK: '1'
     steps:
       - uses: actions/checkout@v6
 
@@ -58,6 +59,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       YOUTUBE_DL_SKIP_DOWNLOAD: '1'
+      YOUTUBE_DL_SKIP_PYTHON_CHECK: '1'
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # Surfaced to job env so step `if:` can test it - the `secrets` context
       # is not allowed inside `if` expressions, but `env` is.
